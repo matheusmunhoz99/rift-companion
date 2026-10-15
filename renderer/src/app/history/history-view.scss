@@ -1,0 +1,283 @@
+:host {
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+
+  input,
+  select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    min-width: 0;
+  }
+
+  input {
+    flex: 1;
+  }
+}
+
+button {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &.ghost {
+    border-color: var(--border);
+    color: var(--muted);
+  }
+
+  &.link {
+    border: none;
+    padding: 0;
+    font-weight: 400;
+    font-size: 13px;
+
+    &:hover:not(:disabled) {
+      background: none;
+      color: var(--text);
+    }
+  }
+}
+
+.search-links {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--success);
+  color: var(--success);
+
+  &.error {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+  }
+
+  .profile-info {
+    flex: 1;
+  }
+
+  .ranks {
+    display: flex;
+    gap: 20px;
+  }
+
+  .rank {
+    display: grid;
+    font-size: 13px;
+  }
+}
+
+.match {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+
+  &.win {
+    border-left-color: #4a7fd6;
+
+    .result {
+      color: #6d9eff;
+    }
+  }
+
+  &.loss {
+    border-left-color: var(--danger);
+
+    .result {
+      color: var(--danger);
+    }
+  }
+}
+
+.match-summary {
+  display: grid;
+  grid-template-columns: 130px auto 120px 1fr;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 0;
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+  }
+}
+
+.match-meta,
+.score {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+
+  strong {
+    font-size: 13px;
+  }
+}
+
+.result {
+  font-weight: 600;
+}
+
+.deaths {
+  color: var(--danger);
+}
+
+.champ {
+  display: flex;
+  gap: 4px;
+
+  .champ-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+  }
+}
+
+.stack {
+  display: grid;
+  gap: 2px;
+}
+
+img.small {
+  width: 23px;
+  height: 23px;
+  border-radius: 4px;
+}
+
+.items {
+  display: flex;
+  gap: 3px;
+
+  img,
+  .empty-slot {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+  }
+
+  .empty-slot {
+    background: var(--border);
+  }
+}
+
+.match-details {
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border);
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  td {
+    padding: 3px 6px;
+    white-space: nowrap;
+  }
+
+  tr.highlight {
+    background: rgba(200, 170, 110, 0.1);
+  }
+
+  .player {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .items img,
+  .items .empty-slot {
+    width: 22px;
+    height: 22px;
+  }
+
+  .import {
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+}
+
+.more {
+  justify-self: center;
+}
+
+.muted {
+  color: var(--muted);
+}

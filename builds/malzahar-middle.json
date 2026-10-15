@@ -1,0 +1,11 @@
+{
+  "championId": 90,
+  "position": "middle",
+  "title": "Malzahar - Meio (exemplo)",
+  "maps": [11],
+  "blocks": [
+    { "name": "Inicial", "items": [1056, 2003, 2003, 3340] },
+    { "name": "Núcleo", "items": [3020, 6653, 3116, 3089] },
+    { "name": "Situacional", "items": [3165, 3135, 3157, 3102] }
+  ]
+}

@@ -1,0 +1,157 @@
+:host {
+  display: grid;
+  gap: 18px;
+}
+
+.block {
+  display: grid;
+  gap: 10px;
+}
+
+.block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h3 {
+    margin: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.rune-page,
+.item-build {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.keystone img {
+  width: 48px;
+  height: 48px;
+}
+
+.rune-details,
+.item-build-info {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rune-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.icon-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .perk {
+    width: 26px;
+    height: 26px;
+  }
+
+  .spell,
+  .item {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+  }
+
+  .divider {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+}
+
+.stats {
+  margin: 0;
+  font-size: 12px;
+
+  span + span::before {
+    content: ' · ';
+  }
+}
+
+.item-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .block-name {
+    width: 84px;
+    font-size: 12px;
+  }
+}
+
+button {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--success);
+  color: var(--success);
+
+  &.error {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+}
+
+.muted {
+  color: var(--muted);
+}
+
+code {
+  background: var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  word-break: break-all;
+}

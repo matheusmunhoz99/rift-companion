@@ -1,0 +1,11 @@
+{
+  "championId": 40,
+  "position": "utility",
+  "title": "Janna - Suporte (exemplo)",
+  "maps": [11],
+  "blocks": [
+    { "name": "Inicial", "items": [3865, 2003, 2003, 3340] },
+    { "name": "Núcleo", "items": [3158, 3504, 3107, 3222] },
+    { "name": "Visão", "items": [3364, 2055] }
+  ]
+}

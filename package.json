@@ -1,0 +1,26 @@
+{
+  "name": "rift-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Companion app para League of Legends: conexão com o cliente, builds e histórico.",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build:renderer": "npm --prefix renderer run build -- --base-href ./",
+    "build": "npm run build:renderer && npm run build:electron",
+    "start": "npm run build && electron .",
+    "dev": "npm run build:electron && concurrently -k -n ng,electron \"npm --prefix renderer start\" \"wait-on http://localhost:4200 && cross-env RENDERER_URL=http://localhost:4200 electron .\""
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/ws": "^8.18.2",
+    "concurrently": "^9.2.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.7.2",
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.5"
+  }
+}

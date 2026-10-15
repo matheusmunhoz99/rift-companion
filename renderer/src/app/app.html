@@ -1,0 +1,101 @@
+<header class="topbar">
+  <span class="brand">Rift Companion</span>
+  <nav class="tabs">
+    <button type="button" [class.active]="tab() === 'client'" (click)="tab.set('client')">Cliente</button>
+    <button type="button" [class.active]="tab() === 'history'" (click)="tab.set('history')">Histórico</button>
+  </nav>
+  <span class="status" [attr.data-status]="state().status">
+    <span class="dot"></span>
+    {{ statusLabel() }}
+  </span>
+</header>
+
+<main class="content" [class.wide]="tab() === 'history'">
+  @if (tab() === 'history') {
+    <app-history-view />
+  } @else if (!lcu.available) {
+    <section class="card notice">
+      Esta tela precisa rodar dentro do Electron para acessar o cliente do LoL.
+      Use <code>npm run dev</code> na raiz do projeto.
+    </section>
+  } @else if (state().status !== 'connected') {
+    <section class="card empty">
+      <h2>Abra o cliente do League of Legends</h2>
+      <p>A conexão é feita automaticamente assim que o cliente estiver aberto.</p>
+    </section>
+  } @else {
+    <section class="card profile">
+      @if (state().summoner; as summoner) {
+        @if (profileIconUrl(); as iconUrl) {
+          <img class="avatar" [src]="iconUrl" alt="Ícone de perfil" />
+        }
+        <div>
+          <h2>
+            {{ summoner.gameName }}<span class="tag">#{{ summoner.tagLine }}</span>
+          </h2>
+          <p class="muted">Nível {{ summoner.summonerLevel }}</p>
+        </div>
+      } @else {
+        <p class="muted">Faça login no cliente para carregar seu perfil.</p>
+      }
+    </section>
+
+    <section class="card">
+      <h3>Status no cliente</h3>
+      <p class="phase">{{ phaseLabel() }}</p>
+    </section>
+
+    @if (selectedChampion(); as pick) {
+      <section class="card champ-select">
+        <h3>Seleção de campeões</h3>
+        <div class="pick">
+          @if (pick.iconUrl) {
+            <img [src]="pick.iconUrl" [alt]="pick.champion?.name" />
+          }
+          <div>
+            <p class="champion-name">{{ pick.champion?.name ?? 'Nenhum campeão escolhido' }}</p>
+            <p class="muted">
+              {{ pick.locked ? 'Confirmado' : 'Intenção de pick' }}
+              @if (pick.position) {
+                · {{ pick.position }}
+              }
+            </p>
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="card">
+      <h3>Builds</h3>
+      @if (!inChampSelect()) {
+        <div class="pickers">
+          <select
+            [value]="manualChampionId()"
+            (change)="manualChampionId.set(+$any($event.target).value)"
+          >
+            <option value="0">Escolha um campeão…</option>
+            @for (champion of ddragon.championList(); track champion.key) {
+              <option [value]="champion.key">{{ champion.name }}</option>
+            }
+          </select>
+          <select [value]="manualPosition()" (change)="manualPosition.set($any($event.target).value)">
+            <option value="">Qualquer rota</option>
+            @for (position of positions; track position.value) {
+              <option [value]="position.value">{{ position.label }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (buildChampionId() > 0) {
+        <app-build-panel
+          [championId]="buildChampionId()"
+          [position]="buildPosition()"
+          [inChampSelect]="inChampSelect()"
+        />
+      } @else if (inChampSelect()) {
+        <p class="muted">Escolha um campeão na seleção para ver as builds.</p>
+      }
+    </section>
+  }
+</main>

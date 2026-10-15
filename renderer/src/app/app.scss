@@ -1,0 +1,178 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+
+  button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      background: var(--border);
+      color: var(--text);
+    }
+  }
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--danger);
+  }
+
+  &[data-status='connecting'] .dot {
+    background: var(--warning);
+  }
+
+  &[data-status='connected'] .dot {
+    background: var(--success);
+  }
+}
+
+.content {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+
+  &.wide {
+    max-width: 980px;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+
+  p {
+    margin-top: 8px;
+    color: var(--muted);
+  }
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+  }
+
+  .tag {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+}
+
+.phase {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  img {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+  }
+
+  .champion-name {
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.pickers {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+
+  select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+}
+
+code {
+  background: var(--border);
+  padding: 1px 6px;
+  border-radius: 4px;
+}

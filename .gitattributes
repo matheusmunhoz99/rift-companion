@@ -1,0 +1,4 @@
+# LF em todo o repositório: os arquivos de server/deploy vão para Linux (systemd/Nginx).
+* text=auto eol=lf
+*.png binary
+*.ico binary

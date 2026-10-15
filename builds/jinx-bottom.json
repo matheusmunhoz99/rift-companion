@@ -1,0 +1,11 @@
+{
+  "championId": 222,
+  "position": "bottom",
+  "title": "Jinx - Crítico (exemplo)",
+  "maps": [11],
+  "blocks": [
+    { "name": "Inicial", "items": [1055, 2003, 3340] },
+    { "name": "Núcleo", "items": [3006, 6672, 3046, 3031] },
+    { "name": "Situacional", "items": [3036, 3072, 6673, 3033] }
+  ]
+}

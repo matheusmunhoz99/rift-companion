@@ -1,0 +1,11 @@
+{
+  "championId": 19,
+  "position": "jungle",
+  "title": "Warwick - Selva (exemplo)",
+  "maps": [11],
+  "blocks": [
+    { "name": "Inicial", "items": [1103, 2003, 3340] },
+    { "name": "Núcleo", "items": [3047, 3153, 3748, 3053] },
+    { "name": "Situacional", "items": [6333, 3181, 6665, 3068] }
+  ]
+}

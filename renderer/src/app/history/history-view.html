@@ -1,0 +1,157 @@
+@if (settings(); as config) {
+  <section class="card">
+    <form class="row" (submit)="$event.preventDefault(); search()">
+      <input
+        class="riot-id"
+        placeholder="Nome#TAG"
+        [value]="riotId()"
+        (input)="riotId.set($any($event.target).value)"
+        spellcheck="false"
+      />
+      <select [value]="platformId()" (change)="changePlatform($any($event.target).value)">
+        @for (platform of config.platforms; track platform.id) {
+          <option [value]="platform.id">{{ platform.id }} · {{ platform.label }}</option>
+        }
+      </select>
+      <button type="submit" [disabled]="loading() !== null">
+        {{ loading() === 'search' ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </form>
+    <div class="search-links">
+      @if (ownRiotId(); as own) {
+        <button type="button" class="link" [disabled]="loading() !== null" (click)="searchOwnAccount()">
+          Minhas partidas ({{ own }})
+        </button>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="card muted">Esta tela precisa rodar dentro do Electron.</section>
+}
+
+@if (feedback(); as message) {
+  <p class="feedback" [class.error]="message.kind === 'error'">{{ message.text }}</p>
+}
+
+@if (player(); as profile) {
+  <section class="card profile">
+    @if (ddragon.profileIconUrl(profile.profileIconId); as icon) {
+      <img class="avatar" [src]="icon" alt="Ícone de perfil" />
+    }
+    <div class="profile-info">
+      <h2>{{ profile.gameName }}<span class="muted">#{{ profile.tagLine }}</span></h2>
+      <p class="muted">Nível {{ profile.summonerLevel }} · {{ profile.platformId }}</p>
+    </div>
+    <div class="ranks">
+      @for (entry of profile.ranked; track entry.queueType) {
+        <div class="rank">
+          <span class="muted">{{ rankLabel(entry.queueType) }}</span>
+          <strong>{{ tierName(entry.tier) }} {{ entry.rank }} · {{ entry.leaguePoints }} PDL</strong>
+          <span class="muted">{{ entry.wins }}V {{ entry.losses }}D</span>
+        </div>
+      } @empty {
+        <span class="muted">Sem ranqueadas nesta temporada</span>
+      }
+    </div>
+  </section>
+
+  @for (match of matches(); track match.matchId) {
+    @if (me(match); as p) {
+      <article class="match" [class.win]="p.win" [class.loss]="!p.win">
+        <button type="button" class="match-summary" (click)="toggleMatch(match.matchId)">
+          <div class="match-meta">
+            <strong>{{ queueName(match.queueId) }}</strong>
+            <span class="muted">{{ timeAgo(match.gameEndTimestamp) }}</span>
+            <span class="result">{{ p.win ? 'Vitória' : 'Derrota' }}</span>
+            <span class="muted">{{ duration(match.gameDurationSeconds) }}</span>
+          </div>
+
+          <div class="champ">
+            @if (ddragon.champion(p.championId); as champion) {
+              <img class="champ-icon" [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name" />
+            }
+            <div class="stack">
+              @for (spellId of p.summonerSpellIds; track $index) {
+                <img class="small" [src]="ddragon.spellIconUrl(spellId)" [alt]="ddragon.spellName(spellId)" />
+              }
+            </div>
+            <div class="stack">
+              <img class="small" [src]="ddragon.runeIconUrl(p.perks.selections[0])" [alt]="ddragon.runeName(p.perks.selections[0])" />
+              <img class="small" [src]="ddragon.runeIconUrl(p.perks.subStyleId)" [alt]="ddragon.runeName(p.perks.subStyleId)" />
+            </div>
+          </div>
+
+          <div class="score">
+            <strong>{{ p.kills }} / <span class="deaths">{{ p.deaths }}</span> / {{ p.assists }}</strong>
+            <span class="muted">{{ kda(p) }} KDA</span>
+            <span class="muted">{{ p.cs }} CS ({{ csPerMinute(p, match) }})</span>
+          </div>
+
+          <div class="items">
+            @for (itemId of p.items; track $index) {
+              @if (itemId > 0) {
+                <img [src]="ddragon.itemIconUrl(itemId)" [alt]="ddragon.itemName(itemId)" [title]="ddragon.itemName(itemId)" />
+              } @else {
+                <span class="empty-slot"></span>
+              }
+            }
+          </div>
+        </button>
+
+        @if (expandedMatchId() === match.matchId) {
+          <div class="match-details">
+            @for (teamId of [100, 200]; track teamId) {
+              <table>
+                <tbody>
+                  @for (player of team(match, teamId); track player.puuid) {
+                    <tr [class.highlight]="player.puuid === p.puuid">
+                      <td class="player">
+                        @if (ddragon.champion(player.championId); as champion) {
+                          <img class="small" [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name" />
+                        }
+                        <span class="name" [title]="player.riotId">{{ player.riotId.split('#')[0] }}</span>
+                      </td>
+                      <td>{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</td>
+                      <td class="muted">{{ player.cs }} CS</td>
+                      <td class="muted">{{ (player.damageToChampions / 1000).toFixed(1) }}k dano</td>
+                      <td class="items">
+                        @for (itemId of player.items; track $index) {
+                          @if (itemId > 0) {
+                            <img [src]="ddragon.itemIconUrl(itemId)" [alt]="ddragon.itemName(itemId)" [title]="ddragon.itemName(itemId)" />
+                          } @else {
+                            <span class="empty-slot"></span>
+                          }
+                        }
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="import"
+                          [disabled]="busyKey() !== null || lcuDisconnected()"
+                          [title]="lcuDisconnected() ? 'Abra o cliente do LoL para importar' : 'Copiar runas, feitiços e itens para o cliente'"
+                          (click)="importBuild(match, player)"
+                        >
+                          {{ busyKey() === match.matchId + ':' + player.puuid ? '…' : 'Importar' }}
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        }
+      </article>
+    }
+  } @empty {
+    @if (loading() === null) {
+      <p class="muted">Nenhuma partida encontrada.</p>
+    }
+  }
+
+  @if (hasMore()) {
+    <button type="button" class="more" [disabled]="loading() !== null" (click)="loadMore()">
+      {{ loading() === 'more' ? 'Carregando…' : 'Carregar mais' }}
+    </button>
+  }
+}

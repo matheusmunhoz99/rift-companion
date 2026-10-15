@@ -1,0 +1,95 @@
+@if (feedback(); as message) {
+  <p class="feedback" [class.error]="message.kind === 'error'">{{ message.text }}</p>
+}
+
+@if (loading()) {
+  <p class="muted">Carregando builds…</p>
+} @else if (data(); as builds) {
+  <section class="block">
+    <header class="block-header">
+      <h3>Runas recomendadas pelo cliente</h3>
+      <label class="toggle" [class.disabled]="!inChampSelect()">
+        <input
+          type="checkbox"
+          [checked]="withSpells()"
+          [disabled]="!inChampSelect()"
+          (change)="withSpells.set($any($event.target).checked)"
+        />
+        Aplicar feitiços
+      </label>
+    </header>
+
+    @for (page of builds.runePages; track page.recommendationId) {
+      <article class="rune-page">
+        <div class="keystone">
+          @if (ddragon.runeIconUrl(page.keystone.id); as icon) {
+            <img [src]="icon" [alt]="page.keystone.name" />
+          }
+        </div>
+        <div class="rune-details">
+          <p class="rune-title">
+            {{ page.keystone.name }}
+            <span class="muted">· {{ styleName(page.primaryStyleId) }} + {{ styleName(page.secondaryStyleId) }}</span>
+          </p>
+          <div class="icon-row">
+            @for (perk of minorPerks(page); track perk.id) {
+              @if (ddragon.runeIconUrl(perk.id); as icon) {
+                <img class="perk" [src]="icon" [alt]="perk.name" [title]="perk.name" />
+              }
+            }
+            <span class="divider"></span>
+            @for (spellId of page.summonerSpellIds; track $index) {
+              @if (ddragon.spellIconUrl(spellId); as icon) {
+                <img class="spell" [src]="icon" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+              }
+            }
+          </div>
+          <p class="stats muted">
+            @for (perk of statPerks(page); track $index) {
+              <span>{{ perk.name }}</span>
+            }
+          </p>
+        </div>
+        <button type="button" [disabled]="busy() !== null" (click)="applyRunes(page)">
+          {{ busy() === page.recommendationId ? 'Importando…' : 'Importar runas' }}
+        </button>
+      </article>
+    } @empty {
+      <p class="muted">O cliente não tem recomendação de runas para esta combinação.</p>
+    }
+  </section>
+
+  <section class="block">
+    <header class="block-header">
+      <h3>Builds de itens</h3>
+    </header>
+
+    @for (build of builds.itemBuilds; track build.file) {
+      <article class="item-build">
+        <div class="item-build-info">
+          <p class="rune-title">{{ build.title }}</p>
+          @for (block of build.blocks; track $index) {
+            <div class="item-block">
+              <span class="block-name muted">{{ block.name }}</span>
+              <div class="icon-row">
+                @for (itemId of block.items; track $index) {
+                  @if (ddragon.itemIconUrl(itemId); as icon) {
+                    <img class="item" [src]="icon" [alt]="ddragon.itemName(itemId)" [title]="ddragon.itemName(itemId)" />
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <button type="button" [disabled]="busy() !== null" (click)="applyItems(build)">
+          {{ busy() === build.file ? 'Importando…' : 'Importar itens' }}
+        </button>
+      </article>
+    } @empty {
+      <p class="muted">
+        Nenhuma build de itens para este campeão. Adicione um arquivo JSON em
+        <code>{{ builds.buildsDirectory }}</code>.
+      </p>
+    }
+  </section>
+}
