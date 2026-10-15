@@ -6,3 +6,4 @@ server/dist/
 server/cache/
 *.env
 *.log
+.omc/

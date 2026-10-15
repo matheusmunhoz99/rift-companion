@@ -4,6 +4,7 @@ import path from 'node:path';
 
 interface StoredSettings {
   platformId?: string;
+  autoAccept?: boolean;
 }
 
 /** Configurações locais em %APPDATA%\rift-companion\settings.json. */
@@ -20,13 +21,22 @@ export class Settings {
     this.write();
   }
 
+  getAutoAccept(): boolean {
+    return this.data.autoAccept ?? false;
+  }
+
+  setAutoAccept(enabled: boolean): void {
+    this.data.autoAccept = enabled;
+    this.write();
+  }
+
   private read(): StoredSettings {
     try {
       const raw = JSON.parse(readFileSync(this.file, 'utf8')) as StoredSettings & {
         riotApiKey?: string;
       };
       // Versões anteriores guardavam a chave da Riot aqui; ela agora fica só no servidor.
-      const cleaned = { platformId: raw.platformId };
+      const cleaned: StoredSettings = { platformId: raw.platformId, autoAccept: raw.autoAccept };
       if (raw.riotApiKey) writeFileSync(this.file, JSON.stringify(cleaned, null, 2));
       return cleaned;
     } catch {

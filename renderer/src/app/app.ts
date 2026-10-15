@@ -44,6 +44,25 @@ export class App {
 
   protected readonly state = this.lcu.state;
   protected readonly tab = signal<'client' | 'history'>('client');
+
+  protected readonly autoAccept = signal(false);
+  protected readonly lastAutoAccept = signal<string | null>(null);
+
+  constructor() {
+    const bridge = window.autoAccept;
+    if (!bridge) return;
+    void bridge.get().then((enabled) => this.autoAccept.set(enabled));
+    bridge.onAccepted((timestamp) =>
+      this.lastAutoAccept.set(
+        new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      ),
+    );
+  }
+
+  protected async toggleAutoAccept(enabled: boolean): Promise<void> {
+    this.autoAccept.set(enabled);
+    await window.autoAccept?.set(enabled);
+  }
   protected readonly statusLabel = computed(() => STATUS_LABELS[this.state().status]);
 
   protected readonly phaseLabel = computed(() => {

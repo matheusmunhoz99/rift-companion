@@ -11,6 +11,12 @@ App desktop para League of Legends (Electron + Angular), inspirado no Blitz.
   - `lcu/connector.ts`: reconexão automática e estado (conta, fase, seleção de campeões).
 - `renderer/`: interface Angular, que recebe o estado via `window.lcu` (preload).
 
+## Aceite automático
+
+Botão na aba Cliente (salvo em `settings.json`). Ao receber o evento
+`/lol-matchmaking/v1/ready-check` em andamento e sem resposta do jogador, o app envia
+`POST /lol-matchmaking/v1/ready-check/accept`. Se você recusar manualmente, nada é enviado.
+
 ## Builds
 
 - Runas: páginas recomendadas pelo próprio cliente (`/lol-perks/v1/recommended-pages/...`).

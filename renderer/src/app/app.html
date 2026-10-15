@@ -40,9 +40,26 @@
       }
     </section>
 
-    <section class="card">
-      <h3>Status no cliente</h3>
-      <p class="phase">{{ phaseLabel() }}</p>
+    <section class="card status-card">
+      <div>
+        <h3>Status no cliente</h3>
+        <p class="phase">{{ phaseLabel() }}</p>
+      </div>
+      <label class="switch">
+        <input
+          type="checkbox"
+          role="switch"
+          [checked]="autoAccept()"
+          (change)="toggleAutoAccept($any($event.target).checked)"
+        />
+        <span class="track"><span class="thumb"></span></span>
+        <span class="switch-label">
+          Aceitar partida automaticamente
+          @if (autoAccept() && lastAutoAccept(); as time) {
+            <span class="muted">Última aceita às {{ time }}</span>
+          }
+        </span>
+      </label>
     </section>
 
     @if (selectedChampion(); as pick) {

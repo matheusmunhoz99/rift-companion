@@ -29,8 +29,15 @@ export interface LcuBridge {
   onState(callback: (state: LcuState) => void): () => void;
 }
 
+export interface AutoAcceptBridge {
+  get(): Promise<boolean>;
+  set(enabled: boolean): Promise<void>;
+  onAccepted(callback: (timestamp: number) => void): () => void;
+}
+
 declare global {
   interface Window {
     lcu?: LcuBridge;
+    autoAccept?: AutoAcceptBridge;
   }
 }

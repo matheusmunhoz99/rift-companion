@@ -9,6 +9,16 @@ contextBridge.exposeInMainWorld('lcu', {
   },
 });
 
+contextBridge.exposeInMainWorld('autoAccept', {
+  get: () => ipcRenderer.invoke('auto-accept:get'),
+  set: (enabled: boolean) => ipcRenderer.invoke('auto-accept:set', enabled),
+  onAccepted: (callback: (timestamp: number) => void) => {
+    const listener = (_event: IpcRendererEvent, timestamp: number) => callback(timestamp);
+    ipcRenderer.on('auto-accept:accepted', listener);
+    return () => ipcRenderer.removeListener('auto-accept:accepted', listener);
+  },
+});
+
 contextBridge.exposeInMainWorld('riot', {
   getSettings: () => ipcRenderer.invoke('riot:get-settings'),
   setPlatform: (platformId: string) => ipcRenderer.invoke('riot:set-platform', platformId),

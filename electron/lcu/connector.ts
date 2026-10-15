@@ -120,6 +120,9 @@ export class LcuConnector extends EventEmitter {
   }
 
   private handleEvent(event: LcuEvent): void {
+    // Repassa os eventos brutos para recursos como o aceite automático.
+    this.emit('lcu-event', event);
+
     switch (event.uri) {
       case '/lol-gameflow/v1/gameflow-phase':
         this.setState({

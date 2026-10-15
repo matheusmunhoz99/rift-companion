@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { registerBuildHandlers } from './builds/ipc';
+import { AutoAccept } from './lcu/auto-accept';
 import { LcuConnector } from './lcu/connector';
 import { registerRiotHandlers } from './riot/ipc';
 import { Settings } from './settings';
@@ -54,7 +55,20 @@ connector.on('state', (state) => {
 
 app.whenReady().then(() => {
   // Settings usa app.getPath, que só fica disponível após o ready.
-  registerRiotHandlers(new Settings(), connector);
+  const settings = new Settings();
+  registerRiotHandlers(settings, connector);
+
+  new AutoAccept(
+    connector,
+    () => connector.getCredentials(),
+    () => settings.getAutoAccept(),
+    () => mainWindow?.webContents.send('auto-accept:accepted', Date.now()),
+  );
+  ipcMain.handle('auto-accept:get', () => settings.getAutoAccept());
+  ipcMain.handle('auto-accept:set', (_event, enabled: boolean) =>
+    settings.setAutoAccept(enabled === true),
+  );
+
   createWindow();
   connector.start();
 
