@@ -1,112 +1,100 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { BuildPanel } from './builds/build-panel';
-import { DataDragonService } from './data-dragon/data-dragon.service';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { PreferencesService } from './core/preferences.service';
 import { HistoryView } from './history/history-view';
 import { LcuService } from './lcu/lcu.service';
+import { OverlayView } from './overlay/overlay-view';
+import { Icon } from './ui/icon';
+import { BuildsView } from './views/builds-view';
+import { ChampSelectView } from './views/champ-select-view';
+import { HomeView } from './views/home-view';
+import { LiveView } from './views/live-view';
+import { SettingsView } from './views/settings-view';
+
+export type View = 'home' | 'champ-select' | 'live' | 'builds' | 'history' | 'settings';
+
+interface NavItem {
+  view: View;
+  label: string;
+  icon: string;
+}
+
+const NAV: NavItem[] = [
+  { view: 'home', label: 'Início', icon: 'home' },
+  { view: 'champ-select', label: 'Seleção', icon: 'swords' },
+  { view: 'live', label: 'Partida ao vivo', icon: 'live' },
+  { view: 'builds', label: 'Builds', icon: 'book' },
+  { view: 'history', label: 'Histórico', icon: 'history' },
+];
+
+const TITLES: Record<View, string> = {
+  home: 'Início',
+  'champ-select': 'Seleção de campeões',
+  live: 'Partida ao vivo',
+  builds: 'Builds e runas',
+  history: 'Histórico de partidas',
+  settings: 'Configurações',
+};
 
 const STATUS_LABELS = {
-  'waiting-client': 'Aguardando o cliente do LoL',
+  'waiting-client': 'Cliente fechado',
   connecting: 'Conectando…',
-  connected: 'Conectado ao cliente',
+  connected: 'Cliente conectado',
 } as const;
-
-const PHASE_LABELS: Record<string, string> = {
-  None: 'No menu',
-  Lobby: 'No lobby',
-  Matchmaking: 'Procurando partida',
-  ReadyCheck: 'Partida encontrada',
-  ChampSelect: 'Seleção de campeões',
-  GameStart: 'Iniciando partida',
-  InProgress: 'Em partida',
-  Reconnect: 'Reconectar',
-  WaitingForStats: 'Aguardando estatísticas',
-  PreEndOfGame: 'Fim de jogo',
-  EndOfGame: 'Fim de jogo',
-};
-
-const POSITION_LABELS: Record<string, string> = {
-  top: 'Topo',
-  jungle: 'Selva',
-  middle: 'Meio',
-  bottom: 'Atirador',
-  utility: 'Suporte',
-};
 
 @Component({
   selector: 'app-root',
-  imports: [BuildPanel, HistoryView],
+  imports: [Icon, HomeView, ChampSelectView, LiveView, BuildsView, HistoryView, SettingsView, OverlayView],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
-  protected readonly lcu = inject(LcuService);
-  protected readonly ddragon = inject(DataDragonService);
+  /** A janela do overlay carrega o mesmo app com #overlay. */
+  protected readonly overlayMode = location.hash === '#overlay';
+
+  private readonly lcu = inject(LcuService);
+  protected readonly prefs = inject(PreferencesService);
 
   protected readonly state = this.lcu.state;
-  protected readonly tab = signal<'client' | 'history'>('client');
-
-  protected readonly autoAccept = signal(false);
-  protected readonly lastAutoAccept = signal<string | null>(null);
-
-  constructor() {
-    const bridge = window.autoAccept;
-    if (!bridge) return;
-    void bridge.get().then((enabled) => this.autoAccept.set(enabled));
-    bridge.onAccepted((timestamp) =>
-      this.lastAutoAccept.set(
-        new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      ),
-    );
-  }
-
-  protected async toggleAutoAccept(enabled: boolean): Promise<void> {
-    this.autoAccept.set(enabled);
-    await window.autoAccept?.set(enabled);
-  }
+  protected readonly nav = NAV;
+  protected readonly view = signal<View>(initialView());
+  protected readonly title = computed(() => TITLES[this.view()]);
   protected readonly statusLabel = computed(() => STATUS_LABELS[this.state().status]);
 
-  protected readonly phaseLabel = computed(() => {
-    const phase = this.state().gameflowPhase;
-    return phase ? (PHASE_LABELS[phase] ?? phase) : '—';
-  });
-
-  protected readonly profileIconUrl = computed(() => {
-    const summoner = this.state().summoner;
-    return summoner ? this.ddragon.profileIconUrl(summoner.profileIconId) : null;
-  });
-
-  protected readonly selectedChampion = computed(() => {
-    const champSelect = this.state().champSelect;
-    if (!champSelect) return null;
-    const championId = champSelect.championId || champSelect.pickIntentChampionId;
-    const champion = championId ? this.ddragon.champion(championId) : null;
-    return {
-      locked: champSelect.championId > 0,
-      champion,
-      iconUrl: champion ? this.ddragon.championIconUrl(champion) : null,
-      position: POSITION_LABELS[champSelect.assignedPosition] ?? null,
-    };
-  });
-
-  protected readonly positions = Object.entries(POSITION_LABELS).map(([value, label]) => ({
-    value,
-    label,
-  }));
-
-  /** Campeão/rota escolhidos à mão, usados fora da seleção de campeões. */
-  protected readonly manualChampionId = signal(0);
-  protected readonly manualPosition = signal('');
-
   protected readonly inChampSelect = computed(() => !!this.state().champSelect);
-
-  protected readonly buildChampionId = computed(() => {
-    const champSelect = this.state().champSelect;
-    if (champSelect) return champSelect.championId || champSelect.pickIntentChampionId;
-    return this.manualChampionId();
+  protected readonly inGame = computed(() => {
+    const phase = this.state().gameflowPhase;
+    return phase === 'InProgress' || phase === 'Reconnect';
   });
 
-  protected readonly buildPosition = computed(() => {
-    const champSelect = this.state().champSelect;
-    return champSelect ? champSelect.assignedPosition : this.manualPosition();
-  });
+  private lastPhase: string | null = null;
+
+  constructor() {
+    if (this.overlayMode) {
+      document.body.classList.add('overlay-mode');
+      return;
+    }
+
+    // Abre a tela certa quando a fase muda (pode ser desligado nas configurações).
+    effect(() => {
+      const phase = this.state().gameflowPhase;
+      untracked(() => {
+        if (phase === this.lastPhase) return;
+        this.lastPhase = phase;
+        if (!this.prefs.preferences().autoNavigate) return;
+        if (phase === 'ChampSelect') this.view.set('champ-select');
+        if (phase === 'InProgress') this.view.set('live');
+      });
+    });
+  }
+
+  protected badge(view: View): boolean {
+    return (view === 'champ-select' && this.inChampSelect()) || (view === 'live' && this.inGame());
+  }
+}
+
+/** Tela inicial pelo hash (#view=builds), usado na revisão visual. */
+function initialView(): View {
+  const match = location.hash.match(/view=([\w-]+)/);
+  const view = match?.[1] as View | undefined;
+  return view && view in TITLES ? view : 'home';
 }

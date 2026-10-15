@@ -1,0 +1,244 @@
+:host {
+  display: grid;
+  gap: 14px;
+}
+
+p,
+h3,
+h4 {
+  margin: 0;
+}
+
+.live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.ghost {
+    border-color: var(--border);
+    color: var(--muted);
+
+    &:hover:not(:disabled) {
+      color: var(--text);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.win-chance {
+  display: grid;
+  gap: 6px;
+
+  .labels {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+  }
+
+  .ally {
+    color: #6d9eff;
+  }
+
+  .enemy {
+    color: var(--danger);
+  }
+
+  .bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--danger);
+    overflow: hidden;
+  }
+
+  .fill {
+    display: block;
+    height: 100%;
+    background: #4a7fd6;
+  }
+
+  .note {
+    font-size: 11px;
+    color: var(--muted);
+  }
+}
+
+.teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.team {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+
+  h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6d9eff;
+  }
+
+  &.enemy-team h4 {
+    color: var(--danger);
+  }
+}
+
+.player {
+  border: 1px solid var(--border);
+  border-left: 3px solid #4a7fd6;
+  border-radius: 8px;
+  background: var(--bg);
+
+  .enemy-team & {
+    border-left-color: var(--danger);
+  }
+
+  &.me {
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+  }
+
+  &:disabled {
+    opacity: 1;
+  }
+}
+
+.champ {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.stack {
+  display: grid;
+  gap: 2px;
+}
+
+img.small {
+  width: 19px;
+  height: 19px;
+  border-radius: 3px;
+}
+
+.identity {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  margin-left: 4px;
+
+  .nick {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .champ-name {
+    font-size: 12px;
+  }
+}
+
+.rank,
+.mastery {
+  display: grid;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rank {
+  width: 128px;
+}
+
+.mastery {
+  width: 78px;
+}
+
+.good {
+  color: var(--success);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+.recent {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+
+  .error {
+    color: var(--danger);
+  }
+}
+
+.results {
+  display: flex;
+  gap: 3px;
+
+  .result {
+    width: 14px;
+    height: 6px;
+    border-radius: 2px;
+    background: var(--danger);
+
+    &.win {
+      background: #4a7fd6;
+    }
+  }
+}
+
+.hint {
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}

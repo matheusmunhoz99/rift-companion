@@ -1,5 +1,14 @@
 import { EventEmitter } from 'node:events';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { platformFromClientRegion } from '../riot/routing';
+import {
+  findMyPickAction,
+  getPickableChampionIds,
+  toChampSelect,
+  type ChampSelectSession,
+  type ChampSelectState,
+} from './champ-select';
 import { findLcuCredentials, type LcuCredentials } from './credentials';
 import { lcuRequest } from './http';
 import { LcuSocket, type LcuEvent } from './socket';
@@ -15,11 +24,7 @@ export interface Summoner {
   profileIconId: number;
 }
 
-export interface ChampSelectState {
-  championId: number;
-  pickIntentChampionId: number;
-  assignedPosition: string;
-}
+export type { ChampSelectState };
 
 export interface LcuState {
   status: ConnectionStatus;
@@ -30,17 +35,8 @@ export interface LcuState {
   platformId: string | null;
 }
 
-interface ChampSelectSession {
-  localPlayerCellId: number;
-  myTeam: Array<{
-    cellId: number;
-    championId: number;
-    championPickIntent: number;
-    assignedPosition: string;
-  }>;
-}
-
 const POLL_INTERVAL_MS = 2_000;
+const SNAPSHOT_INTERVAL_MS = 5_000;
 
 /**
  * Mantém a conexão com o cliente do LoL: procura as credenciais, abre o WebSocket,
@@ -52,6 +48,10 @@ export class LcuConnector extends EventEmitter {
   private socket = new LcuSocket();
   private pollTimer: NodeJS.Timeout | null = null;
   private busy = false;
+  /** Campeões escolhíveis, buscados uma vez por ação de escolha. */
+  private pickable: { actionId: number; championIds: number[] } | null = null;
+  private snapshotDirectory: string | null = null;
+  private lastSnapshotAt = 0;
 
   constructor() {
     super();
@@ -65,6 +65,14 @@ export class LcuConnector extends EventEmitter {
 
   getCredentials(): LcuCredentials | null {
     return this.credentials;
+  }
+
+  /**
+   * Grava a sessão de seleção bruta (local, a cada 5 s no máximo) para
+   * conferir campos de modos novos, como os do ARAM.
+   */
+  setSnapshotDirectory(directory: string): void {
+    this.snapshotDirectory = directory;
   }
 
   start(): void {
@@ -132,11 +140,12 @@ export class LcuConnector extends EventEmitter {
         });
         break;
       case '/lol-champ-select/v1/session':
-        this.setState({
-          ...this.state,
-          champSelect:
-            event.eventType === 'Delete' ? null : toChampSelect(event.data as ChampSelectSession),
-        });
+        if (event.eventType === 'Delete') {
+          this.pickable = null;
+          this.setState({ ...this.state, champSelect: null });
+        } else {
+          void this.applySession(event.data as ChampSelectSession);
+        }
         break;
       case '/lol-summoner/v1/current-summoner':
         if (event.eventType !== 'Delete') {
@@ -164,7 +173,50 @@ export class LcuConnector extends EventEmitter {
 
   private async loadChampSelect(): Promise<void> {
     const session = await this.get<ChampSelectSession>('/lol-champ-select/v1/session');
-    this.setState({ ...this.state, champSelect: session ? toChampSelect(session) : null });
+    if (session) await this.applySession(session);
+    else this.setState({ ...this.state, champSelect: null });
+  }
+
+  private async applySession(session: ChampSelectSession): Promise<void> {
+    void this.saveSnapshot(session);
+
+    // Mostra a sessão na hora; os campeões escolhíveis chegam em seguida.
+    const actionId = findMyPickAction(session);
+    const known = actionId !== null && this.pickable?.actionId === actionId;
+    this.setState({
+      ...this.state,
+      champSelect: toChampSelect(session, known ? this.pickable!.championIds : []),
+    });
+    if (actionId === null || known || !this.credentials) return;
+
+    try {
+      const championIds = await getPickableChampionIds(this.credentials);
+      this.pickable = { actionId, championIds };
+      const current = this.state.champSelect;
+      if (current && current.pickActionId === actionId) {
+        this.setState({ ...this.state, champSelect: { ...current, pickableChampionIds: championIds } });
+      }
+    } catch {
+      // Sem a lista, a tela só não oferece a escolha pelo app.
+    }
+  }
+
+  private async saveSnapshot(session: ChampSelectSession): Promise<void> {
+    if (!this.snapshotDirectory || Date.now() - this.lastSnapshotAt < SNAPSHOT_INTERVAL_MS) return;
+    this.lastSnapshotAt = Date.now();
+    try {
+      // chatDetails traz o token (JWT) do chat da seleção; não é necessário para diagnóstico.
+      const { chatDetails: _chat, ...safeSession } = session as ChampSelectSession & {
+        chatDetails?: unknown;
+      };
+      await mkdir(this.snapshotDirectory, { recursive: true });
+      await writeFile(
+        path.join(this.snapshotDirectory, 'champ-select-session.json'),
+        JSON.stringify(safeSession, null, 2),
+      );
+    } catch {
+      // Diagnóstico apenas; falhas não afetam o app.
+    }
   }
 
   private async get<T>(endpoint: string): Promise<T | null> {
@@ -197,12 +249,3 @@ function toSummoner(data: Summoner): Summoner {
   };
 }
 
-function toChampSelect(session: ChampSelectSession): ChampSelectState | null {
-  const me = session.myTeam?.find((player) => player.cellId === session.localPlayerCellId);
-  if (!me) return null;
-  return {
-    championId: me.championId,
-    pickIntentChampionId: me.championPickIntent,
-    assignedPosition: me.assignedPosition,
-  };
-}

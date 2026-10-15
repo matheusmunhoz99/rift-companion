@@ -1,0 +1,131 @@
+@if (game(); as live) {
+  <header class="live-header">
+    <div>
+      <h3>{{ queueName(live.queueId) }}</h3>
+      <p class="muted">Iniciada às {{ startTime(live.gameStartTime) }}</p>
+    </div>
+    <button type="button" class="ghost" [disabled]="loading()" (click)="load()">
+      {{ loading() ? 'Atualizando…' : 'Atualizar' }}
+    </button>
+  </header>
+
+  @if (winChance(); as chance) {
+    <div class="win-chance">
+      <div class="labels">
+        <span class="ally">Seu time {{ chance.allyPercent }}%</span>
+        <span class="enemy">{{ 100 - chance.allyPercent }}% Inimigos</span>
+      </div>
+      <div class="bar">
+        <span class="fill" [style.width.%]="chance.allyPercent"></span>
+      </div>
+      <p class="note">
+        Estimativa simples pelo elo médio dos times ({{ chance.rankedPlayers }} de {{ chance.totalPlayers }} jogadores com elo).
+        Não considera campeões, composição nem o modo de jogo.
+      </p>
+    </div>
+  }
+
+  <div class="teams">
+    @for (team of [allies(), enemies()]; track $index) {
+      <section class="team" [class.enemy-team]="$index === 1">
+        <h4>{{ $index === 0 ? 'Seu time' : 'Inimigos' }}</h4>
+        @for (player of team; track player.puuid || $index) {
+          <article class="player" [class.me]="player === me()">
+            <button type="button" class="player-row" [disabled]="!player.puuid" (click)="toggle(player)">
+              @if (iconUrl(player.championId); as icon) {
+                <img class="champ" [src]="icon" [alt]="ddragon.champion(player.championId)?.name ?? ''" />
+              }
+              <div class="stack">
+                @for (spellId of player.summonerSpellIds; track $index) {
+                  @if (ddragon.spellIconUrl(spellId); as spell) {
+                    <img class="small" [src]="spell" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+                  }
+                }
+              </div>
+              <div class="stack">
+                @if (ddragon.runeIconUrl(player.keystoneId); as rune) {
+                  <img class="small" [src]="rune" [alt]="ddragon.runeName(player.keystoneId)" [title]="ddragon.runeName(player.keystoneId)" />
+                }
+                @if (ddragon.runeIconUrl(player.subStyleId); as sub) {
+                  <img class="small" [src]="sub" [alt]="ddragon.runeName(player.subStyleId)" />
+                }
+              </div>
+
+              <div class="identity">
+                <span class="nick">
+                  {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
+                </span>
+                <span class="muted champ-name">{{ ddragon.champion(player.championId)?.name }}</span>
+              </div>
+
+              <div class="rank">
+                @if (mainRank(player.ranked); as rank) {
+                  <span>{{ rankText(rank) }}</span>
+                  <span class="muted">
+                    {{ rank.wins }}V {{ rank.losses }}D
+                    @if (winRate(rank.wins, rank.losses); as rate) {
+                      · <span [class.good]="rate >= 52" [class.bad]="rate < 48">{{ rate }}%</span>
+                    }
+                  </span>
+                } @else {
+                  <span class="muted">Sem elo</span>
+                }
+              </div>
+
+              <div class="mastery">
+                @if (player.mastery; as mastery) {
+                  <span>Maestria {{ mastery.level }}</span>
+                  <span class="muted">{{ (mastery.points / 1000).toFixed(1) }}k pts</span>
+                } @else {
+                  <span class="muted">Primeira vez?</span>
+                }
+              </div>
+            </button>
+
+            @if (expanded() === player.puuid) {
+              <div class="recent">
+                @switch (recentFor(player)) {
+                  @case ('loading') {
+                    <span class="muted">Carregando últimas partidas…</span>
+                  }
+                  @case ('error') {
+                    <span class="error">Não foi possível carregar o histórico.</span>
+                  }
+                  @default {
+                    @if (asSummary(recentFor(player)); as summary) {
+                      @if (summary.games === 0) {
+                        <span class="muted">Sem partidas recentes.</span>
+                      } @else {
+                        <div class="results">
+                          @for (won of summary.results; track $index) {
+                            <span class="result" [class.win]="won" [title]="won ? 'Vitória' : 'Derrota'"></span>
+                          }
+                        </div>
+                        <span>
+                          Últimas {{ summary.games }}: <strong>{{ summary.winRate }}%</strong> de vitórias · KDA {{ summary.kda }}
+                        </span>
+                        <span class="muted">
+                          Com {{ ddragon.champion(player.championId)?.name }}:
+                          {{ summary.championGames }} partida{{ summary.championGames === 1 ? '' : 's' }}
+                          @if (summary.championGames > 0) {
+                            ({{ summary.championWins }}V)
+                          }
+                        </span>
+                      }
+                    }
+                  }
+                }
+              </div>
+            }
+          </article>
+        }
+      </section>
+    }
+  </div>
+  <p class="hint muted">Clique num jogador para ver as últimas {{ 10 }} partidas.</p>
+} @else if (loading()) {
+  <p class="muted">Carregando a partida…</p>
+} @else if (error(); as message) {
+  <p class="muted">{{ message }}</p>
+  <button type="button" class="ghost" (click)="load()">Tentar de novo</button>
+}

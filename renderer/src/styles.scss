@@ -1,13 +1,26 @@
 :root {
-  --bg: #0e1015;
-  --surface: #161922;
-  --border: #262b38;
-  --text: #e8eaf0;
-  --muted: #8a90a2;
-  --accent: #c8aa6e;
-  --success: #3ccf7a;
-  --warning: #e0b341;
-  --danger: #e05656;
+  --bg: #0b0d13;
+  --sidebar: #07080c;
+  --surface: #12151e;
+  --surface-2: #181c27;
+  --surface-3: #202534;
+  --border: #232938;
+  --border-strong: #2f3648;
+  --text: #eef1f7;
+  --muted: #8a92a6;
+  --faint: #5d6478;
+  --accent: #ff4f64;
+  --accent-soft: rgba(255, 79, 100, 0.12);
+  --ally: #3d8bff;
+  --ally-soft: rgba(61, 139, 255, 0.12);
+  --enemy: #ff4f64;
+  --success: #2fd48a;
+  --warning: #f5b84a;
+  --danger: #ff4f64;
+  --win: #3d8bff;
+  --loss: #ff4f64;
+  --radius: 12px;
+  --radius-sm: 8px;
   color-scheme: dark;
 }
 
@@ -17,9 +30,157 @@
 
 html,
 body {
+  height: 100%;
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Janela do overlay: fundo transparente sobre o jogo. */
+body.overlay-mode,
+body.overlay-mode app-root {
+  background: transparent;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background-clip: padding-box;
+
+  &:hover {
+    background-color: var(--border-strong);
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Componentes compartilhados entre as telas. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &.ghost {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+
+    &:hover:not(:disabled) {
+      background: var(--surface-3);
+      filter: none;
+    }
+  }
+
+  &.small {
+    padding: 5px 11px;
+    font-size: 12px;
+  }
+}
+
+.input {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+
+  &::placeholder {
+    color: var(--faint);
+  }
+
+  &:focus {
+    border-color: var(--border-strong);
+    outline: none;
+  }
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 64px 24px;
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  p {
+    margin: 0;
+    max-width: 440px;
+    color: var(--muted);
+  }
+}
+
+code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  font-size: 12px;
 }

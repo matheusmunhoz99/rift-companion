@@ -1,0 +1,131 @@
+<div class="me">
+  @if (myChampion(); as champion) {
+    <img class="me-icon" [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" />
+  } @else {
+    <span class="me-icon empty"></span>
+  }
+  <div>
+    <p class="me-name">{{ myChampion()?.name ?? 'Nenhum campeão ainda' }}</p>
+    <p class="muted">
+      {{ session().championId ? 'Seu campeão' : 'Aguardando escolha' }}
+      @if (position(); as label) {
+        · {{ label }}
+      }
+    </p>
+  </div>
+  @if (session().allowRerolling) {
+    <button
+      type="button"
+      class="reroll"
+      [disabled]="busy() !== null || session().rerollsRemaining < 1"
+      (click)="reroll()"
+    >
+      {{ busy() === 'reroll' ? 'Sorteando…' : 'Rolar de novo (' + session().rerollsRemaining + ')' }}
+    </button>
+  }
+</div>
+
+@if (feedback(); as message) {
+  <p class="feedback" [class.error]="message.kind === 'error'">{{ message.text }}</p>
+}
+
+@if (session().pickActionId !== null) {
+  <section class="block">
+    <header class="block-header">
+      <h4>Escolha seu campeão</h4>
+      <input
+        type="search"
+        placeholder="Buscar campeão"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </header>
+    @if (session().pickableChampionIds.length === 0) {
+      <p class="muted">Carregando opções…</p>
+    } @else {
+      <div class="grid">
+        @for (champion of pickable(); track champion.key) {
+          <button
+            type="button"
+            class="champ"
+            [disabled]="busy() !== null"
+            [title]="champion.name"
+            (click)="pick(champion)"
+          >
+            <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" />
+            <span>{{ champion.name }}</span>
+          </button>
+        } @empty {
+          <p class="muted">Nenhum campeão com esse nome.</p>
+        }
+      </div>
+    }
+  </section>
+}
+
+@if (session().benchEnabled) {
+  <section class="block">
+    <header class="block-header">
+      <h4>Campeões disponíveis</h4>
+      <span class="muted">Clique para trocar pelo seu</span>
+    </header>
+    <div class="bench">
+      @for (championId of session().benchChampionIds; track championId) {
+        <button
+          type="button"
+          class="champ"
+          [disabled]="busy() !== null"
+          [title]="champion(championId)?.name ?? ''"
+          (click)="swap(championId)"
+        >
+          <img [src]="iconUrl(championId)" [alt]="champion(championId)?.name ?? ''" />
+          <span>{{ champion(championId)?.name }}</span>
+        </button>
+      } @empty {
+        <p class="muted">O banco está vazio.</p>
+      }
+    </div>
+  </section>
+}
+
+@if (teammates().length > 0) {
+  <section class="block">
+    <header class="block-header">
+      <h4>Seu time</h4>
+    </header>
+    <ul class="team">
+      @for (member of teammates(); track member.cellId) {
+        <li>
+          @if (iconUrl(member.championId); as icon) {
+            <img [src]="icon" [alt]="champion(member.championId)?.name ?? ''" />
+          } @else {
+            <span class="empty-icon"></span>
+          }
+          <span class="mate-name">{{ champion(member.championId)?.name ?? 'Escolhendo…' }}</span>
+
+          @if (tradeFor(member); as trade) {
+            @switch (trade.state) {
+              @case ('AVAILABLE') {
+                <button type="button" class="small" [disabled]="busy() !== null" (click)="respond(trade, 'request')">
+                  Pedir troca
+                </button>
+              }
+              @case ('SENT') {
+                <span class="muted">Pedido enviado</span>
+              }
+              @case ('RECEIVED') {
+                <span class="incoming">Quer trocar com você</span>
+                <button type="button" class="small" [disabled]="busy() !== null" (click)="respond(trade, 'accept')">
+                  Aceitar
+                </button>
+                <button type="button" class="small ghost" [disabled]="busy() !== null" (click)="respond(trade, 'decline')">
+                  Recusar
+                </button>
+              }
+            }
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

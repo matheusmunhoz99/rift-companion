@@ -1,4 +1,5 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
+import { readFileSync } from 'node:fs';
 import type { LcuConnector } from '../lcu/connector';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
@@ -23,6 +24,19 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
         `/v1/players/${enc(platformId)}/${enc(gameName.trim())}/${enc(tagLine.trim().replace(/^#/, ''))}`,
         `Jogador ${gameName}#${tagLine} não encontrado.`,
       ),
+  );
+
+  ipcMain.handle(
+    'riot:get-live-game',
+    (_event, gameName: string, tagLine: string, platformId: string) => {
+      // Só no desenvolvimento: partida gravada para revisar o visual sem estar jogando.
+      const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_LIVE;
+      if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+      return apiGet(
+        `/v1/live/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`,
+        'Você não está em partida.',
+      );
+    },
   );
 
   ipcMain.handle(

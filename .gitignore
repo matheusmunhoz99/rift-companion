@@ -7,3 +7,4 @@ server/cache/
 *.env
 *.log
 .omc/
+release/

@@ -1,118 +1,84 @@
-<header class="topbar">
-  <span class="brand">Rift Companion</span>
-  <nav class="tabs">
-    <button type="button" [class.active]="tab() === 'client'" (click)="tab.set('client')">Cliente</button>
-    <button type="button" [class.active]="tab() === 'history'" (click)="tab.set('history')">Histórico</button>
-  </nav>
-  <span class="status" [attr.data-status]="state().status">
-    <span class="dot"></span>
-    {{ statusLabel() }}
-  </span>
-</header>
-
-<main class="content" [class.wide]="tab() === 'history'">
-  @if (tab() === 'history') {
-    <app-history-view />
-  } @else if (!lcu.available) {
-    <section class="card notice">
-      Esta tela precisa rodar dentro do Electron para acessar o cliente do LoL.
-      Use <code>npm run dev</code> na raiz do projeto.
-    </section>
-  } @else if (state().status !== 'connected') {
-    <section class="card empty">
-      <h2>Abra o cliente do League of Legends</h2>
-      <p>A conexão é feita automaticamente assim que o cliente estiver aberto.</p>
-    </section>
-  } @else {
-    <section class="card profile">
-      @if (state().summoner; as summoner) {
-        @if (profileIconUrl(); as iconUrl) {
-          <img class="avatar" [src]="iconUrl" alt="Ícone de perfil" />
-        }
-        <div>
-          <h2>
-            {{ summoner.gameName }}<span class="tag">#{{ summoner.tagLine }}</span>
-          </h2>
-          <p class="muted">Nível {{ summoner.summonerLevel }}</p>
-        </div>
-      } @else {
-        <p class="muted">Faça login no cliente para carregar seu perfil.</p>
-      }
-    </section>
-
-    <section class="card status-card">
-      <div>
-        <h3>Status no cliente</h3>
-        <p class="phase">{{ phaseLabel() }}</p>
+@if (overlayMode) {
+  <app-overlay-view />
+} @else {
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand drag">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <defs>
+            <linearGradient id="logo-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ff6a7c" />
+              <stop offset="1" stop-color="#d9324a" />
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="9" fill="url(#logo-gradient)" />
+          <path d="M10 23V9h7a4.5 4.5 0 0 1 0 9h-7m6 0 6 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="brand-name">Rift <strong>Companion</strong></span>
       </div>
-      <label class="switch">
-        <input
-          type="checkbox"
-          role="switch"
-          [checked]="autoAccept()"
-          (change)="toggleAutoAccept($any($event.target).checked)"
-        />
-        <span class="track"><span class="thumb"></span></span>
-        <span class="switch-label">
-          Aceitar partida automaticamente
-          @if (autoAccept() && lastAutoAccept(); as time) {
-            <span class="muted">Última aceita às {{ time }}</span>
-          }
-        </span>
-      </label>
-    </section>
 
-    @if (selectedChampion(); as pick) {
-      <section class="card champ-select">
-        <h3>Seleção de campeões</h3>
-        <div class="pick">
-          @if (pick.iconUrl) {
-            <img [src]="pick.iconUrl" [alt]="pick.champion?.name" />
-          }
-          <div>
-            <p class="champion-name">{{ pick.champion?.name ?? 'Nenhum campeão escolhido' }}</p>
-            <p class="muted">
-              {{ pick.locked ? 'Confirmado' : 'Intenção de pick' }}
-              @if (pick.position) {
-                · {{ pick.position }}
-              }
-            </p>
-          </div>
-        </div>
-      </section>
-    }
-
-    <section class="card">
-      <h3>Builds</h3>
-      @if (!inChampSelect()) {
-        <div class="pickers">
-          <select
-            [value]="manualChampionId()"
-            (change)="manualChampionId.set(+$any($event.target).value)"
+      <nav class="nav">
+        @for (item of nav; track item.view) {
+          <button
+            type="button"
+            class="nav-item"
+            [class.active]="view() === item.view"
+            (click)="view.set(item.view)"
           >
-            <option value="0">Escolha um campeão…</option>
-            @for (champion of ddragon.championList(); track champion.key) {
-              <option [value]="champion.key">{{ champion.name }}</option>
+            <app-icon [name]="item.icon" />
+            <span>{{ item.label }}</span>
+            @if (badge(item.view)) {
+              <span class="live-dot" aria-label="Agora"></span>
             }
-          </select>
-          <select [value]="manualPosition()" (change)="manualPosition.set($any($event.target).value)">
-            <option value="">Qualquer rota</option>
-            @for (position of positions; track position.value) {
-              <option [value]="position.value">{{ position.label }}</option>
-            }
-          </select>
-        </div>
-      }
+          </button>
+        }
+      </nav>
 
-      @if (buildChampionId() > 0) {
-        <app-build-panel
-          [championId]="buildChampionId()"
-          [position]="buildPosition()"
-          [inChampSelect]="inChampSelect()"
-        />
-      } @else if (inChampSelect()) {
-        <p class="muted">Escolha um campeão na seleção para ver as builds.</p>
-      }
-    </section>
-  }
-</main>
+      <div class="sidebar-footer">
+        <button
+          type="button"
+          class="nav-item"
+          [class.active]="view() === 'settings'"
+          (click)="view.set('settings')"
+        >
+          <app-icon name="settings" />
+          <span>Configurações</span>
+        </button>
+        <div class="client-status" [attr.data-status]="state().status">
+          <span class="dot"></span>
+          <span>{{ statusLabel() }}</span>
+        </div>
+        <span class="version">Beta {{ prefs.info()?.version ?? '' }}</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="titlebar drag">
+        <h1>{{ title() }}</h1>
+      </header>
+
+      <main class="content">
+        @switch (view()) {
+          @case ('home') {
+            <app-home-view (navigate)="view.set($event)" />
+          }
+          @case ('champ-select') {
+            <app-champ-select-view />
+          }
+          @case ('live') {
+            <app-live-view />
+          }
+          @case ('builds') {
+            <app-builds-view />
+          }
+          @case ('history') {
+            <app-history-view />
+          }
+          @case ('settings') {
+            <app-settings-view />
+          }
+        }
+      </main>
+    </div>
+  </div>
+}

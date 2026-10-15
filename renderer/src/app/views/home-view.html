@@ -1,0 +1,132 @@
+@if (state().status !== 'connected') {
+  <section class="card">
+    <div class="empty-state">
+      <app-icon name="bolt" [size]="36" />
+      <h2>Abra o cliente do League of Legends</h2>
+      <p>
+        O Rift Companion conecta sozinho assim que o cliente estiver aberto e logado.
+        Nada precisa ser configurado.
+      </p>
+    </div>
+  </section>
+} @else {
+  <section class="hero card">
+    @if (state().summoner; as summoner) {
+      <div class="identity">
+        <div class="avatar-wrap">
+          @if (ddragon.profileIconUrl(summoner.profileIconId); as icon) {
+            <img class="avatar" [src]="icon" alt="Ícone de perfil" />
+          }
+          <span class="level">{{ summoner.summonerLevel }}</span>
+        </div>
+        <div>
+          <h2>{{ summoner.gameName }}<span class="tag">#{{ summoner.tagLine }}</span></h2>
+          <p class="muted">{{ state().platformId ?? '—' }} · {{ phaseLabel() }}</p>
+        </div>
+      </div>
+
+      <div class="ranks">
+        @if (profile(); as player) {
+          @for (entry of player.ranked; track entry.queueType) {
+            <div class="rank">
+              <span class="rank-queue">{{ rankLabel(entry.queueType) }}</span>
+              <strong>{{ rankText(entry) }}</strong>
+              <span class="muted">
+                {{ entry.wins }}V {{ entry.losses }}D
+                @if (winRate(entry.wins, entry.losses); as rate) {
+                  · {{ rate }}%
+                }
+              </span>
+            </div>
+          } @empty {
+            <div class="rank">
+              <span class="rank-queue">Ranqueada</span>
+              <strong>Sem elo nesta temporada</strong>
+            </div>
+          }
+        } @else if (profileError(); as message) {
+          <span class="muted small">{{ message }}</span>
+        } @else {
+          <span class="muted small">Carregando elo…</span>
+        }
+      </div>
+    } @else {
+      <p class="muted">Faça login no cliente para carregar seu perfil.</p>
+    }
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h3 class="section-title">Automação</h3>
+      <app-switch
+        label="Aceitar partida automaticamente"
+        [description]="prefs.lastAutoAccept() ? 'Última aceita às ' + prefs.lastAutoAccept() : 'Aceita a fila assim que a partida for encontrada.'"
+        [checked]="prefs.preferences().autoAccept"
+        (toggled)="prefs.set({ autoAccept: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
+        label="Overlay durante a partida"
+        description="Barra com KDA, CS, ouro e objetivos sobre o jogo (modo sem bordas)."
+        [checked]="prefs.preferences().overlayEnabled"
+        (toggled)="prefs.set({ overlayEnabled: $event })"
+      />
+    </section>
+
+    <section class="card">
+      <h3 class="section-title">Atalhos</h3>
+      <div class="shortcuts">
+        <button type="button" class="shortcut" (click)="navigate.emit('builds')">
+          <app-icon name="book" />
+          <span>Builds e runas</span>
+        </button>
+        <button type="button" class="shortcut" (click)="navigate.emit('history')">
+          <app-icon name="search" />
+          <span>Buscar jogador</span>
+        </button>
+        <button type="button" class="shortcut" (click)="navigate.emit('live')">
+          <app-icon name="live" />
+          <span>Partida ao vivo</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <header class="recent-header">
+      <h3 class="section-title">Partidas recentes</h3>
+      @if (recentStats(); as stats) {
+        <span class="muted small">
+          {{ stats.wins }}V {{ stats.games - stats.wins }}D ·
+          <strong [class.good]="stats.winRate >= 50" [class.bad]="stats.winRate < 50">{{ stats.winRate }}%</strong>
+          · KDA {{ stats.kda }}
+        </span>
+      }
+    </header>
+
+    @if (recent(); as rows) {
+      <div class="recent">
+        @for (row of rows; track row.match.matchId) {
+          <div class="recent-row" [class.win]="row.me.win">
+            @if (iconUrl(row.me.championId); as icon) {
+              <img [src]="icon" [alt]="ddragon.champion(row.me.championId)?.name ?? ''" />
+            }
+            <div class="recent-info">
+              <strong>{{ row.me.win ? 'Vitória' : 'Derrota' }}</strong>
+              <span class="muted">{{ queueName(row.match.queueId) }} · {{ timeAgo(row.match.gameEndTimestamp) }}</span>
+            </div>
+            <div class="recent-score">
+              <strong>{{ row.me.kills }}/{{ row.me.deaths }}/{{ row.me.assists }}</strong>
+              <span class="muted">{{ kda(row.me) }} KDA</span>
+            </div>
+          </div>
+        } @empty {
+          <p class="muted">Nenhuma partida recente.</p>
+        }
+      </div>
+      <button type="button" class="btn ghost small more" (click)="navigate.emit('history')">Ver histórico completo</button>
+    } @else if (!profileError()) {
+      <p class="muted">Carregando partidas…</p>
+    }
+  </section>
+}

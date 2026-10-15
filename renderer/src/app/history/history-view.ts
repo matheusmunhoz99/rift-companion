@@ -2,37 +2,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { isStatShard, type ItemBuild, type RunePageSuggestion } from '../builds/builds.types';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
+import { queueName, rankQueueLabel, tierName } from '../riot/labels';
 import type { MatchParticipant, MatchSummary, PlayerProfile, RiotSettings } from './riot.types';
 
 const PAGE_SIZE = 10;
-
-const QUEUE_NAMES: Record<number, string> = {
-  0: 'Personalizada',
-  400: 'Normal (Escolha)',
-  420: 'Ranqueada Solo/Duo',
-  430: 'Normal (Às Cegas)',
-  440: 'Ranqueada Flex',
-  450: 'ARAM',
-  480: 'Partida Rápida',
-  490: 'Partida Rápida',
-  700: 'Clash',
-  900: 'ARURF',
-  1700: 'Arena',
-  1900: 'URF',
-};
-
-const TIER_NAMES: Record<string, string> = {
-  IRON: 'Ferro',
-  BRONZE: 'Bronze',
-  SILVER: 'Prata',
-  GOLD: 'Ouro',
-  PLATINUM: 'Platina',
-  EMERALD: 'Esmeralda',
-  DIAMOND: 'Diamante',
-  MASTER: 'Mestre',
-  GRANDMASTER: 'Grão-Mestre',
-  CHALLENGER: 'Desafiante',
-};
 
 interface Feedback {
   kind: 'success' | 'error';
@@ -123,17 +96,9 @@ export class HistoryView {
     return match.participants.filter((p) => p.teamId === teamId);
   }
 
-  protected queueName(queueId: number): string {
-    return QUEUE_NAMES[queueId] ?? `Fila ${queueId}`;
-  }
-
-  protected rankLabel(queueType: string): string {
-    return queueType === 'RANKED_SOLO_5x5' ? 'Solo/Duo' : queueType === 'RANKED_FLEX_SR' ? 'Flex' : queueType;
-  }
-
-  protected tierName(tier: string): string {
-    return TIER_NAMES[tier] ?? tier;
-  }
+  protected readonly queueName = queueName;
+  protected readonly rankLabel = rankQueueLabel;
+  protected readonly tierName = tierName;
 
   protected kda(p: MatchParticipant): string {
     return p.deaths === 0 ? 'Perfeito' : ((p.kills + p.assists) / p.deaths).toFixed(2);

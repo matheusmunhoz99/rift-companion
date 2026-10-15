@@ -1,0 +1,67 @@
+<div class="layout">
+  <section class="card picker">
+    <div class="search">
+      <app-icon name="search" [size]="16" />
+      <input
+        class="input"
+        type="search"
+        placeholder="Buscar campeão"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </div>
+    <div class="chips">
+      @for (option of positions; track option.value) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="position() === option.value"
+          (click)="position.set(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+    <div class="grid">
+      @for (champion of champions(); track champion.key) {
+        <button
+          type="button"
+          class="champ"
+          [class.active]="selected()?.key === champion.key"
+          [title]="champion.name"
+          (click)="select(champion)"
+        >
+          <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" loading="lazy" />
+          <span>{{ champion.name }}</span>
+        </button>
+      } @empty {
+        <p class="muted">
+          {{ ddragon.championList().length === 0 ? 'Carregando campeões…' : 'Nenhum campeão com esse nome.' }}
+        </p>
+      }
+    </div>
+  </section>
+
+  <section class="card detail">
+    @if (selected(); as champion) {
+      <header class="detail-header">
+        <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" />
+        <div>
+          <h2>{{ champion.name }}</h2>
+          <p class="muted">{{ positionLabel() }}</p>
+        </div>
+      </header>
+      @if (connected()) {
+        <app-build-panel [championId]="champion.key" [position]="position()" />
+      } @else {
+        <p class="muted">Abra o cliente do LoL para ver as runas recomendadas e importar a build.</p>
+      }
+    } @else {
+      <div class="empty-state">
+        <app-icon name="layers" [size]="36" />
+        <h2>Escolha um campeão</h2>
+        <p>Veja as runas que o cliente recomenda e importe runas, feitiços e itens com um clique.</p>
+      </div>
+    }
+  </section>
+</div>

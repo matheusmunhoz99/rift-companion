@@ -1,15 +1,17 @@
 {
   "name": "rift-companion",
-  "version": "0.1.0",
+  "version": "0.2.0-beta.1",
   "private": true,
-  "description": "Companion app para League of Legends: conexão com o cliente, builds e histórico.",
+  "description": "Companion app para League of Legends: builds, runas, partida ao vivo e histórico.",
   "main": "dist-electron/main.js",
   "scripts": {
-    "build:electron": "tsc -p electron/tsconfig.json",
+    "build:electron": "node scripts/clean.js dist-electron && tsc -p electron/tsconfig.json",
     "build:renderer": "npm --prefix renderer run build -- --base-href ./",
     "build": "npm run build:renderer && npm run build:electron",
     "start": "npm run build && electron .",
-    "dev": "npm run build:electron && concurrently -k -n ng,electron \"npm --prefix renderer start\" \"wait-on http://localhost:4200 && cross-env RENDERER_URL=http://localhost:4200 electron .\""
+    "dev": "npm run build:electron && concurrently -k -n ng,electron \"npm --prefix renderer start\" \"wait-on http://localhost:4200 && cross-env RENDERER_URL=http://localhost:4200 electron .\"",
+    "icon": "electron scripts/render-icon.js",
+    "dist": "npm run build && electron-builder --win portable --x64"
   },
   "dependencies": {
     "ws": "^8.22.0"
@@ -20,7 +22,40 @@
     "concurrently": "^9.2.5",
     "cross-env": "^10.1.0",
     "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.9.3",
     "wait-on": "^8.0.5"
+  },
+  "productName": "Rift Companion",
+  "author": "Rift Companion",
+  "build": {
+    "appId": "br.com.workscanner.riftcompanion",
+    "productName": "Rift Companion",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "renderer/dist/renderer/browser/**/*",
+      "builds/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "portable": {
+      "artifactName": "RiftCompanion-Beta-${version}.exe"
+    }
   }
 }

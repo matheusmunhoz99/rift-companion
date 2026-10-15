@@ -58,7 +58,29 @@ export interface RiotSettings {
   platforms: Array<{ id: string; label: string }>;
 }
 
+// Espelha server/src/riot/live.ts.
+export interface LiveParticipant {
+  puuid: string;
+  riotId: string;
+  championId: number;
+  teamId: number;
+  summonerSpellIds: number[];
+  keystoneId: number;
+  subStyleId: number;
+  ranked: RankedEntry[];
+  mastery: { level: number; points: number } | null;
+}
+
+export interface LiveGame {
+  gameId: number;
+  queueId: number;
+  mapId: number;
+  gameStartTime: number;
+  participants: LiveParticipant[];
+}
+
 export interface RiotBridge {
+  getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getSettings(): Promise<RiotSettings>;
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;
