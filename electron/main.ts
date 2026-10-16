@@ -12,6 +12,7 @@ import { OVERLAY_SHORTCUT, OverlayController } from './overlay/overlay';
 import { registerRiotHandlers } from './riot/ipc';
 import { Settings, type Preferences } from './settings';
 import { createTray } from './tray';
+import { compareVersions } from './version';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
@@ -112,10 +113,22 @@ function currentState() {
 // Uma instância só: abrir de novo traz a janela existente para frente.
 // A captura de desenvolvimento roda ao lado da instância normal.
 const capturing = !!devOnly('RIFT_CAPTURE');
-if (!capturing && !app.requestSingleInstanceLock()) {
-  app.quit();
-} else {
-  app.on('second-instance', () => showMainWindow());
+void acquireInstance().then((acquired) => {
+  if (!acquired) {
+    app.quit();
+    return;
+  }
+
+  // Outra cópia foi aberta: se for uma versão mais nova, esta fecha e cede o lugar.
+  app.on('second-instance', (_event, _argv, _cwd, additionalData) => {
+    const version = (additionalData as { version?: string } | null)?.version;
+    if (version && compareVersions(version, app.getVersion()) > 0) {
+      quitting = true;
+      app.quit();
+      return;
+    }
+    showMainWindow();
+  });
 
   ipcMain.handle('lcu:get-state', () => currentState());
   registerBuildHandlers(connector);
@@ -210,6 +223,21 @@ if (!capturing && !app.requestSingleInstanceLock()) {
     connector.stop();
     if (process.platform !== 'darwin') app.quit();
   });
+});
+
+/**
+ * Uma instância só. Se já houver uma aberta, envia a nossa versão: uma versão
+ * mais antiga fecha sozinha e esperamos ela sair; a mesma ou mais nova continua.
+ */
+async function acquireInstance(): Promise<boolean> {
+  if (capturing) return true;
+  const data = { version: app.getVersion() };
+  if (app.requestSingleInstanceLock(data)) return true;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (app.requestSingleInstanceLock(data)) return true;
+  }
+  return false;
 }
 
 function showMainWindow(): void {
