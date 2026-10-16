@@ -1,5 +1,6 @@
 import { BrowserWindow, globalShortcut, screen } from 'electron';
 import type { LcuConnector } from '../lcu/connector';
+import type { Preferences } from '../settings';
 import { fetchLiveClientData } from './live-client';
 
 const POLL_MS = 2_000;
@@ -18,7 +19,7 @@ export class OverlayController {
 
   constructor(
     private readonly connector: LcuConnector,
-    private readonly isEnabled: () => boolean,
+    private readonly getPreferences: () => Preferences,
     private readonly loadPage: (window: BrowserWindow) => void,
     private readonly preloadPath: string,
   ) {
@@ -29,7 +30,8 @@ export class OverlayController {
   /** Reavalia se o overlay deve estar ativo (fase da partida e configuração). */
   sync(): void {
     const phase = this.connector.getState().gameflowPhase;
-    const shouldRun = this.isEnabled() && (phase === 'InProgress' || phase === 'Reconnect');
+    const shouldRun = this.getPreferences().overlayEnabled && (phase === 'InProgress' || phase === 'Reconnect');
+    if (this.window && !this.window.isDestroyed()) this.applyLayout(this.window);
     if (shouldRun && !this.timer) this.start();
     if (!shouldRun && this.timer) this.stop();
   }
@@ -57,7 +59,12 @@ export class OverlayController {
     if (!data || !this.timer) return;
     const window = this.ensureWindow();
     window.webContents.send('overlay:data', data);
-    if (!this.hiddenByUser && !window.isVisible()) window.showInactive();
+    if (this.hiddenByUser) return;
+    if (!window.isVisible()) window.showInactive();
+    // Jogos em tela cheia (com a otimização de tela cheia do Windows) tomam o topo;
+    // reafirmar a cada atualização mantém o overlay visível quando o sistema permite.
+    window.setAlwaysOnTop(true, 'screen-saver');
+    window.moveTop();
   }
 
   private toggleByUser(): void {
@@ -70,12 +77,9 @@ export class OverlayController {
   private ensureWindow(): BrowserWindow {
     if (this.window && !this.window.isDestroyed()) return this.window;
 
-    const { workArea } = screen.getPrimaryDisplay();
     const window = new BrowserWindow({
       width: WIDTH,
       height: HEIGHT,
-      x: Math.round(workArea.x + (workArea.width - WIDTH) / 2),
-      y: workArea.y + 6,
       frame: false,
       transparent: true,
       resizable: false,
@@ -95,8 +99,24 @@ export class OverlayController {
     window.setAlwaysOnTop(true, 'screen-saver');
     window.setIgnoreMouseEvents(true);
     window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    this.applyLayout(window);
     this.loadPage(window);
     this.window = window;
     return window;
+  }
+
+  /** Posição (esquerda, centro, direita) e opacidade escolhidas nas configurações. */
+  private applyLayout(window: BrowserWindow): void {
+    const { overlayPosition, overlayOpacity } = this.getPreferences();
+    const { bounds } = screen.getPrimaryDisplay();
+    const margin = 12;
+    const x =
+      overlayPosition === 'left'
+        ? bounds.x + margin
+        : overlayPosition === 'right'
+          ? bounds.x + bounds.width - WIDTH - margin
+          : Math.round(bounds.x + (bounds.width - WIDTH) / 2);
+    window.setBounds({ x, y: bounds.y + 6, width: WIDTH, height: HEIGHT });
+    window.setOpacity(overlayOpacity);
   }
 }

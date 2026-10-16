@@ -19,6 +19,25 @@ contextBridge.exposeInMainWorld('app', {
   onAutoAccepted: (callback: (timestamp: number) => void) =>
     subscribe('auto-accept:accepted', callback),
   onOverlayData: (callback: (data: unknown) => void) => subscribe('overlay:data', callback),
+  onPreferencesChanged: (callback: (preferences: unknown) => void) =>
+    subscribe('prefs:changed', callback),
+  onAutoRunesApplied: (callback: (result: unknown) => void) =>
+    subscribe('auto-runes:applied', callback),
+  gameWindowMode: () => ipcRenderer.invoke('app:game-window-mode'),
+});
+
+contextBridge.exposeInMainWorld('lobby', {
+  queues: () => ipcRenderer.invoke('lobby:queues'),
+  friends: () => ipcRenderer.invoke('lobby:friends'),
+  create: (queueId: number) => ipcRenderer.invoke('lobby:create', queueId),
+  leave: () => ipcRenderer.invoke('lobby:leave'),
+  setPositions: (first: string, second: string) => ipcRenderer.invoke('lobby:positions', first, second),
+  search: (start: boolean) => ipcRenderer.invoke('lobby:search', start),
+  invite: (summonerId: number) => ipcRenderer.invoke('lobby:invite', summonerId),
+  readyCheck: (accept: boolean) => ipcRenderer.invoke('lobby:ready-check', accept),
+  champions: () => ipcRenderer.invoke('lobby:champions'),
+  setSlot: (index: number, championId: number, position: string) =>
+    ipcRenderer.invoke('lobby:slot', index, championId, position),
 });
 
 contextBridge.exposeInMainWorld('champSelect', {

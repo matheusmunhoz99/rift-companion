@@ -242,3 +242,26 @@ img.small {
 .muted {
   color: var(--muted);
 }
+
+.nick.link {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+}
+
+.history-link {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -2,18 +2,51 @@ import { app } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+export type OverlayPosition = 'left' | 'center' | 'right';
+
 export interface Preferences {
   autoAccept: boolean;
   overlayEnabled: boolean;
+  overlayPosition: OverlayPosition;
+  /** Opacidade do overlay, de 0.4 a 1. */
+  overlayOpacity: number;
   /** Abre a tela certa sozinho (seleção, partida) conforme a fase do cliente. */
   autoNavigate: boolean;
+  /** Importa runas e feitiços recomendados ao travar o campeão. */
+  autoRunes: boolean;
+  /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
+  minimizeToTray: boolean;
+  startWithWindows: boolean;
 }
 
 const DEFAULT_PREFERENCES: Preferences = {
   autoAccept: false,
   overlayEnabled: true,
+  overlayPosition: 'center',
+  overlayOpacity: 0.9,
   autoNavigate: true,
+  autoRunes: false,
+  minimizeToTray: true,
+  startWithWindows: false,
 };
+
+/** Validação de cada preferência: valores fora do formato são ignorados. */
+const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Preferences[K] } = {
+  autoAccept: isBoolean,
+  overlayEnabled: isBoolean,
+  overlayPosition: (value): value is OverlayPosition =>
+    value === 'left' || value === 'center' || value === 'right',
+  overlayOpacity: (value): value is number =>
+    typeof value === 'number' && value >= 0.4 && value <= 1,
+  autoNavigate: isBoolean,
+  autoRunes: isBoolean,
+  minimizeToTray: isBoolean,
+  startWithWindows: isBoolean,
+};
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
 
 interface StoredSettings extends Partial<Preferences> {
   platformId?: string;
@@ -34,17 +67,19 @@ export class Settings {
   }
 
   getPreferences(): Preferences {
-    return {
-      autoAccept: this.data.autoAccept ?? DEFAULT_PREFERENCES.autoAccept,
-      overlayEnabled: this.data.overlayEnabled ?? DEFAULT_PREFERENCES.overlayEnabled,
-      autoNavigate: this.data.autoNavigate ?? DEFAULT_PREFERENCES.autoNavigate,
-    };
+    const preferences = { ...DEFAULT_PREFERENCES };
+    for (const key of Object.keys(DEFAULT_PREFERENCES) as Array<keyof Preferences>) {
+      const value = this.data[key];
+      if (VALIDATORS[key](value)) (preferences as Record<string, unknown>)[key] = value;
+    }
+    return preferences;
   }
 
-  /** Aceita só chaves conhecidas com valor booleano. */
+  /** Aceita só chaves conhecidas com valores no formato esperado. */
   updatePreferences(changes: Partial<Preferences>): Preferences {
     for (const key of Object.keys(DEFAULT_PREFERENCES) as Array<keyof Preferences>) {
-      if (typeof changes[key] === 'boolean') this.data[key] = changes[key];
+      const value = changes[key];
+      if (VALIDATORS[key](value)) (this.data as Record<string, unknown>)[key] = value;
     }
     this.write();
     return this.getPreferences();

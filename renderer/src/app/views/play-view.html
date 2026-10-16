@@ -1,0 +1,298 @@
+@if (!connected()) {
+  <section class="card">
+    <div class="empty-state">
+      <app-icon name="bolt" [size]="36" />
+      <h2>Abra o cliente do League of Legends</h2>
+      <p>Para montar a sala e entrar na fila pelo app, o cliente precisa estar aberto e logado.</p>
+    </div>
+  </section>
+} @else if (state().gameflowPhase === 'InProgress' || state().gameflowPhase === 'ChampSelect') {
+  <section class="card">
+    <div class="empty-state">
+      <app-icon name="live" [size]="36" />
+      <h2>{{ state().gameflowPhase === 'InProgress' ? 'Você está em partida' : 'Você está na seleção de campeões' }}</h2>
+      <p>Quando terminar, monte a próxima sala por aqui.</p>
+      <button type="button" class="btn" (click)="nav.go(state().gameflowPhase === 'InProgress' ? 'live' : 'champ-select')">
+        Ir para {{ state().gameflowPhase === 'InProgress' ? 'a partida' : 'a seleção' }}
+      </button>
+    </div>
+  </section>
+} @else if (lobby(); as room) {
+  <div class="lobby-layout">
+    <div class="lobby-main">
+      <section class="card lobby-header">
+        <div>
+          <span class="eyebrow">Sala</span>
+          <h2>{{ lobbyQueueName(room.queueId) }}</h2>
+          <p class="muted">{{ room.members.length }} de {{ room.maxLobbySize }} jogadores</p>
+        </div>
+        <button type="button" class="btn ghost" [disabled]="busy() !== null" (click)="leave()">Sair da sala</button>
+      </section>
+
+      <section class="members">
+        @for (member of room.members; track member.puuid) {
+          <article class="member" [class.me]="member === me()">
+            <div class="member-avatar">
+              @if (ddragon.profileIconUrl(member.summonerIconId); as icon) {
+                <img [src]="icon" alt="" />
+              }
+              @if (member.isLeader) {
+                <span class="crown" title="Líder da sala">★</span>
+              }
+            </div>
+            <button type="button" class="member-name" [disabled]="!member.tagLine" (click)="openMember(member)" title="Ver histórico">
+              {{ member.gameName }}<span class="muted">#{{ member.tagLine }}</span>
+            </button>
+            <span class="muted small">Nível {{ member.summonerLevel }}</span>
+            @if (member.playerSlots.length > 0) {
+              <div class="member-slots">
+                @for (slot of member.playerSlots; track $index) {
+                  @if (ddragon.champion(slot.championId); as champion) {
+                    <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name + ' · ' + positionLabel(slot.positionPreference)" />
+                  }
+                }
+              </div>
+            }
+            @if (room.showPositionSelector) {
+              <div class="member-positions">
+                <span class="position">{{ positionLabels[member.firstPosition] }}</span>
+                @if (member.secondPosition !== 'UNSELECTED') {
+                  <span class="position secondary">{{ positionLabels[member.secondPosition] }}</span>
+                }
+              </div>
+            }
+          </article>
+        }
+        @for (slot of slots(emptySlots()); track slot) {
+          <article class="member empty">
+            <div class="member-avatar"><span class="plus">+</span></div>
+            <span class="muted">Vaga livre</span>
+          </article>
+        }
+      </section>
+
+      @if (slotMode()) {
+        <section class="card">
+          <h3 class="section-title">Seus campeões</h3>
+          <div class="slots">
+            @for (index of [0, 1]; track index) {
+              <div class="slot">
+                <button type="button" class="slot-champion" [disabled]="busy() !== null || searching()" (click)="openPicker(index)">
+                  @if (slot(index)?.championId && ddragon.champion(slot(index)!.championId); as champion) {
+                    <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" />
+                    <span>
+                      <strong>{{ champion.name }}</strong>
+                      <small class="muted">Trocar campeão</small>
+                    </span>
+                  } @else {
+                    <span class="slot-empty">+</span>
+                    <span><strong>Escolher campeão</strong></span>
+                  }
+                </button>
+                <div class="chips">
+                  @for (position of slotPositions; track position) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [class.active]="slot(index)?.positionPreference === position"
+                      [class.scarce]="scarce().includes(position)"
+                      [disabled]="busy() !== null || searching() || !slot(index)?.championId || !slotPositionAllowed(index, position)"
+                      [title]="scarce().includes(position) ? 'Rota prioritária' : ''"
+                      (click)="setSlotPosition(index, position)"
+                    >
+                      @if (scarce().includes(position)) {
+                        <span class="diamond">◆</span>
+                      }
+                      {{ positionLabels[position] }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          @if (scarce().length > 0) {
+            <p class="priority-hint">
+              <span class="diamond">◆</span> Prioridade agora: <strong>{{ scarceLabels() }}</strong>. Uma das suas duas rotas precisa ser prioritária.
+            </p>
+          }
+          <p class="muted small slot-hint">Ao trocar o campeão, o app já aplica as runas e os feitiços recomendados para a rota.</p>
+        </section>
+      } @else if (room.showPositionSelector && me(); as mine) {
+        <section class="card">
+          <h3 class="section-title">Suas rotas</h3>
+          <div class="position-row">
+            <span class="position-label">Principal</span>
+            <div class="chips">
+              @for (position of positions; track position) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.active]="mine.firstPosition === position"
+                  [disabled]="busy() !== null || searching()"
+                  (click)="setPosition('first', position)"
+                >
+                  {{ positionLabels[position] }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="position-row">
+            <span class="position-label">Secundária</span>
+            <div class="chips">
+              @for (position of positions; track position) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.active]="mine.secondPosition === position"
+                  [disabled]="busy() !== null || searching() || mine.firstPosition === 'FILL' || mine.firstPosition === position"
+                  (click)="setPosition('second', position)"
+                >
+                  {{ positionLabels[position] }}
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="card search-card" [class.searching]="searching()">
+        @if (searching()) {
+          <div class="search-info">
+            <span class="pulse"></span>
+            <div>
+              <strong>Procurando partida · {{ elapsed() }}</strong>
+              <p class="muted small">Tempo estimado {{ estimate() }}</p>
+            </div>
+          </div>
+          <button type="button" class="btn ghost" [disabled]="busy() !== null" (click)="toggleSearch()">Cancelar</button>
+        } @else {
+          <div>
+            <strong>Pronto para jogar?</strong>
+            <p class="muted small">
+              {{ room.isLeader ? 'A fila começa para todos da sala.' : 'Só o líder da sala pode iniciar a fila.' }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn big"
+            [disabled]="busy() !== null || !room.isLeader || !room.canStartActivity"
+            (click)="toggleSearch()"
+          >
+            Encontrar partida
+          </button>
+        }
+        @for (message of state().search?.errors ?? []; track $index) {
+          <p class="search-error">{{ message }}</p>
+        }
+      </section>
+    </div>
+
+    <aside class="card friends">
+      <header class="friends-header">
+        <h3 class="section-title">Amigos</h3>
+        <button type="button" class="icon-btn" title="Atualizar" (click)="refresh()">
+          <app-icon name="refresh" [size]="16" />
+        </button>
+      </header>
+      <input
+        class="input"
+        type="search"
+        placeholder="Buscar amigo"
+        [value]="friendSearch()"
+        (input)="friendSearch.set($any($event.target).value)"
+      />
+      <ul>
+        @for (friend of visibleFriends(); track friend.puuid) {
+          <li [class.offline]="friend.availability === 'offline'">
+            <span class="availability" [attr.data-status]="friend.availability"></span>
+            <button type="button" class="friend-name" (click)="openFriend(friend)" title="Ver histórico">
+              <strong>{{ friend.gameName }}</strong>
+              <span class="muted small">{{ friendStatus(friend) }}</span>
+            </button>
+            @if (inLobby(friend)) {
+              <span class="muted small">Na sala</span>
+            } @else if (invited(friend)) {
+              <span class="muted small">Convidado</span>
+            } @else if (canInvite(friend)) {
+              <button
+                type="button"
+                class="btn small ghost"
+                [disabled]="busy() !== null"
+                (click)="invite(friend)"
+              >
+                Convidar
+              </button>
+            }
+          </li>
+        } @empty {
+          <li class="muted small">Nenhum amigo encontrado.</li>
+        }
+      </ul>
+    </aside>
+  </div>
+} @else {
+  <div class="queues">
+    @for (group of queueGroups(); track group.title) {
+      <section>
+        <h3 class="section-title">{{ group.title }}</h3>
+        <div class="queue-grid">
+          @for (queue of group.queues; track queue.id) {
+            <button
+              type="button"
+              class="queue"
+              [class.ranked]="queue.isRanked"
+              [disabled]="busy() !== null"
+              (click)="createLobby(queue)"
+            >
+              <span class="queue-name">{{ queue.name }}</span>
+              <span class="queue-meta">
+                @if (queue.isRanked) {
+                  <span class="tag">Ranqueada</span>
+                }
+                @if (queue.showPositionSelector) {
+                  <span class="tag">Escolha de rotas</span>
+                }
+              </span>
+              <span class="queue-cta">{{ busy() === 'queue:' + queue.id ? 'Criando sala…' : 'Criar sala' }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    } @empty {
+      <p class="muted">Carregando filas…</p>
+    }
+  </div>
+}
+
+@if (pickingSlot() !== null) {
+  <div class="picker-backdrop" (click)="pickingSlot.set(null)">
+    <div class="picker card" (click)="$event.stopPropagation()">
+      <header class="picker-header">
+        <h3>Escolha o campeão {{ (pickingSlot() ?? 0) + 1 }}</h3>
+        <button type="button" class="icon-btn" (click)="pickingSlot.set(null)">✕</button>
+      </header>
+      <input
+        class="input"
+        type="search"
+        placeholder="Buscar campeão"
+        [value]="championSearch()"
+        (input)="championSearch.set($any($event.target).value)"
+      />
+      <div class="picker-grid">
+        @for (champion of pickerChampions(); track champion.key) {
+          <button
+            type="button"
+            class="picker-champ"
+            [disabled]="slot(1 - (pickingSlot() ?? 0))?.championId === champion.key"
+            (click)="chooseChampion(champion.key)"
+          >
+            <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" loading="lazy" />
+            <span>{{ champion.name }}</span>
+          </button>
+        } @empty {
+          <p class="muted">Nenhum campeão encontrado.</p>
+        }
+      </div>
+    </div>
+  </div>
+}

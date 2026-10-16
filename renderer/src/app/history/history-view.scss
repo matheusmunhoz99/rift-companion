@@ -281,3 +281,18 @@ img.small {
 .muted {
   color: var(--muted);
 }
+
+.match-details .name {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+}

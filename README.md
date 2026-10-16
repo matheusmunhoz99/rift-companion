@@ -11,6 +11,15 @@ App desktop para League of Legends (Electron + Angular), inspirado no Blitz.
   - `lcu/connector.ts`: reconexão automática e estado (conta, fase, seleção de campeões).
 - `renderer/`: interface Angular, que recebe o estado via `window.lcu` (preload).
 
+## Jogar (sala e fila)
+
+Aba Jogar: lista as filas disponíveis (`/lol-game-queues/v1/queues`, sem TFT, tutoriais e Clash),
+cria a sala (`POST /lol-lobby/v2/lobby`), escolhe rotas (`position-preferences`) ou, no Jogo Dinâmico,
+os dois campeões com rota (`/lol-lobby/v1/lobby/members/localMember/player-slots`, com runas e feitiços
+recomendados), convida amigos (`/lol-chat/v1/friends` + `/lol-lobby/v2/lobby/invitations`) e
+inicia/cancela a busca. A janela "Partida encontrada" permite aceitar ou recusar pelo app.
+O nome dos membros vem de `/lol-summoner/v2/summoners/puuid/:puuid` (o cliente não envia mais no lobby).
+
 ## Aceite automático
 
 Botão na aba Cliente (salvo em `settings.json`). Ao receber o evento
@@ -74,6 +83,10 @@ limitada a 10–90%); não é um modelo treinado e não considera campeões nem 
 - Remover: `systemctl disable --now rift-api`, apagar os arquivos acima, `certbot delete --cert-name rift-api.workscanner.com.br`, `nginx -t && systemctl reload nginx`.
 
 ## Overlay
+
+Posição (esquerda, centro, direita) e opacidade nas Configurações. O app lê `Config/game.cfg`
+(`WindowMode`) para avisar quando o jogo está em tela cheia exclusiva, onde o Windows pode esconder o
+overlay; em "Sem bordas" ele aparece sempre. A cada atualização a janela reafirma "sempre no topo".
 
 Janela transparente, sempre por cima e que ignora cliques (`electron/overlay/`), alimentada pela
 Live Client Data API do jogo (`https://127.0.0.1:2999`). Não injeta nada no processo do jogo.

@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveGame, LiveParticipant, MatchSummary } from '../history/riot.types';
+import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { mainRank, queueName, rankText, winRate } from '../riot/labels';
 import { estimateWinChance } from './win-chance';
@@ -28,6 +29,7 @@ interface RecentSummary {
 export class LiveGameView {
   protected readonly ddragon = inject(DataDragonService);
   private readonly lcu = inject(LcuService);
+  private readonly nav = inject(NavigationService);
 
   protected readonly game = signal<LiveGame | null>(null);
   protected readonly loading = signal(false);
@@ -119,6 +121,10 @@ export class LiveGameView {
     } catch {
       this.setRecent(puuid, 'error');
     }
+  }
+
+  protected openPlayer(participant: LiveParticipant): void {
+    if (participant.riotId) this.nav.openPlayer(participant.riotId, this.lcu.state().platformId);
   }
 
   protected recentFor(participant: LiveParticipant) {

@@ -76,15 +76,15 @@
     <section class="card">
       <h3 class="section-title">Atalhos</h3>
       <div class="shortcuts">
-        <button type="button" class="shortcut" (click)="navigate.emit('builds')">
+        <button type="button" class="shortcut" (click)="nav.go('builds')">
           <app-icon name="book" />
           <span>Builds e runas</span>
         </button>
-        <button type="button" class="shortcut" (click)="navigate.emit('history')">
+        <button type="button" class="shortcut" (click)="nav.go('history')">
           <app-icon name="search" />
           <span>Buscar jogador</span>
         </button>
-        <button type="button" class="shortcut" (click)="navigate.emit('live')">
+        <button type="button" class="shortcut" (click)="nav.go('live')">
           <app-icon name="live" />
           <span>Partida ao vivo</span>
         </button>
@@ -124,7 +124,7 @@
           <p class="muted">Nenhuma partida recente.</p>
         }
       </div>
-      <button type="button" class="btn ghost small more" (click)="navigate.emit('history')">Ver histórico completo</button>
+      <button type="button" class="btn ghost small more" (click)="nav.go('history')">Ver histórico completo</button>
     } @else if (!profileError()) {
       <p class="muted">Carregando partidas…</p>
     }

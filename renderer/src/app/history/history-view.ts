@@ -1,5 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { isStatShard, type ItemBuild, type RunePageSuggestion } from '../builds/builds.types';
+import { NavigationService } from '../core/navigation.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName, rankQueueLabel, tierName } from '../riot/labels';
@@ -20,6 +21,8 @@ interface Feedback {
 export class HistoryView {
   protected readonly ddragon = inject(DataDragonService);
   private readonly lcu = inject(LcuService);
+  private readonly nav = inject(NavigationService);
+  private handledRequest = 0;
 
   protected readonly settings = signal<RiotSettings | null>(null);
   protected readonly riotId = signal('');
@@ -42,11 +45,30 @@ export class HistoryView {
 
   constructor() {
     void this.loadSettings();
+
+    // Jogador aberto a partir de outra tela (partida ao vivo, sala, amigos).
+    effect(() => {
+      const request = this.nav.playerRequest();
+      if (!request || request.token === this.handledRequest) return;
+      this.handledRequest = request.token;
+      untracked(() => void this.openPlayer(request.riotId, request.platformId));
+    });
   }
 
   protected async changePlatform(platformId: string): Promise<void> {
     this.platformId.set(platformId);
     await window.riot!.setPlatform(platformId);
+  }
+
+  /** Preenche a busca e carrega o jogador (Nome#TAG). */
+  protected async openPlayer(riotId: string, platformId: string | null): Promise<void> {
+    this.riotId.set(riotId);
+    if (platformId && platformId !== this.platformId()) await this.changePlatform(platformId);
+    await this.search();
+  }
+
+  protected openParticipant(participant: MatchParticipant): void {
+    if (participant.riotId.includes('#')) void this.openPlayer(participant.riotId, this.platformId());
   }
 
   protected async searchOwnAccount(): Promise<void> {

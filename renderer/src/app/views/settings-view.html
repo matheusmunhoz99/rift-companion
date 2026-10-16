@@ -1,0 +1,122 @@
+<div class="settings">
+  <section class="card">
+    <h3 class="section-title">Fila e seleção</h3>
+    <app-switch
+      label="Aceitar partida automaticamente"
+      description="Aceita a fila assim que a partida for encontrada. Se você recusar, nada é enviado."
+      [checked]="prefs.preferences().autoAccept"
+      (toggled)="prefs.set({ autoAccept: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
+      label="Importar runas automaticamente"
+      description="Ao travar o campeão, aplica a página de runas e os feitiços que o cliente recomenda."
+      [checked]="prefs.preferences().autoRunes"
+      (toggled)="prefs.set({ autoRunes: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
+      label="Abrir telas automaticamente"
+      description="Vai para Seleção e Partida ao vivo quando elas começam."
+      [checked]="prefs.preferences().autoNavigate"
+      (toggled)="prefs.set({ autoNavigate: $event })"
+    />
+  </section>
+
+  <section class="card">
+    <h3 class="section-title">Overlay no jogo</h3>
+    <app-switch
+      label="Mostrar overlay durante a partida"
+      description="Barra no topo com tempo, KDA, CS por minuto, ouro, abates e objetivos."
+      [checked]="prefs.preferences().overlayEnabled"
+      (toggled)="prefs.set({ overlayEnabled: $event })"
+    />
+
+    @switch (prefs.gameWindowMode()) {
+      @case ('fullscreen') {
+        <div class="notice warning">
+          <strong>Seu jogo está em Tela cheia.</strong>
+          Nesse modo o Windows pode não deixar nada aparecer por cima do jogo. Para o overlay funcionar sempre,
+          no jogo vá em <em>Configurações › Vídeo › Modo de janela</em> e escolha <strong>Sem bordas</strong>:
+          fica igual à tela cheia, com o mesmo desempenho.
+        </div>
+      }
+      @case ('borderless') {
+        <div class="notice ok">Seu jogo está em modo Sem bordas: o overlay vai aparecer normalmente.</div>
+      }
+      @case ('windowed') {
+        <div class="notice ok">Seu jogo está em modo Janela: o overlay aparece no topo da tela.</div>
+      }
+    }
+
+    <div class="row">
+      <span class="row-label">Posição</span>
+      <div class="segmented">
+        @for (option of positions; track option.value) {
+          <button
+            type="button"
+            [class.active]="prefs.preferences().overlayPosition === option.value"
+            (click)="prefs.set({ overlayPosition: option.value })"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="row">
+      <span class="row-label">Opacidade</span>
+      <input
+        class="slider"
+        type="range"
+        min="40"
+        max="100"
+        step="5"
+        [value]="prefs.preferences().overlayOpacity * 100"
+        (change)="setOpacity($any($event.target).value)"
+      />
+      <span class="value">{{ (prefs.preferences().overlayOpacity * 100).toFixed(0) }}%</span>
+    </div>
+    <p class="hint">
+      Mostrar/ocultar durante a partida: <code>{{ prefs.info()?.overlayShortcut ?? 'Ctrl+Shift+O' }}</code>.
+      O overlay é uma janela separada: não injeta nada no jogo (sem risco com o Vanguard).
+    </p>
+  </section>
+
+  <section class="card">
+    <h3 class="section-title">Aplicativo</h3>
+    <app-switch
+      label="Manter na bandeja ao fechar"
+      description="Fechar a janela deixa o app rodando ao lado do relógio (aceite automático e overlay continuam)."
+      [checked]="prefs.preferences().minimizeToTray"
+      (toggled)="prefs.set({ minimizeToTray: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
+      label="Iniciar com o Windows"
+      description="Abre o Rift Companion junto com o computador."
+      [checked]="prefs.preferences().startWithWindows"
+      (toggled)="prefs.set({ startWithWindows: $event })"
+    />
+  </section>
+
+  <section class="card">
+    <h3 class="section-title">Builds de itens</h3>
+    <p class="muted">Adicione suas próprias builds em JSON na pasta do app. Elas aparecem junto com as de exemplo.</p>
+    <button type="button" class="btn ghost" (click)="openBuildsFolder()">
+      <app-icon name="folder" [size]="16" /> Abrir pasta de builds
+    </button>
+  </section>
+
+  <section class="card">
+    <h3 class="section-title">Sobre</h3>
+    <p><strong>Rift Companion</strong> · versão beta {{ prefs.info()?.version }}</p>
+    <p class="muted">
+      Os dados da sua conta vêm do cliente do LoL no seu PC. Buscas de jogadores e partidas passam pelo servidor do
+      Rift Companion, que consulta a Riot API. Nenhuma senha é lida ou enviada.
+    </p>
+    <p class="muted small">
+      Rift Companion não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de qualquer pessoa
+      envolvida na produção ou gestão de propriedades da Riot Games.
+    </p>
+  </section>
+</div>

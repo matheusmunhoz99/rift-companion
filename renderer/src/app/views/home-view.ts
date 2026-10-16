@@ -1,5 +1,5 @@
-import { Component, computed, effect, inject, output, signal, untracked } from '@angular/core';
-import type { View } from '../app';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { NavigationService } from '../core/navigation.service';
 import { PreferencesService } from '../core/preferences.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { MatchParticipant, MatchSummary, PlayerProfile } from '../history/riot.types';
@@ -36,7 +36,7 @@ interface RecentRow {
   styleUrl: './home-view.scss',
 })
 export class HomeView {
-  readonly navigate = output<View>();
+  protected readonly nav = inject(NavigationService);
 
   private readonly lcu = inject(LcuService);
   protected readonly prefs = inject(PreferencesService);

@@ -51,6 +51,95 @@ export interface LcuState {
   gameflowPhase: string | null;
   champSelect: ChampSelectState | null;
   platformId: string | null;
+  lobby: LobbyState | null;
+  search: SearchState | null;
+  readyCheck: ReadyCheckState | null;
+}
+
+// Espelha electron/lcu/lobby.ts.
+export type Position = 'TOP' | 'JUNGLE' | 'MIDDLE' | 'BOTTOM' | 'UTILITY' | 'FILL' | 'UNSELECTED';
+
+export interface QueueOption {
+  id: number;
+  name: string;
+  gameMode: string;
+  mapId: number;
+  category: string;
+  group: string;
+  isRanked: boolean;
+  showPositionSelector: boolean;
+  showQuickPlaySlotSelection: boolean;
+}
+
+export interface PlayerSlot {
+  championId: number;
+  positionPreference: string;
+  perks: string;
+  skinId: number;
+  spell1: number;
+  spell2: number;
+}
+
+export interface LobbyMember {
+  puuid: string;
+  summonerId: number;
+  gameName: string;
+  tagLine: string;
+  summonerLevel: number;
+  summonerIconId: number;
+  isLeader: boolean;
+  isBot: boolean;
+  firstPosition: Position;
+  secondPosition: Position;
+  playerSlots: PlayerSlot[];
+}
+
+export interface LobbyState {
+  queueId: number;
+  showPositionSelector: boolean;
+  maxLobbySize: number;
+  canStartActivity: boolean;
+  isLeader: boolean;
+  localPlayerSlots: PlayerSlot[];
+  scarcePositions: string[];
+  members: LobbyMember[];
+  invitations: Array<{ toSummonerId: number; toSummonerName: string; state: string }>;
+}
+
+export interface SearchState {
+  searchState: string;
+  timeInQueue: number;
+  estimatedQueueTime: number;
+  errors: string[];
+}
+
+export interface ReadyCheckState {
+  state: string;
+  playerResponse: string;
+  timer: number;
+}
+
+export interface Friend {
+  puuid: string;
+  summonerId: number;
+  gameName: string;
+  tagLine: string;
+  icon: number;
+  availability: string;
+  gameStatus: string;
+}
+
+export interface LobbyBridge {
+  queues(): Promise<QueueOption[]>;
+  friends(): Promise<Friend[]>;
+  create(queueId: number): Promise<void>;
+  leave(): Promise<void>;
+  setPositions(first: Position, second: Position): Promise<void>;
+  search(start: boolean): Promise<void>;
+  invite(summonerId: number): Promise<void>;
+  readyCheck(accept: boolean): Promise<void>;
+  champions(): Promise<number[]>;
+  setSlot(index: number, championId: number, position: string): Promise<void>;
 }
 
 export interface LcuBridge {
@@ -62,5 +151,6 @@ declare global {
   interface Window {
     lcu?: LcuBridge;
     champSelect?: ChampSelectBridge;
+    lobby?: LobbyBridge;
   }
 }

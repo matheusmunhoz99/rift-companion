@@ -109,7 +109,7 @@
                         @if (ddragon.champion(player.championId); as champion) {
                           <img class="small" [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name" />
                         }
-                        <span class="name" [title]="player.riotId">{{ player.riotId.split('#')[0] }}</span>
+                        <button type="button" class="name" [title]="'Ver histórico de ' + player.riotId" (click)="openParticipant(player)">{{ player.riotId.split('#')[0] }}</button>
                       </td>
                       <td>{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</td>
                       <td class="muted">{{ player.cs }} CS</td>

@@ -12,6 +12,9 @@ export class LcuService {
     gameflowPhase: null,
     champSelect: null,
     platformId: null,
+    lobby: null,
+    search: null,
+    readyCheck: null,
   });
 
   constructor() {

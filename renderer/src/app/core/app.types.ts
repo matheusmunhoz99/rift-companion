@@ -1,8 +1,16 @@
 // Espelha electron/settings.ts, electron/main.ts e electron/overlay/live-client.ts.
+export type OverlayPosition = 'left' | 'center' | 'right';
+export type GameWindowMode = 'fullscreen' | 'windowed' | 'borderless' | 'unknown';
+
 export interface Preferences {
   autoAccept: boolean;
   overlayEnabled: boolean;
+  overlayPosition: OverlayPosition;
+  overlayOpacity: number;
   autoNavigate: boolean;
+  autoRunes: boolean;
+  minimizeToTray: boolean;
+  startWithWindows: boolean;
 }
 
 export interface AppInfo {
@@ -41,6 +49,9 @@ export interface AppBridge {
   openBuildsFolder(): Promise<void>;
   onAutoAccepted(callback: (timestamp: number) => void): () => void;
   onOverlayData(callback: (data: OverlayData) => void): () => void;
+  onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;
+  onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;
+  gameWindowMode(): Promise<GameWindowMode>;
 }
 
 declare global {

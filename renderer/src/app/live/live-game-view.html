@@ -52,7 +52,12 @@
               </div>
 
               <div class="identity">
-                <span class="nick">
+                <span
+                  class="nick"
+                  [class.link]="!!player.puuid"
+                  [title]="'Ver histórico de ' + player.riotId"
+                  (click)="$event.stopPropagation(); openPlayer(player)"
+                >
                   {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
                 </span>
                 <span class="muted champ-name">{{ ddragon.champion(player.championId)?.name }}</span>
@@ -104,6 +109,9 @@
                         <span>
                           Últimas {{ summary.games }}: <strong>{{ summary.winRate }}%</strong> de vitórias · KDA {{ summary.kda }}
                         </span>
+                        <button type="button" class="history-link" (click)="openPlayer(player)">
+                          Ver histórico completo
+                        </button>
                         <span class="muted">
                           Com {{ ddragon.champion(player.championId)?.name }}:
                           {{ summary.championGames }} partida{{ summary.championGames === 1 ? '' : 's' }}
@@ -122,7 +130,7 @@
       </section>
     }
   </div>
-  <p class="hint muted">Clique num jogador para ver as últimas {{ 10 }} partidas.</p>
+  <p class="hint muted">Clique num jogador para ver o resumo das últimas 10 partidas, ou no nome para abrir o histórico completo.</p>
 } @else if (loading()) {
   <p class="muted">Carregando a partida…</p>
 } @else if (error(); as message) {

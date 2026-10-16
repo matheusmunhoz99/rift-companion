@@ -10,6 +10,15 @@ import {
   type ChampSelectState,
 } from './champ-select';
 import { findLcuCredentials, type LcuCredentials } from './credentials';
+import {
+  toLobbyState,
+  toSearchState,
+  withSearchTimes,
+  type LobbyState,
+  type RawLobby,
+  type ReadyCheckState,
+  type SearchState,
+} from './lobby';
 import { lcuRequest } from './http';
 import { LcuSocket, type LcuEvent } from './socket';
 
@@ -33,6 +42,9 @@ export interface LcuState {
   champSelect: ChampSelectState | null;
   /** Plataforma da Riot API da conta logada (ex.: BR1). */
   platformId: string | null;
+  lobby: LobbyState | null;
+  search: SearchState | null;
+  readyCheck: ReadyCheckState | null;
 }
 
 const POLL_INTERVAL_MS = 2_000;
@@ -51,6 +63,7 @@ export class LcuConnector extends EventEmitter {
   /** Campeões escolhíveis, buscados uma vez por ação de escolha. */
   private pickable: { actionId: number; championIds: number[] } | null = null;
   private snapshotDirectory: string | null = null;
+  private readonly names = new Map<string, { gameName: string; tagLine: string }>();
   private lastSnapshotAt = 0;
 
   constructor() {
@@ -118,7 +131,7 @@ export class LcuConnector extends EventEmitter {
 
     this.credentials = credentials;
     this.setState({ ...this.state, status: 'connected' });
-    await Promise.all([this.loadSummoner(), this.loadGameflowPhase(), this.loadPlatform()]);
+    await Promise.all([this.loadSummoner(), this.loadGameflowPhase(), this.loadPlatform(), this.loadLobby()]);
     if (this.state.gameflowPhase === 'ChampSelect') await this.loadChampSelect();
   }
 
@@ -147,6 +160,41 @@ export class LcuConnector extends EventEmitter {
           void this.applySession(event.data as ChampSelectSession);
         }
         break;
+      case '/lol-lobby/v2/lobby':
+        if (event.eventType === 'Delete' || !event.data) {
+          this.setState({ ...this.state, lobby: null });
+        } else {
+          void this.applyLobby(toLobbyState(event.data as RawLobby));
+        }
+        break;
+      case '/lol-lobby/v2/lobby/matchmaking/search-state':
+        this.setState({
+          ...this.state,
+          search:
+            event.eventType === 'Delete' || !event.data
+              ? null
+              : toSearchState(event.data as Parameters<typeof toSearchState>[0], this.state.search),
+        });
+        break;
+      case '/lol-matchmaking/v1/search':
+        if (event.eventType !== 'Delete' && event.data) {
+          this.setState({
+            ...this.state,
+            search: withSearchTimes(this.state.search, event.data as Parameters<typeof withSearchTimes>[1]),
+          });
+        }
+        break;
+      case '/lol-matchmaking/v1/ready-check': {
+        const data = event.data as ReadyCheckState | null;
+        this.setState({
+          ...this.state,
+          readyCheck:
+            event.eventType === 'Delete' || !data || data.state !== 'InProgress'
+              ? null
+              : { state: data.state, playerResponse: data.playerResponse, timer: data.timer },
+        });
+        break;
+      }
       case '/lol-summoner/v1/current-summoner':
         if (event.eventType !== 'Delete') {
           this.setState({ ...this.state, summoner: toSummoner(event.data as Summoner) });
@@ -163,6 +211,42 @@ export class LcuConnector extends EventEmitter {
   private async loadGameflowPhase(): Promise<void> {
     const phase = await this.get<string>('/lol-gameflow/v1/gameflow-phase');
     this.setState({ ...this.state, gameflowPhase: phase });
+  }
+
+  private async loadLobby(): Promise<void> {
+    const lobby = await this.get<RawLobby>('/lol-lobby/v2/lobby');
+    if (lobby) await this.applyLobby(toLobbyState(lobby));
+    else this.setState({ ...this.state, lobby: null });
+  }
+
+  /**
+   * O cliente não envia mais o nome dos membros da sala; o Riot ID vem do
+   * endpoint de invocador pelo puuid, com cache durante a sessão.
+   */
+  private async applyLobby(lobby: LobbyState): Promise<void> {
+    this.setState({ ...this.state, lobby: this.withNames(lobby) });
+    const missing = lobby.members.filter((m) => !m.gameName && m.puuid && !this.names.has(m.puuid));
+    if (missing.length === 0) return;
+
+    await Promise.all(
+      missing.map(async (member) => {
+        const summoner = await this.get<{ gameName: string; tagLine: string }>(
+          `/lol-summoner/v2/summoners/puuid/${member.puuid}`,
+        );
+        if (summoner?.gameName) this.names.set(member.puuid, { gameName: summoner.gameName, tagLine: summoner.tagLine });
+      }),
+    );
+    if (this.state.lobby) this.setState({ ...this.state, lobby: this.withNames(this.state.lobby) });
+  }
+
+  private withNames(lobby: LobbyState): LobbyState {
+    return {
+      ...lobby,
+      members: lobby.members.map((member) => {
+        const name = member.gameName ? null : this.names.get(member.puuid);
+        return name ? { ...member, ...name } : member;
+      }),
+    };
   }
 
   private async loadPlatform(): Promise<void> {
@@ -235,7 +319,16 @@ export class LcuConnector extends EventEmitter {
 }
 
 function emptyState(status: ConnectionStatus): LcuState {
-  return { status, summoner: null, gameflowPhase: null, champSelect: null, platformId: null };
+  return {
+    status,
+    summoner: null,
+    gameflowPhase: null,
+    champSelect: null,
+    platformId: null,
+    lobby: null,
+    search: null,
+    readyCheck: null,
+  };
 }
 
 function toSummoner(data: Summoner): Summoner {

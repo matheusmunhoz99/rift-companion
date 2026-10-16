@@ -1,21 +1,29 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, type Tray } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { registerBuildHandlers } from './builds/ipc';
 import { AutoAccept } from './lcu/auto-accept';
+import { AutoRunes } from './lcu/auto-runes';
 import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
+import { registerLobbyHandlers } from './lcu/lobby-ipc';
+import { readGameWindowMode } from './overlay/game-settings';
 import { OVERLAY_SHORTCUT, OverlayController } from './overlay/overlay';
 import { registerRiotHandlers } from './riot/ipc';
 import { Settings, type Preferences } from './settings';
+import { createTray } from './tray';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
-const BACKGROUND = '#0a0c10';
+const BACKGROUND = '#0b0d13';
+const ICON = path.join(__dirname, '..', 'assets', 'icon.png');
 
 const connector = new LcuConnector();
 let mainWindow: BrowserWindow | null = null;
 let overlay: OverlayController | null = null;
+let settings: Settings | null = null;
+let tray: Tray | null = null;
+let quitting = false;
 
 /** Só no desenvolvimento: estado fictício e captura de tela para revisar o visual. */
 const devOnly = (name: string) => (app.isPackaged ? undefined : process.env[name]);
@@ -33,8 +41,7 @@ function createWindow(): void {
     minHeight: 680,
     backgroundColor: BACKGROUND,
     title: 'Rift Companion',
-    // No .exe o ícone vem do próprio executável; no desenvolvimento, de build/icon.png.
-    ...(app.isPackaged ? {} : { icon: path.join(__dirname, '..', 'build', 'icon.png') }),
+    icon: ICON,
     // Barra de título própria; os botões de janela continuam nativos.
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: BACKGROUND, symbolColor: '#8b93a7', height: 40 },
@@ -54,6 +61,12 @@ function createWindow(): void {
 
   loadRenderer(mainWindow, devOnly('RIFT_VIEW') ? `view=${devOnly('RIFT_VIEW')}` : '');
   scheduleCapture(mainWindow);
+
+  mainWindow.on('close', (event) => {
+    if (quitting || !settings?.getPreferences().minimizeToTray || !tray) return;
+    event.preventDefault();
+    mainWindow?.hide();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -97,18 +110,17 @@ function currentState() {
 }
 
 // Uma instância só: abrir de novo traz a janela existente para frente.
-if (!app.requestSingleInstanceLock()) {
+// A captura de desenvolvimento roda ao lado da instância normal.
+const capturing = !!devOnly('RIFT_CAPTURE');
+if (!capturing && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  });
+  app.on('second-instance', () => showMainWindow());
 
   ipcMain.handle('lcu:get-state', () => currentState());
   registerBuildHandlers(connector);
   registerChampSelectHandlers(connector);
+  registerLobbyHandlers(connector);
 
   connector.on('state', () => {
     if (!devOnly('RIFT_DEMO_STATE')) mainWindow?.webContents.send('lcu:state', currentState());
@@ -116,30 +128,42 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     // Settings usa app.getPath, que só fica disponível após o ready.
-    const settings = new Settings();
-    registerRiotHandlers(settings, connector);
+    const prefs = new Settings();
+    settings = prefs;
+    registerRiotHandlers(prefs, connector);
+    applyStartWithWindows(prefs.getPreferences().startWithWindows);
     if (!app.isPackaged) connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));
 
     new AutoAccept(
       connector,
       () => connector.getCredentials(),
-      () => settings.getAutoAccept(),
+      () => prefs.getAutoAccept(),
       () => mainWindow?.webContents.send('auto-accept:accepted', Date.now()),
     );
 
-    overlay = new OverlayController(
+    new AutoRunes(
       connector,
-      () => settings.getPreferences().overlayEnabled,
+      () => prefs.getPreferences().autoRunes,
+      (result) => mainWindow?.webContents.send('auto-runes:applied', result),
+    );
+
+    if (!capturing) overlay = new OverlayController(
+      connector,
+      () => prefs.getPreferences(),
       (window) => loadRenderer(window, 'overlay'),
       path.join(__dirname, 'preload.js'),
     );
 
-    ipcMain.handle('prefs:get', () => settings.getPreferences());
+    ipcMain.handle('prefs:get', () => prefs.getPreferences());
     ipcMain.handle('prefs:set', (_event, changes: Partial<Preferences>) => {
-      const preferences = settings.updatePreferences(changes ?? {});
+      const preferences = prefs.updatePreferences(changes ?? {});
       overlay?.sync();
+      applyStartWithWindows(preferences.startWithWindows);
       return preferences;
     });
+    ipcMain.handle('app:game-window-mode', () =>
+      readGameWindowMode(connector.getCredentials()?.installDirectory ?? null),
+    );
     ipcMain.handle('app:info', () => ({
       version: app.getVersion(),
       overlayShortcut: OVERLAY_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
@@ -159,16 +183,47 @@ if (!app.requestSingleInstanceLock()) {
 
     createWindow();
     connector.start();
+    tray = createTray(ICON, {
+      show: showMainWindow,
+      quit: () => {
+        quitting = true;
+        app.quit();
+      },
+      isAutoAccept: () => prefs.getAutoAccept(),
+      setAutoAccept: (enabled) => {
+        prefs.updatePreferences({ autoAccept: enabled });
+        mainWindow?.webContents.send('prefs:changed', prefs.getPreferences());
+      },
+    });
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
   });
 
+  app.on('before-quit', () => {
+    quitting = true;
+  });
   app.on('will-quit', () => overlay?.dispose());
 
   app.on('window-all-closed', () => {
     connector.stop();
     if (process.platform !== 'darwin') app.quit();
+  });
+}
+
+function showMainWindow(): void {
+  if (!mainWindow) return createWindow();
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+/** No .exe portátil, o caminho estável é o do arquivo original, não o da pasta temporária. */
+function applyStartWithWindows(enabled: boolean): void {
+  if (!app.isPackaged) return;
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,
   });
 }
