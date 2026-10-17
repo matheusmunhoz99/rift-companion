@@ -1,0 +1,170 @@
+:host {
+  display: grid;
+  gap: 14px;
+}
+
+p,
+h4 {
+  margin: 0;
+}
+
+h4 {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.numbers {
+  display: flex;
+  gap: 8px;
+
+  div {
+    display: grid;
+    min-width: 76px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    text-align: center;
+  }
+
+  strong {
+    font-size: 16px;
+  }
+
+  span {
+    color: var(--muted);
+    font-size: 11px;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  small {
+    margin-left: 4px;
+    color: var(--faint);
+  }
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+}
+
+.source {
+  font-size: 12px;
+
+  .warning {
+    color: var(--warning);
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+
+  & + & {
+    margin-top: 6px;
+  }
+
+  &.compact {
+    padding: 6px 10px;
+  }
+}
+
+.icons {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .keystone {
+    width: 34px;
+    height: 34px;
+  }
+
+  .style {
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    opacity: 0.8;
+  }
+
+  .item {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
+
+  .arrow {
+    color: var(--faint);
+  }
+
+  .item-name {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.rate {
+  display: grid;
+  min-width: 78px;
+  font-size: 12px;
+  text-align: right;
+
+  strong {
+    font-size: 14px;
+  }
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.good {
+  color: var(--success);
+}
+
+.bad {
+  color: var(--danger);
+}

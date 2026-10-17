@@ -24,6 +24,21 @@ import type { OverlayData } from '../core/app.types';
           <span class="stat"><small>Barões</small> <b class="ally">{{ d.objectives.barons.ally }}</b>:<b class="enemy">{{ d.objectives.barons.enemy }}</b></span>
           <span class="stat"><small>Torres</small> <b class="ally">{{ d.objectives.towers.ally }}</b>:<b class="enemy">{{ d.objectives.towers.enemy }}</b></span>
         }
+        @if (d.timers; as timers) {
+          @if (timers.dragon !== null) {
+            <span class="sep"></span>
+            <span class="stat timer" [class.up]="timers.dragon <= d.gameTime">
+              <small>{{ soulTaken(d) ? 'Ancião' : 'Dragão' }}</small>
+              <b>{{ timers.dragon <= d.gameTime ? 'vivo' : clock(timers.dragon - d.gameTime) }}</b>
+            </span>
+          }
+          @if (timers.baron !== null) {
+            <span class="stat timer" [class.up]="timers.baron <= d.gameTime">
+              <small>Barão</small>
+              <b>{{ timers.baron <= d.gameTime ? 'vivo' : clock(timers.baron - d.gameTime) }}</b>
+            </span>
+          }
+        }
       </div>
     }
   `,
@@ -77,6 +92,13 @@ import type { OverlayData } from '../core/app.types';
     .gold b {
       color: #f5c451;
     }
+    .timer b {
+      color: #f5c451;
+      font-variant-numeric: tabular-nums;
+    }
+    .timer.up b {
+      color: #2fd48a;
+    }
   `,
 })
 export class OverlayView {
@@ -89,6 +111,10 @@ export class OverlayView {
   protected clock(seconds: number): string {
     const total = Math.floor(seconds);
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+
+  protected soulTaken(d: OverlayData): boolean {
+    return d.objectives.dragons.ally >= 4 || d.objectives.dragons.enemy >= 4;
   }
 
   /** Modos de Summoner's Rift mostram objetivos; ARAM e outros, só se houver algum. */

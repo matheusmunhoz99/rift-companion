@@ -55,6 +55,8 @@
     </div>
   </section>
 
+  <app-player-summary [player]="profile" [matches]="matches()" />
+
   @for (match of matches(); track match.matchId) {
     @if (me(match); as p) {
       <article class="match" [class.win]="p.win" [class.loss]="!p.win">

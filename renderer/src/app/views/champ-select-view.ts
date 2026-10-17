@@ -1,12 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
 import { ChampSelectPanel } from '../champ-select/champ-select-panel';
+import { ChampionStatsPanel } from '../stats/champion-stats';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
 
 @Component({
   selector: 'app-champ-select-view',
-  imports: [ChampSelectPanel, BuildPanel, Icon],
+  imports: [ChampSelectPanel, BuildPanel, ChampionStatsPanel, Icon],
   template: `
     @if (state().champSelect; as session) {
       <div class="layout">
@@ -17,6 +18,9 @@ import { Icon } from '../ui/icon';
         <section class="card">
           <h3 class="section-title">Build recomendada</h3>
           @if (championId() > 0) {
+            <div class="stats-block">
+              <app-champion-stats [championId]="championId()" [position]="session.assignedPosition || null" />
+            </div>
             <app-build-panel [championId]="championId()" [position]="session.assignedPosition" [inChampSelect]="true" />
           } @else {
             <p class="muted">Escolha um campeão para ver runas e itens.</p>
@@ -42,6 +46,11 @@ import { Icon } from '../ui/icon';
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
       gap: 18px;
       align-items: start;
+    }
+    .stats-block {
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
     }
     @media (max-width: 1200px) {
       .layout {

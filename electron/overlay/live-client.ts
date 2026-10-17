@@ -31,7 +31,18 @@ export interface OverlayData {
     heralds: { ally: number; enemy: number };
     towers: { ally: number; enemy: number };
   };
+  /**
+   * Reaparecimento após o último abate (modo clássico): segundos de jogo em que
+   * o objetivo volta, ou null se ainda não foi abatido. O primeiro surgimento
+   * muda entre temporadas e modos, por isso não é estimado.
+   */
+  timers: { dragon: number | null; baron: number | null } | null;
 }
+
+/** Tempos de reaparecimento estáveis há várias temporadas. */
+const DRAGON_RESPAWN_S = 5 * 60;
+const ELDER_RESPAWN_S = 6 * 60;
+const BARON_RESPAWN_S = 6 * 60;
 
 interface RawPlayer {
   riotId?: string;
@@ -42,10 +53,10 @@ interface RawPlayer {
   scores: { kills: number; deaths: number; assists: number; creepScore: number; wardScore: number };
 }
 
-interface RawGameData {
+export interface RawGameData {
   activePlayer?: { riotId?: string; summonerName?: string; currentGold?: number; level?: number };
   allPlayers: RawPlayer[];
-  events?: { Events: Array<{ EventName: string; KillerName?: string; EventTime: number }> };
+  events?: { Events: Array<{ EventName: string; KillerName?: string; EventTime: number; DragonType?: string }> };
   gameData: { gameTime: number; gameMode: string };
 }
 
@@ -68,7 +79,7 @@ export function fetchLiveClientData(): Promise<OverlayData | null> {
   });
 }
 
-function toOverlayData(raw: RawGameData): OverlayData {
+export function toOverlayData(raw: RawGameData): OverlayData {
   const myId = raw.activePlayer?.riotId ?? raw.activePlayer?.summonerName ?? '';
   const playerName = (p: RawPlayer) => p.riotId ?? p.summonerName ?? '';
   const me = raw.allPlayers.find((p) => playerName(p) === myId) ?? null;
@@ -104,6 +115,21 @@ function toOverlayData(raw: RawGameData): OverlayData {
     teamKills[player.team === allyTeam ? 'ally' : 'enemy'] += player.scores.kills;
   }
 
+  const events = raw.events?.Events ?? [];
+  const lastTime = (name: string) =>
+    events.filter((e) => e.EventName === name).reduce<number | null>((last, e) => Math.max(last ?? 0, e.EventTime), null);
+  const lastDragon = lastTime('DragonKill');
+  const lastBaron = lastTime('BaronKill');
+  // Com a alma conquistada (4 dragões de um time), o próximo é o Ancião.
+  const soul = objectives.dragons.ally >= 4 || objectives.dragons.enemy >= 4;
+  const timers =
+    raw.gameData.gameMode === 'CLASSIC'
+      ? {
+          dragon: lastDragon === null ? null : lastDragon + (soul ? ELDER_RESPAWN_S : DRAGON_RESPAWN_S),
+          baron: lastBaron === null ? null : lastBaron + BARON_RESPAWN_S,
+        }
+      : null;
+
   const minutes = raw.gameData.gameTime / 60;
   return {
     gameTime: raw.gameData.gameTime,
@@ -121,5 +147,6 @@ function toOverlayData(raw: RawGameData): OverlayData {
     },
     teamKills,
     objectives,
+    timers,
   };
 }

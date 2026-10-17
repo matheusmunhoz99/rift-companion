@@ -51,6 +51,11 @@
           <p class="muted">{{ positionLabel() }}</p>
         </div>
       </header>
+      <div class="stats-block">
+        <h3 class="section-title">Estatísticas Mestre+</h3>
+        <app-champion-stats [championId]="champion.key" [position]="position() || null" />
+      </div>
+      <h3 class="section-title">Recomendações do cliente</h3>
       @if (connected()) {
         <app-build-panel [championId]="champion.key" [position]="position()" />
       } @else {

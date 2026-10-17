@@ -1,0 +1,82 @@
+@if (overview(); as o) {
+  <section class="summary">
+    <div class="card overview">
+      <h3 class="section-title">Últimas {{ o.games }} partidas</h3>
+      <div class="ring-row">
+        <div class="ring" [style.--rate]="o.winRate">
+          <span>{{ o.winRate }}%</span>
+        </div>
+        <div class="ring-text">
+          <strong>{{ o.wins }}V {{ o.games - o.wins }}D</strong>
+          <span class="muted">{{ o.kills }} / <span class="deaths">{{ o.deaths }}</span> / {{ o.assists }}</span>
+          <span><strong>{{ o.kda }}</strong> KDA</span>
+        </div>
+      </div>
+      <div class="stats">
+        <div><strong>{{ o.csPerMinute }}</strong><span>CS/min</span></div>
+        <div><strong>{{ o.participation }}%</strong><span>Part. abates</span></div>
+        <div><strong>{{ o.vision }}</strong><span>Visão</span></div>
+      </div>
+      <div class="streak" [class.win]="o.streak.win">
+        {{ o.streak.count }} {{ o.streak.win ? (o.streak.count === 1 ? 'vitória' : 'vitórias') : (o.streak.count === 1 ? 'derrota' : 'derrotas') }} seguidas
+      </div>
+      <div class="results">
+        @for (won of o.results; track $index) {
+          <span [class.win]="won" [title]="won ? 'Vitória' : 'Derrota'"></span>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">Campeões mais jogados</h3>
+      <ul class="champions">
+        @for (line of champions(); track line.championId) {
+          <li>
+            @if (iconUrl(line.championId); as icon) {
+              <img [src]="icon" [alt]="name(line.championId)" />
+            }
+            <div class="champion-info">
+              <strong>{{ name(line.championId) }}</strong>
+              <span class="muted">{{ line.kda }} KDA</span>
+            </div>
+            <div class="champion-rate">
+              <strong [class.good]="line.winRate >= 55" [class.bad]="line.winRate < 45">{{ line.winRate }}%</strong>
+              <span class="muted">{{ line.games }} {{ line.games === 1 ? 'jogo' : 'jogos' }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">Por rota</h3>
+      <ul class="positions">
+        @for (line of positions(); track line.label) {
+          <li>
+            <span class="pos-label">{{ line.label }}</span>
+            <div class="bar"><span [style.width.%]="line.share"></span></div>
+            <span class="muted pos-games">{{ line.games }}</span>
+            <strong class="pos-rate" [class.good]="line.winRate >= 55" [class.bad]="line.winRate < 45">{{ line.winRate }}%</strong>
+          </li>
+        } @empty {
+          <li class="muted">Sem partidas com rota definida.</li>
+        }
+      </ul>
+
+      @if (mastery().length > 0) {
+        <h3 class="section-title mastery-title">Maestria</h3>
+        <div class="mastery">
+          @for (m of mastery(); track m.championId) {
+            <div class="mastery-item" [title]="name(m.championId) + ' · nível ' + m.level">
+              @if (iconUrl(m.championId); as icon) {
+                <img [src]="icon" [alt]="name(m.championId)" />
+              }
+              <span class="mastery-level">{{ m.level }}</span>
+              <span class="muted">{{ points(m.points) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+}

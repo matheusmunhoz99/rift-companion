@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import type { OverlayPosition } from '../core/app.types';
 import { PreferencesService } from '../core/preferences.service';
 import { Icon } from '../ui/icon';
@@ -22,6 +22,18 @@ export class SettingsView {
 
   constructor() {
     void this.prefs.refreshGameWindowMode();
+  }
+
+  protected readonly checking = signal(false);
+  protected readonly updateMessage = signal<string | null>(null);
+
+  protected async checkUpdate(): Promise<void> {
+    this.checking.set(true);
+    const status = await this.prefs.checkUpdate();
+    this.checking.set(false);
+    this.updateMessage.set(
+      status.state === 'available' ? `Versão ${status.release.version} disponível: use o aviso no topo para atualizar.` : 'Você está na versão mais recente.',
+    );
   }
 
   protected setOpacity(value: string): void {

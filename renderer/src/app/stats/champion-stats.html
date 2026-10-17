@@ -1,0 +1,121 @@
+@if (loading() && !stats()) {
+  <p class="muted">Carregando estatísticas…</p>
+} @else if (stats(); as s) {
+  @if (!s.position || !s.games) {
+    <p class="muted">
+      Ainda não há partidas suficientes deste campeão na coleta (Mestre+ BR, patch {{ s.patches.join(' e ') || 'atual' }}).
+      A coleta roda o tempo todo; volte mais tarde.
+    </p>
+  } @else {
+    <div class="head">
+      <div class="numbers">
+        <div><strong [class.good]="s.winRate! >= 0.52" [class.bad]="s.winRate! < 0.48">{{ percent(s.winRate) }}</strong><span>Vitórias</span></div>
+        <div><strong>{{ percent(s.pickRate) }}</strong><span>Escolha</span></div>
+        <div><strong>{{ percent(s.banRate) }}</strong><span>Banimento</span></div>
+        <div><strong>{{ s.games }}</strong><span>Partidas</span></div>
+      </div>
+      <div class="chips">
+        @for (p of positions(); track p.value) {
+          <button type="button" class="chip" [class.active]="s.position === p.value" (click)="selectPosition(p.value)">
+            {{ p.label }} <small>{{ p.games }}</small>
+          </button>
+        }
+      </div>
+    </div>
+    <p class="source muted">
+      Ranqueada Solo/Duo · Mestre+ BR · patch {{ s.patches.join(' + ') }} · {{ s.matches }} partidas analisadas
+      @if (s.games < 100) {
+        · <span class="warning">amostra pequena</span>
+      }
+    </p>
+
+    <section>
+      <h4>Runas mais usadas</h4>
+      @for (option of s.runes ?? []; track option.key) {
+        <div class="row">
+          <div class="icons">
+            @if (ddragon.runeIconUrl(rune(option).keystone); as icon) {
+              <img class="keystone" [src]="icon" [alt]="ddragon.runeName(rune(option).keystone)" [title]="ddragon.runeName(rune(option).keystone)" />
+            }
+            @for (id of rune(option).minor; track $index) {
+              @if (ddragon.runeIconUrl(id); as icon) {
+                <img [src]="icon" [alt]="ddragon.runeName(id)" [title]="ddragon.runeName(id)" />
+              }
+            }
+            @if (ddragon.runeIconUrl(rune(option).sub); as icon) {
+              <img class="style" [src]="icon" [alt]="ddragon.runeName(rune(option).sub)" />
+            }
+          </div>
+          <div class="rate">
+            <strong [class.good]="option.winRate >= 0.52" [class.bad]="option.winRate < 0.48">{{ percent(option.winRate) }}</strong>
+            <span class="muted">{{ percent(option.share, 0) }} · {{ option.games }}</span>
+          </div>
+          <button type="button" class="btn small ghost" [disabled]="busy() !== null || !connected()" (click)="importRunes(option)">
+            {{ busy() === 'runes:' + option.key ? '…' : 'Importar' }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <section>
+      <h4>Núcleo de itens</h4>
+      @for (option of s.core ?? []; track option.key) {
+        <div class="row">
+          <div class="icons">
+            @for (id of items(option); track $index) {
+              <img class="item" [src]="ddragon.itemIconUrl(id)" [alt]="ddragon.itemName(id)" [title]="ddragon.itemName(id)" />
+              @if (!$last) {
+                <span class="arrow">›</span>
+              }
+            }
+          </div>
+          <div class="rate">
+            <strong [class.good]="option.winRate >= 0.52" [class.bad]="option.winRate < 0.48">{{ percent(option.winRate) }}</strong>
+            <span class="muted">{{ percent(option.share, 0) }} · {{ option.games }}</span>
+          </div>
+          <button type="button" class="btn small ghost" [disabled]="busy() !== null || !connected()" (click)="importItems(option)">
+            {{ busy() === 'items:' + option.key ? '…' : 'Importar' }}
+          </button>
+        </div>
+      } @empty {
+        <p class="muted">Sem partidas com 3 itens completos ainda.</p>
+      }
+    </section>
+
+    <div class="pair">
+      <section>
+        <h4>Feitiços</h4>
+        @for (option of s.spells ?? []; track option.key) {
+          <div class="row compact">
+            <div class="icons">
+              @for (id of spells(option); track $index) {
+                <img class="item" [src]="ddragon.spellIconUrl(id)" [alt]="ddragon.spellName(id)" [title]="ddragon.spellName(id)" />
+              }
+            </div>
+            <div class="rate">
+              <strong>{{ percent(option.winRate) }}</strong>
+              <span class="muted">{{ percent(option.share, 0) }}</span>
+            </div>
+          </div>
+        }
+      </section>
+      <section>
+        <h4>Botas</h4>
+        @for (option of s.boots ?? []; track option.key) {
+          <div class="row compact">
+            <div class="icons">
+              <img class="item" [src]="ddragon.itemIconUrl(+option.key)" [alt]="ddragon.itemName(+option.key)" [title]="ddragon.itemName(+option.key)" />
+              <span class="item-name">{{ ddragon.itemName(+option.key) }}</span>
+            </div>
+            <div class="rate">
+              <strong>{{ percent(option.winRate) }}</strong>
+              <span class="muted">{{ percent(option.share, 0) }}</span>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+  }
+} @else {
+  <p class="muted">Estatísticas indisponíveis no momento.</p>
+}

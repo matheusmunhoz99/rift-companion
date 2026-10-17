@@ -287,3 +287,31 @@
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 28px 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(61, 139, 255, 0.4);
+  border-radius: var(--radius-sm);
+  background: var(--ally-soft);
+  font-size: 13px;
+}
+
+.update-progress {
+  flex: 0 0 220px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--ally);
+    transition: width 0.2s;
+  }
+}

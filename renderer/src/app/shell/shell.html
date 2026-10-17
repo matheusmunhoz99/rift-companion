@@ -54,6 +54,26 @@
       <h1>{{ title() }}</h1>
     </header>
 
+    @switch (prefs.update().state) {
+      @case ('available') {
+        <div class="update-banner">
+          <span>
+            <strong>Nova versão {{ $any(prefs.update()).release.version }} disponível.</strong>
+            @for (note of $any(prefs.update()).release.notes; track $index) {
+              <span class="muted"> · {{ note }}</span>
+            }
+          </span>
+          <button type="button" class="btn small" (click)="prefs.installUpdate()">Atualizar agora</button>
+        </div>
+      }
+      @case ('downloading') {
+        <div class="update-banner">
+          <span>Baixando a versão {{ $any(prefs.update()).release.version }}…</span>
+          <div class="update-progress"><span [style.width.%]="$any(prefs.update()).progress * 100"></span></div>
+        </div>
+      }
+    }
+
     <main class="content">
       @switch (nav.view()) {
         @case ('home') {
@@ -67,6 +87,9 @@
         }
         @case ('live') {
           <app-live-view />
+        }
+        @case ('tierlist') {
+          <app-tierlist-view />
         }
         @case ('builds') {
           <app-builds-view />

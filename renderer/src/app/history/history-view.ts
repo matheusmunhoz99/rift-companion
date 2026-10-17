@@ -4,9 +4,10 @@ import { NavigationService } from '../core/navigation.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName, rankQueueLabel, tierName } from '../riot/labels';
+import { PlayerSummary } from './player-summary';
 import type { MatchParticipant, MatchSummary, PlayerProfile, RiotSettings } from './riot.types';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 interface Feedback {
   kind: 'success' | 'error';
@@ -15,6 +16,7 @@ interface Feedback {
 
 @Component({
   selector: 'app-history-view',
+  imports: [PlayerSummary],
   templateUrl: './history-view.html',
   styleUrl: './history-view.scss',
 })

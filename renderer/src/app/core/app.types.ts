@@ -40,7 +40,22 @@ export interface OverlayData {
     heralds: { ally: number; enemy: number };
     towers: { ally: number; enemy: number };
   };
+  timers: { dragon: number | null; baron: number | null } | null;
 }
+
+export interface ReleaseInfo {
+  version: string;
+  file: string;
+  sha256: string;
+  size: number;
+  notes: string[];
+}
+
+export type UpdateStatus =
+  | { state: 'idle' }
+  | { state: 'available'; release: ReleaseInfo }
+  | { state: 'downloading'; release: ReleaseInfo; progress: number }
+  | { state: 'error'; message: string };
 
 export interface AppBridge {
   info(): Promise<AppInfo>;
@@ -52,6 +67,10 @@ export interface AppBridge {
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;
   onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;
   gameWindowMode(): Promise<GameWindowMode>;
+  updateStatus(): Promise<UpdateStatus>;
+  checkUpdate(): Promise<UpdateStatus>;
+  installUpdate(): Promise<void>;
+  onUpdateStatus(callback: (status: UpdateStatus) => void): () => void;
 }
 
 declare global {

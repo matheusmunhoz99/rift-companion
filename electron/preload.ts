@@ -24,6 +24,10 @@ contextBridge.exposeInMainWorld('app', {
   onAutoRunesApplied: (callback: (result: unknown) => void) =>
     subscribe('auto-runes:applied', callback),
   gameWindowMode: () => ipcRenderer.invoke('app:game-window-mode'),
+  updateStatus: () => ipcRenderer.invoke('update:status'),
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (callback: (status: unknown) => void) => subscribe('update:status', callback),
 });
 
 contextBridge.exposeInMainWorld('lobby', {
@@ -57,6 +61,13 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-live-game', gameName, tagLine, platformId),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
+});
+
+contextBridge.exposeInMainWorld('stats', {
+  meta: () => ipcRenderer.invoke('stats:meta'),
+  tierList: (position: string | null) => ipcRenderer.invoke('stats:tierlist', position),
+  champion: (championId: number, position: string | null) =>
+    ipcRenderer.invoke('stats:champion', championId, position),
 });
 
 contextBridge.exposeInMainWorld('builds', {

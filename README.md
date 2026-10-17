@@ -82,6 +82,31 @@ limitada a 10–90%); não é um modelo treinado e não considera campeões nem 
 - Atualizar o servidor: gerar `dist/`, enviar para `/opt/rift-api` e `systemctl restart rift-api`.
 - Remover: `systemctl disable --now rift-api`, apagar os arquivos acima, `certbot delete --cert-name rift-api.workscanner.com.br`, `nginx -t && systemctl reload nginx`.
 
+## Estatísticas (tier list e builds)
+
+O servidor coleta continuamente partidas Ranqueadas Solo/Duo de jogadores Mestre+ do BR (listas
+challenger/grandmaster/master da league-v4) e agrega por campeão e rota, no patch atual: vitórias,
+escolha, banimento, páginas de runas, feitiços, núcleo de 3 itens completos e botas
+(`server/src/stats/`, SQLite em `/var/lib/rift-api/stats.sqlite`). A coleta usa no máximo 60% do limite
+da chave (`RIOT_LOW_PRIORITY_SHARE`); as buscas dos usuários sempre passam na frente.
+Rotas: `/v1/stats/meta`, `/v1/stats/tierlist?position=`, `/v1/stats/champion/:id?position=`.
+O tier é por percentil do winrate ajustado (prior bayesiano de 60 partidas) dentro de cada rota.
+
+## Atualização automática
+
+O app confere `/downloads/latest.json` ao abrir e a cada 6 h. Ao atualizar, baixa o .exe novo para a
+pasta do .exe atual, confere tamanho e SHA-256, abre a versão nova e fecha (a nova assume pela troca
+de versão da instância única). Para publicar:
+
+```bash
+RELEASE_NOTES="Nota 1; Nota 2" npm run release
+```
+
+## Testes
+
+- `npm test` (raiz): conversão dos dados do jogo para o overlay e timers.
+- `npm test` em `server/`: servidor ponta a ponta com uma Riot API falsa (coleta, estatísticas, jogador).
+
 ## Overlay
 
 Posição (esquerda, centro, direita) e opacidade nas Configurações. O app lê `Config/game.cfg`

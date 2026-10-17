@@ -1,0 +1,63 @@
+<section class="card">
+  <div class="toolbar">
+    <div class="chips">
+      @for (p of positions; track p.value) {
+        <button type="button" class="chip" [class.active]="position() === p.value" (click)="position.set(p.value)">{{ p.label }}</button>
+      }
+    </div>
+    <input
+      class="input"
+      type="search"
+      placeholder="Buscar campeão"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+  @if (meta(); as m) {
+    <p class="source muted">
+      {{ m.queue }} · {{ m.tiers }} {{ m.region }} · patch {{ m.patches.join(' + ') || '—' }} ·
+      <strong>{{ m.matches }}</strong> partidas analisadas
+      @if (m.matches < 2000) {
+        · <span class="warning">coleta em andamento: a lista fica mais completa ao longo do dia</span>
+      }
+    </p>
+  }
+
+  <table>
+    <thead>
+      <tr>
+        <th class="rank">#</th>
+        <th><button type="button" [class.active]="sort() === 'tier'" (click)="sort.set('tier')">Tier</button></th>
+        <th class="champ">Campeão</th>
+        <th><button type="button" [class.active]="sort() === 'winRate'" (click)="sort.set('winRate')">Vitórias</button></th>
+        <th><button type="button" [class.active]="sort() === 'pickRate'" (click)="sort.set('pickRate')">Escolha</button></th>
+        <th><button type="button" [class.active]="sort() === 'banRate'" (click)="sort.set('banRate')">Banimento</button></th>
+        <th><button type="button" [class.active]="sort() === 'games'" (click)="sort.set('games')">Partidas</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (entry of rows(); track entry.championId; let i = $index) {
+        <tr (click)="open(entry)" title="Ver builds de {{ name(entry.championId) }}">
+          <td class="rank muted">{{ i + 1 }}</td>
+          <td><span class="tier" [attr.data-tier]="entry.tier">{{ entry.tier }}</span></td>
+          <td class="champ">
+            @if (iconUrl(entry.championId); as icon) {
+              <img [src]="icon" [alt]="name(entry.championId)" />
+            }
+            <strong>{{ name(entry.championId) }}</strong>
+          </td>
+          <td [class.good]="entry.winRate >= 0.52" [class.bad]="entry.winRate < 0.48">{{ percent(entry.winRate) }}</td>
+          <td>{{ percent(entry.pickRate) }}</td>
+          <td>{{ percent(entry.banRate) }}</td>
+          <td class="muted">{{ entry.games }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="empty muted">
+            {{ loading() ? 'Carregando…' : 'Ainda não há campeões com partidas suficientes nesta rota. A coleta roda o tempo todo.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

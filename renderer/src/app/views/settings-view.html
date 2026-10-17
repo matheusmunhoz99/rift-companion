@@ -109,7 +109,15 @@
 
   <section class="card">
     <h3 class="section-title">Sobre</h3>
-    <p><strong>Rift Companion</strong> · versão beta {{ prefs.info()?.version }}</p>
+    <div class="about-row">
+      <p><strong>Rift Companion</strong> · versão beta {{ prefs.info()?.version }}</p>
+      <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
+        {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
+      </button>
+    </div>
+    @if (updateMessage(); as message) {
+      <p class="muted">{{ message }}</p>
+    }
     <p class="muted">
       Os dados da sua conta vêm do cliente do LoL no seu PC. Buscas de jogadores e partidas passam pelo servidor do
       Rift Companion, que consulta a Riot API. Nenhuma senha é lida ou enviada.

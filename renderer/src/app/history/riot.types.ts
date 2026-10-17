@@ -16,6 +16,7 @@ export interface PlayerProfile {
   summonerLevel: number;
   profileIconId: number;
   ranked: RankedEntry[];
+  topMastery: Array<{ championId: number; level: number; points: number; lastPlayTime: number }>;
 }
 
 export interface MatchParticipant {

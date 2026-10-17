@@ -1,5 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
+import { NavigationService } from '../core/navigation.service';
+import { ChampionStatsPanel } from '../stats/champion-stats';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
@@ -15,13 +17,29 @@ const POSITIONS = [
 
 @Component({
   selector: 'app-builds-view',
-  imports: [BuildPanel, Icon],
+  imports: [BuildPanel, ChampionStatsPanel, Icon],
   templateUrl: './builds-view.html',
   styleUrl: './builds-view.scss',
 })
 export class BuildsView {
   protected readonly ddragon = inject(DataDragonService);
   private readonly lcu = inject(LcuService);
+  private readonly nav = inject(NavigationService);
+
+  constructor() {
+    // Campeão pedido por outra tela (tier list): seleciona e ajusta a rota.
+    // Espera a lista de campeões do Data Dragon carregar antes de consumir o pedido.
+    effect(() => {
+      const request = this.nav.buildsRequest();
+      if (!request || this.ddragon.championList().length === 0) return;
+      untracked(() => {
+        const champion = this.ddragon.champion(request.championId);
+        if (champion) this.selected.set(champion);
+        if (request.position) this.position.set(request.position.toLowerCase());
+        this.nav.buildsRequest.set(null);
+      });
+    });
+  }
 
   protected readonly positions = POSITIONS;
   protected readonly search = signal('');

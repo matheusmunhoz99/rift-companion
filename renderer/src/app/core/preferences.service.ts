@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { AppInfo, GameWindowMode, Preferences } from './app.types';
-import { ToastService } from './toast.service';
+import type { AppInfo, GameWindowMode, Preferences, UpdateStatus } from './app.types';
+import { ToastService, errorText } from './toast.service';
 
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
@@ -21,6 +21,7 @@ export class PreferencesService {
   readonly info = signal<AppInfo | null>(null);
   readonly lastAutoAccept = signal<string | null>(null);
   readonly gameWindowMode = signal<GameWindowMode>('unknown');
+  readonly update = signal<UpdateStatus>({ state: 'idle' });
 
   constructor() {
     const bridge = window.app;
@@ -30,6 +31,8 @@ export class PreferencesService {
     void this.refreshGameWindowMode();
 
     bridge.onPreferencesChanged((preferences) => this.preferences.set(preferences));
+    void bridge.updateStatus().then((status) => this.update.set(status));
+    bridge.onUpdateStatus((status) => this.update.set(status));
     bridge.onAutoAccepted((timestamp) => {
       const time = new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       this.lastAutoAccept.set(time);
@@ -45,6 +48,21 @@ export class PreferencesService {
     this.preferences.update((current) => ({ ...current, ...changes }));
     const saved = await window.app?.setPreferences(changes);
     if (saved) this.preferences.set(saved);
+  }
+
+  async checkUpdate(): Promise<UpdateStatus> {
+    const status = (await window.app?.checkUpdate()) ?? { state: 'idle' as const };
+    this.update.set(status);
+    return status;
+  }
+
+  async installUpdate(): Promise<void> {
+    try {
+      await window.app?.installUpdate();
+      this.toast.show('Atualização baixada. Abrindo a nova versão…', 'success');
+    } catch (error) {
+      this.toast.show(errorText(error), 'error');
+    }
   }
 
   async refreshGameWindowMode(): Promise<void> {

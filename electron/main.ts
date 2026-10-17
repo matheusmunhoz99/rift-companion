@@ -8,10 +8,11 @@ import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
-import { OVERLAY_SHORTCUT, OverlayController } from './overlay/overlay';
+import { OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
 import { registerRiotHandlers } from './riot/ipc';
 import { Settings, type Preferences } from './settings';
 import { createTray } from './tray';
+import { Updater } from './updater';
 import { compareVersions } from './version';
 
 const rendererUrl = process.env.RENDERER_URL;
@@ -60,7 +61,7 @@ function createWindow(): void {
     return { action: 'deny' };
   });
 
-  loadRenderer(mainWindow, devOnly('RIFT_VIEW') ? `view=${devOnly('RIFT_VIEW')}` : '');
+  loadRenderer(mainWindow, devOnly('RIFT_VIEW') ? `view=${devOnly('RIFT_VIEW')}${devOnly('RIFT_PLAYER') ? `&player=${encodeURIComponent(devOnly('RIFT_PLAYER')!)}` : ''}${devOnly('RIFT_HASH') ? `&${devOnly('RIFT_HASH')}` : ''}` : '');
   scheduleCapture(mainWindow);
 
   mainWindow.on('close', (event) => {
@@ -91,7 +92,7 @@ function scheduleCapture(window: BrowserWindow): void {
 /** Só no desenvolvimento: abre o overlay com dados de um arquivo e captura a janela. */
 function captureDemoOverlay(dataFile: string): void {
   const window = new BrowserWindow({
-    width: 640,
+    width: OVERLAY_WIDTH,
     height: 56,
     frame: false,
     transparent: true,
@@ -174,6 +175,12 @@ void acquireInstance().then((acquired) => {
       applyStartWithWindows(preferences.startWithWindows);
       return preferences;
     });
+    const updater = new Updater((status) => mainWindow?.webContents.send('update:status', status));
+    ipcMain.handle('update:status', () => updater.getStatus());
+    ipcMain.handle('update:check', () => updater.check());
+    ipcMain.handle('update:install', () => updater.install());
+    if (!capturing) updater.start();
+
     ipcMain.handle('app:game-window-mode', () =>
       readGameWindowMode(connector.getCredentials()?.installDirectory ?? null),
     );

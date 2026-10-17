@@ -39,6 +39,14 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     },
   );
 
+  ipcMain.handle('stats:meta', () => apiGet('/v1/stats/meta'));
+  ipcMain.handle('stats:tierlist', (_event, position: string | null) =>
+    apiGet(`/v1/stats/tierlist${position ? `?position=${enc(position)}` : ''}`),
+  );
+  ipcMain.handle('stats:champion', (_event, championId: number, position: string | null) =>
+    apiGet(`/v1/stats/champion/${Number(championId)}${position ? `?position=${enc(position)}` : ''}`),
+  );
+
   ipcMain.handle(
     'riot:get-matches',
     (_event, puuid: string, platformId: string, start: number, count: number) =>

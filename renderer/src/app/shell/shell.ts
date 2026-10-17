@@ -11,6 +11,7 @@ import { HomeView } from '../views/home-view';
 import { LiveView } from '../views/live-view';
 import { PlayView } from '../views/play-view';
 import { SettingsView } from '../views/settings-view';
+import { TierListView } from '../views/tierlist-view';
 
 interface NavItem {
   view: View;
@@ -23,6 +24,7 @@ const NAV: NavItem[] = [
   { view: 'play', label: 'Jogar', icon: 'play' },
   { view: 'champ-select', label: 'Seleção', icon: 'swords' },
   { view: 'live', label: 'Partida ao vivo', icon: 'live' },
+  { view: 'tierlist', label: 'Tier list', icon: 'layers' },
   { view: 'builds', label: 'Builds', icon: 'book' },
   { view: 'history', label: 'Histórico', icon: 'history' },
 ];
@@ -35,7 +37,7 @@ const STATUS_LABELS = {
 
 @Component({
   selector: 'app-shell',
-  imports: [Icon, HomeView, PlayView, ChampSelectView, LiveView, BuildsView, HistoryView, SettingsView],
+  imports: [Icon, HomeView, PlayView, ChampSelectView, LiveView, TierListView, BuildsView, HistoryView, SettingsView],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })

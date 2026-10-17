@@ -4,7 +4,8 @@ import type { Preferences } from '../settings';
 import { fetchLiveClientData } from './live-client';
 
 const POLL_MS = 2_000;
-const WIDTH = 640;
+export const OVERLAY_WIDTH = 820;
+const WIDTH = OVERLAY_WIDTH;
 const HEIGHT = 56;
 export const OVERLAY_SHORTCUT = 'CommandOrControl+Shift+O';
 

@@ -1,0 +1,197 @@
+.summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 1150px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ring-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ring {
+  --rate: 50;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: conic-gradient(var(--win) calc(var(--rate) * 1%), var(--loss) 0);
+
+  span {
+    display: grid;
+    place-items: center;
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: var(--surface);
+    font-size: 18px;
+    font-weight: 800;
+  }
+}
+
+.ring-text {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+
+  .deaths {
+    color: var(--danger);
+  }
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+
+  div {
+    display: grid;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    text-align: center;
+  }
+
+  span {
+    color: var(--muted);
+    font-size: 11px;
+  }
+}
+
+.streak {
+  margin-top: 12px;
+  color: var(--loss);
+  font-size: 12px;
+  font-weight: 700;
+
+  &.win {
+    color: var(--win);
+  }
+}
+
+.results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+
+  span {
+    width: 12px;
+    height: 6px;
+    border-radius: 2px;
+    background: var(--loss);
+
+    &.win {
+      background: var(--win);
+    }
+  }
+}
+
+.champions li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+}
+
+.champion-info,
+.champion-rate {
+  display: grid;
+  font-size: 12px;
+
+  strong {
+    font-size: 13px;
+  }
+}
+
+.champion-info {
+  flex: 1;
+}
+
+.champion-rate {
+  text-align: right;
+}
+
+.positions li {
+  display: grid;
+  grid-template-columns: 70px 1fr 28px 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+}
+
+.pos-games,
+.pos-rate {
+  text-align: right;
+}
+
+.mastery-title {
+  margin-top: 18px;
+}
+
+.mastery {
+  display: flex;
+  gap: 10px;
+}
+
+.mastery-item {
+  display: grid;
+  justify-items: center;
+  font-size: 11px;
+
+  img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .mastery-level {
+    margin-top: -8px;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.good {
+  color: var(--success);
+}
+
+.bad {
+  color: var(--danger);
+}
