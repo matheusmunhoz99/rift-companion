@@ -12,7 +12,7 @@ import {
   type StatsOption,
 } from './stats.types';
 
-/** Estatísticas agregadas (Mestre+ BR) de um campeão, com importação das opções. */
+/** Estatísticas agregadas (Mestre+ BR, EUW e KR) de um campeão, com importação das opções. */
 @Component({
   selector: 'app-champion-stats',
   templateUrl: './champion-stats.html',
@@ -30,6 +30,8 @@ export class ChampionStatsPanel {
   protected readonly stats = signal<ChampionStats | null>(null);
   protected readonly loading = signal(false);
   protected readonly selectedPosition = signal<string | null>(null);
+  /** Oponente escolhido (build contra ele); null mostra a build geral. */
+  protected readonly opponentId = signal<number | null>(null);
   protected readonly busy = signal<string | null>(null);
 
   protected readonly percent = percent;
@@ -47,13 +49,44 @@ export class ChampionStatsPanel {
       const championId = this.championId();
       const position = this.position()?.toUpperCase() || null;
       this.selectedPosition.set(position);
-      void this.load(championId, position);
+      this.opponentId.set(null);
+      void this.load(championId, position, null);
+    });
+    effect(() => {
+      if (this.ddragon.version()) void this.ddragon.loadAbilities(this.championId());
     });
   }
 
   protected selectPosition(position: string): void {
     this.selectedPosition.set(position);
-    void this.load(this.championId(), position);
+    this.opponentId.set(null);
+    void this.load(this.championId(), position, null);
+  }
+
+  protected selectOpponent(opponentId: number | null): void {
+    this.opponentId.set(opponentId);
+    void this.load(this.championId(), this.stats()?.position ?? this.selectedPosition(), opponentId);
+  }
+
+  /** Melhores e piores confrontos (já filtrados por amostra mínima no servidor). */
+  protected readonly bestMatchups = computed(() =>
+    [...(this.stats()?.matchups ?? [])].sort((a, b) => b.winRate - a.winRate).slice(0, 5),
+  );
+  protected readonly worstMatchups = computed(() =>
+    [...(this.stats()?.matchups ?? [])].sort((a, b) => a.winRate - b.winRate).slice(0, 5),
+  );
+
+  protected readonly opponentOptions = computed(() =>
+    this.ddragon.championList().filter((c) => c.key !== this.championId()),
+  );
+
+  /** Ordem de habilidades: "1,3,2" -> [{ key: 'Q', ... }, ...]. */
+  protected skills(key: string) {
+    const list = this.ddragon.abilities().get(this.championId());
+    return key.split(',').map((slot) => {
+      const index = Number(slot) - 1;
+      return { key: ['Q', 'W', 'E', 'R'][index], icon: list?.[index]?.icon ?? null, name: list?.[index]?.name ?? '' };
+    });
   }
 
   protected rune(option: StatsOption) {
@@ -97,6 +130,7 @@ export class ChampionStatsPanel {
       title: `${champion} · Mestre+ ${percent(core.winRate, 0)}`,
       maps: [11],
       blocks: [
+        ...(stats?.start?.[0] ? [{ name: 'Itens iniciais', items: this.items(stats.start[0]) }] : []),
         { name: `Núcleo (${percent(core.winRate, 0)} de vitórias)`, items: this.items(core) },
         ...(boots.length ? [{ name: 'Botas', items: boots }] : []),
       ],
@@ -107,11 +141,11 @@ export class ChampionStatsPanel {
     });
   }
 
-  private async load(championId: number, position: string | null): Promise<void> {
+  private async load(championId: number, position: string | null, opponentId: number | null): Promise<void> {
     if (!window.stats) return;
     this.loading.set(true);
     try {
-      this.stats.set(await window.stats.champion(championId, position));
+      this.stats.set(await window.stats.champion(championId, position, opponentId));
     } catch {
       this.stats.set(null);
     } finally {

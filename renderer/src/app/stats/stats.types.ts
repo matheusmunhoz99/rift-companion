@@ -40,12 +40,17 @@ export interface ChampionStats {
   spells?: StatsOption[];
   core?: StatsOption[];
   boots?: StatsOption[];
+  start?: StatsOption[];
+  skillOrder?: StatsOption[];
+  skillStart?: StatsOption[];
+  matchups?: Array<{ opponentId: number; games: number; winRate: number }>;
+  opponent?: { opponentId: number; games: number; winRate: number | null; buildFromMatchup: boolean } | null;
 }
 
 export interface StatsBridge {
   meta(): Promise<StatsMeta>;
   tierList(position: string | null): Promise<TierEntry[]>;
-  champion(championId: number, position: string | null): Promise<ChampionStats | null>;
+  champion(championId: number, position: string | null, opponentId?: number | null): Promise<ChampionStats | null>;
 }
 
 declare global {

@@ -89,7 +89,10 @@ challenger/grandmaster/master da league-v4) e agrega por campeão e rota, no pat
 escolha, banimento, páginas de runas, feitiços, núcleo de 3 itens completos e botas
 (`server/src/stats/`, SQLite em `/var/lib/rift-api/stats.sqlite`). A coleta usa no máximo 60% do limite
 da chave (`RIOT_LOW_PRIORITY_SHARE`); as buscas dos usuários sempre passam na frente.
-Rotas: `/v1/stats/meta`, `/v1/stats/tierlist?position=`, `/v1/stats/champion/:id?position=`.
+Coleta em BR, EUW e KR em paralelo (cada rota da Riot tem o próprio limite). Cada partida usa também a
+linha do tempo (`/timeline`) para itens iniciais, núcleo na ordem real de compra e ordem de habilidades, e
+registra o confronto direto (mesma rota) para winrate e build contra cada campeão.
+Rotas: `/v1/stats/meta`, `/v1/stats/tierlist?position=`, `/v1/stats/champion/:id?position=&vs=`.
 O tier é por percentil do winrate ajustado (prior bayesiano de 60 partidas) dentro de cada rota.
 
 ## Atualização automática

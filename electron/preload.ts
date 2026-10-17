@@ -66,8 +66,8 @@ contextBridge.exposeInMainWorld('riot', {
 contextBridge.exposeInMainWorld('stats', {
   meta: () => ipcRenderer.invoke('stats:meta'),
   tierList: (position: string | null) => ipcRenderer.invoke('stats:tierlist', position),
-  champion: (championId: number, position: string | null) =>
-    ipcRenderer.invoke('stats:champion', championId, position),
+  champion: (championId: number, position: string | null, opponentId?: number | null) =>
+    ipcRenderer.invoke('stats:champion', championId, position, opponentId ?? null),
 });
 
 contextBridge.exposeInMainWorld('builds', {

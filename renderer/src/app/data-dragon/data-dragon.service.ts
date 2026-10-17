@@ -37,6 +37,33 @@ export class DataDragonService {
     return this.champions().get(key) ?? null;
   }
 
+  /** Habilidades Q, W, E, R do campeão (carregadas sob demanda e guardadas). */
+  readonly abilities = signal<Map<number, Array<{ key: string; name: string; icon: string }>>>(new Map());
+  private readonly loadingAbilities = new Set<number>();
+
+  async loadAbilities(championKey: number): Promise<void> {
+    const version = this.version();
+    const champion = this.champion(championKey);
+    if (!version || !champion || this.abilities().has(championKey) || this.loadingAbilities.has(championKey)) return;
+    this.loadingAbilities.add(championKey);
+    try {
+      const body = await getJson<{
+        data: Record<string, { spells: Array<{ name: string; image: { full: string } }> }>;
+      }>(`${BASE_URL}/cdn/${version}/data/pt_BR/champion/${champion.id}.json`);
+      const spells = Object.values(body.data)[0]?.spells ?? [];
+      const list = spells.map((spell, index) => ({
+        key: ['Q', 'W', 'E', 'R'][index],
+        name: spell.name,
+        icon: `${BASE_URL}/cdn/${version}/img/spell/${spell.image.full}`,
+      }));
+      this.abilities.update((map) => new Map(map).set(championKey, list));
+    } catch {
+      // Sem os ícones, a tela mostra só as letras.
+    } finally {
+      this.loadingAbilities.delete(championKey);
+    }
+  }
+
   championIconUrl(champion: ChampionInfo): string | null {
     const version = this.version();
     return version ? `${BASE_URL}/cdn/${version}/img/champion/${champion.id}.png` : null;

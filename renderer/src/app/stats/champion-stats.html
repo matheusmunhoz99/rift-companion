@@ -3,7 +3,7 @@
 } @else if (stats(); as s) {
   @if (!s.position || !s.games) {
     <p class="muted">
-      Ainda não há partidas suficientes deste campeão na coleta (Mestre+ BR, patch {{ s.patches.join(' e ') || 'atual' }}).
+      Ainda não há partidas suficientes deste campeão na coleta (Mestre+ BR, EUW e KR, patch {{ s.patches.join(' e ') || 'atual' }}).
       A coleta roda o tempo todo; volte mais tarde.
     </p>
   } @else {
@@ -23,11 +23,31 @@
       </div>
     </div>
     <p class="source muted">
-      Ranqueada Solo/Duo · Mestre+ BR · patch {{ s.patches.join(' + ') }} · {{ s.matches }} partidas analisadas
+      Ranqueada Solo/Duo · Mestre+ BR, EUW e KR · patch {{ s.patches.join(' + ') }} · {{ s.matches }} partidas analisadas
       @if (s.games < 100) {
         · <span class="warning">amostra pequena</span>
       }
     </p>
+
+    <div class="opponent-bar">
+      <span class="muted">Contra</span>
+      <select [value]="opponentId() ?? ''" (change)="selectOpponent($any($event.target).value ? +$any($event.target).value : null)">
+        <option value="">Qualquer oponente</option>
+        @for (champion of opponentOptions(); track champion.key) {
+          <option [value]="champion.key">{{ champion.name }}</option>
+        }
+      </select>
+      @if (s.opponent; as vs) {
+        <span class="vs-info">
+          @if (vs.winRate !== null) {
+            <strong [class.good]="vs.winRate >= 0.52" [class.bad]="vs.winRate < 0.48">{{ percent(vs.winRate) }}</strong> em {{ vs.games }} confrontos
+          } @else {
+            {{ vs.games }} confrontos
+          }
+          · {{ vs.buildFromMatchup ? 'build específica deste confronto' : 'poucos confrontos ainda: mostrando a build geral' }}
+        </span>
+      }
+    </div>
 
     <section>
       <h4>Runas mais usadas</h4>
@@ -56,6 +76,57 @@
         </div>
       }
     </section>
+
+    <div class="pair">
+      <section>
+        <h4>Itens iniciais</h4>
+        @for (option of (s.start ?? []).slice(0, 2); track option.key) {
+          <div class="row compact">
+            <div class="icons">
+              @for (id of items(option); track $index) {
+                <img class="item" [src]="ddragon.itemIconUrl(id)" [alt]="ddragon.itemName(id)" [title]="ddragon.itemName(id)" />
+              }
+            </div>
+            <div class="rate">
+              <strong>{{ percent(option.winRate) }}</strong>
+              <span class="muted">{{ percent(option.share, 0) }}</span>
+            </div>
+          </div>
+        } @empty {
+          <p class="muted small">Coletando…</p>
+        }
+      </section>
+      <section>
+        <h4>Habilidades</h4>
+        @if (s.skillOrder?.[0]; as order) {
+          <div class="skills">
+            @if (s.skillStart?.[0]; as first) {
+              <div class="skill-start">
+                @for (skill of skills(first.key); track $index) {
+                  <span class="skill-key small-key">{{ skill.key }}</span>
+                }
+              </div>
+            }
+            <div class="skill-order">
+              @for (skill of skills(order.key); track $index) {
+                <span class="skill">
+                  @if (skill.icon) {
+                    <img [src]="skill.icon" [alt]="skill.name" [title]="skill.name" />
+                  }
+                  <span class="skill-key">{{ skill.key }}</span>
+                </span>
+                @if (!$last) {
+                  <span class="arrow">›</span>
+                }
+              }
+            </div>
+            <span class="muted small">Maximizar nessa ordem · {{ percent(order.share, 0) }} dos jogadores · {{ percent(order.winRate) }}</span>
+          </div>
+        } @else {
+          <p class="muted small">Coletando…</p>
+        }
+      </section>
+    </div>
 
     <section>
       <h4>Núcleo de itens</h4>
@@ -115,6 +186,37 @@
         }
       </section>
     </div>
+
+    @if ((s.matchups ?? []).length > 0) {
+      <div class="pair">
+        <section>
+          <h4>Melhores confrontos</h4>
+          @for (m of bestMatchups(); track m.opponentId) {
+            <button type="button" class="matchup" [class.active]="opponentId() === m.opponentId" (click)="selectOpponent(m.opponentId)">
+              @if (ddragon.champion(m.opponentId); as c) {
+                <img [src]="ddragon.championIconUrl(c)" [alt]="c.name" />
+                <span>{{ c.name }}</span>
+              }
+              <strong class="good">{{ percent(m.winRate, 0) }}</strong>
+              <small class="muted">{{ m.games }}</small>
+            </button>
+          }
+        </section>
+        <section>
+          <h4>Piores confrontos</h4>
+          @for (m of worstMatchups(); track m.opponentId) {
+            <button type="button" class="matchup" [class.active]="opponentId() === m.opponentId" (click)="selectOpponent(m.opponentId)">
+              @if (ddragon.champion(m.opponentId); as c) {
+                <img [src]="ddragon.championIconUrl(c)" [alt]="c.name" />
+                <span>{{ c.name }}</span>
+              }
+              <strong class="bad">{{ percent(m.winRate, 0) }}</strong>
+              <small class="muted">{{ m.games }}</small>
+            </button>
+          }
+        </section>
+      </div>
+    }
   }
 } @else {
   <p class="muted">Estatísticas indisponíveis no momento.</p>
