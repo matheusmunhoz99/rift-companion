@@ -21,6 +21,10 @@
 </p>
 
 <p align="center">
+  <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"><img alt="Download" src="https://img.shields.io/badge/Download-Windows-e84057?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiPjxwYXRoIGQ9Ik0xMiAzVjE0LjVNNyAxMCAxMiAxNSAxNyAxME00IDE2LjVWMjAuNUgyMFYxNi41Ii8+PC9zdmc+" /></a>
+</p>
+
+<p align="center">
   <img src="docs/screenshots/live.png" alt="Live game view" width="900" />
 </p>
 

@@ -38,8 +38,9 @@ run('ssh', ['-o', 'BatchMode=yes', HOST, `mkdir -p ${REMOTE_DIR}`]);
 run('scp', ['-o', 'BatchMode=yes', exe, `${HOST}:${REMOTE_DIR}/${file}.part`]);
 run('ssh', ['-o', 'BatchMode=yes', HOST, `mv ${REMOTE_DIR}/${file}.part ${REMOTE_DIR}/${file}`]);
 run('scp', ['-o', 'BatchMode=yes', manifestPath, `${HOST}:${REMOTE_DIR}/latest.json.part`]);
-// Publica o manifesto e mantém só as últimas versões.
+// Publica o manifesto, aponta o link fixo de download (RiftCompanion.exe) para a
+// versão nova e mantém só as últimas versões.
 run('ssh', ['-o', 'BatchMode=yes', HOST,
-  `cd ${REMOTE_DIR} && mv latest.json.part latest.json && chmod 644 * && ls -1t RiftCompanion-Beta-*.exe | tail -n +${KEEP + 1} | xargs -r rm -f`]);
+  `cd ${REMOTE_DIR} && mv latest.json.part latest.json && ln -sfn ${file} RiftCompanion.exe && chmod 644 *.exe latest.json && ls -1t RiftCompanion-Beta-*.exe | tail -n +${KEEP + 1} | xargs -r rm -f`]);
 
 console.log(`Publicado ${file} (${(manifest.size / 1e6).toFixed(1)} MB, sha256 ${manifest.sha256.slice(0, 12)}…)`);
