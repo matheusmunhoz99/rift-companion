@@ -1,8 +1,16 @@
 .layout {
   display: grid;
-  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.2fr);
   gap: 18px;
   align-items: start;
+
+  > * {
+    min-width: 0;
+  }
+
+  @media (max-width: 1060px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .picker {

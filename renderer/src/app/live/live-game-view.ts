@@ -6,6 +6,7 @@ import { LcuService } from '../lcu/lcu.service';
 import { mainRank, queueName, rankText, winRate } from '../riot/labels';
 import { findEncounters, type PlayerEncounters } from './encounters';
 import { estimateWinChance } from './win-chance';
+import { ChampionStatsPanel } from '../stats/champion-stats';
 
 const RECENT_GAMES = 10;
 /** Quantas partidas suas são cruzadas com os jogadores da partida atual. */
@@ -29,6 +30,7 @@ interface RecentSummary {
 
 @Component({
   selector: 'app-live-game-view',
+  imports: [ChampionStatsPanel],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })
@@ -64,6 +66,15 @@ export class LiveGameView {
   protected readonly enemies = computed(() =>
     (this.game()?.participants ?? []).filter((p) => p.teamId !== this.allyTeamId()),
   );
+
+  /** Campeões inimigos, comparados por conteúdo para não recarregar a build a cada atualização. */
+  protected readonly enemyIds = computed(() => this.enemies().map((p) => p.championId), {
+    equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
+  });
+
+  protected readonly allyIds = computed(() => this.allies().map((p) => p.championId), {
+    equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
+  });
 
   /** Jogadores desta partida que estavam nas suas últimas 10 partidas. */
   protected readonly encounters = signal<PlayerEncounters[] | 'loading' | null>(null);

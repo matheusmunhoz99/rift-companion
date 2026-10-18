@@ -271,6 +271,7 @@ img.small {
 }
 
 .encounters {
+  container-type: inline-size;
   display: grid;
   gap: 8px;
   padding: 10px 12px;
@@ -311,16 +312,21 @@ img.small {
 
 .encounter {
   display: grid;
-  grid-template-columns: 56px 1fr 1fr 64px auto;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 64px auto;
   align-items: center;
   gap: 8px;
   font-size: 12px;
 
-  @media (max-width: 900px) {
-    grid-template-columns: 56px 1fr 64px;
+  @container (max-width: 720px) {
+    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: 2px;
+
+    .outcome {
+      grid-column: 2;
+    }
 
     .when {
-      grid-column: 2 / -1;
+      grid-column: 3;
     }
   }
 
@@ -389,5 +395,21 @@ img.small {
 @keyframes pulse {
   50% {
     opacity: 0.3;
+  }
+}
+
+.match-build {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+
+  h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
   }
 }

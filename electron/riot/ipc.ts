@@ -61,13 +61,17 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
   ipcMain.handle('stats:tierlist', (_event, position: string | null) =>
     apiGet(`/v1/stats/tierlist${position ? `?position=${enc(position)}` : ''}`),
   );
-  ipcMain.handle('stats:champion', (_event, championId: number, position: string | null, opponentId?: number | null) => {
+  ipcMain.handle(
+    'stats:champion',
+    (_event, championId: number, position: string | null, opponentId?: number | null, damage?: string | null) => {
     const query = new URLSearchParams();
     if (position) query.set('position', position);
     if (opponentId) query.set('vs', String(Number(opponentId)));
+    if (damage && ['ap', 'ad', 'mixed'].includes(damage)) query.set('damage', damage);
     const suffix = query.toString() ? `?${query}` : '';
     return apiGet(`/v1/stats/champion/${Number(championId)}${suffix}`);
-  });
+    },
+  );
 
   ipcMain.handle(
     'riot:get-matches',

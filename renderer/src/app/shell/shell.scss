@@ -167,7 +167,7 @@
   flex-shrink: 0;
   height: 64px;
   /* Espaço dos botões nativos de janela (titleBarOverlay). */
-  padding: 0 150px 0 28px;
+  padding: 0 150px 0 max(clamp(14px, 2.2vw, 36px), calc((100% - 1760px) / 2));
 
   h1 {
     margin: 0;
@@ -180,7 +180,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 28px 28px;
+  /* Margens que crescem com a janela; em monitores muito largos o conteúdo fica centralizado. */
+  padding: 4px max(clamp(14px, 2.2vw, 36px), calc((100% - 1760px) / 2)) clamp(14px, 2.2vw, 36px);
 }
 
 /* Janela de partida encontrada */
@@ -313,5 +314,70 @@
     height: 100%;
     background: var(--ally);
     transition: width 0.2s;
+  }
+}
+
+/* Janelas estreitas: o menu vira uma coluna só de ícones. */
+@media (max-width: 1100px) {
+  .shell {
+    grid-template-columns: 68px 1fr;
+  }
+
+  .sidebar {
+    padding: 0 10px 12px;
+  }
+
+  .brand {
+    justify-content: center;
+    padding: 0;
+
+    .brand-name {
+      display: none;
+    }
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 11px 0;
+
+    .label {
+      display: none;
+    }
+
+    &.active::before {
+      left: -10px;
+    }
+  }
+
+  .live-dot {
+    position: absolute;
+    top: 7px;
+    right: 9px;
+    margin: 0;
+  }
+
+  .client-status {
+    justify-content: center;
+    padding: 10px 0;
+
+    .label {
+      display: none;
+    }
+  }
+
+  .version {
+    display: none;
+  }
+
+  .titlebar h1 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    padding: 24px 18px;
   }
 }

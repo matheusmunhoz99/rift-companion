@@ -36,11 +36,13 @@ function loadRenderer(window: BrowserWindow, hash = ''): void {
 }
 
 function createWindow(): void {
+  // Só no desenvolvimento: tamanho da janela para revisar o layout (ex.: RIFT_SIZE=760x560).
+  const [width, height] = (devOnly('RIFT_SIZE') ?? '1320x840').split('x').map(Number);
   mainWindow = new BrowserWindow({
-    width: 1320,
-    height: 840,
-    minWidth: 1080,
-    minHeight: 680,
+    width,
+    height,
+    minWidth: 760,
+    minHeight: 560,
     backgroundColor: BACKGROUND,
     title: 'Rift Companion',
     icon: ICON,

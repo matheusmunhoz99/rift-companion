@@ -29,12 +29,76 @@
       }
     </p>
 
+    @if (matchMode()) {
+      <div class="match-card">
+        <h4>Esta partida</h4>
+        <div class="match-facts">
+          <div class="fact">
+            <span class="label">Oponente de rota</span>
+            @if (detectedOpponentId(); as opp) {
+              <span class="value">
+                @if (ddragon.champion(opp); as champ) {
+                  @if (ddragon.championIconUrl(champ); as icon) {
+                    <img class="mini" [src]="icon" [alt]="champ.name" />
+                  }
+                  {{ champ.name }}
+                }
+                <small class="muted">provável</small>
+              </span>
+            } @else {
+              <span class="value muted">esperando as escolhas</span>
+            }
+          </div>
+          @if (enemyProfile(); as profile) {
+            <div class="fact grow">
+              <span class="label">Time inimigo · {{ damageLabel(profile.damage) }}</span>
+              <div class="damage-bar" [title]="'Estimativa pelos campeões inimigos'">
+                <span class="magic" [style.width.%]="profile.magicShare * 100"></span>
+              </div>
+              <span class="damage-legend">
+                <span class="magic-dot"></span> mágico {{ (profile.magicShare * 100).toFixed(0) }}%
+                <span class="physical-dot"></span> físico {{ (100 - profile.magicShare * 100).toFixed(0) }}%
+              </span>
+            </div>
+          }
+        </div>
+
+        @if (s.situational; as sit) {
+          @if (situationalPicks().length > 0) {
+            <p class="muted small-note">
+              Itens que jogadores Mestre+ de {{ ddragon.champion(championId())?.name }} compram mais contra times de
+              {{ damageLabel(sit.damage) }} ({{ sit.games }} partidas):
+            </p>
+            <div class="situational">
+              @for (item of situationalPicks(); track item.itemId) {
+                <div class="sit-item" [title]="ddragon.itemName(item.itemId)">
+                  @if (ddragon.itemIconUrl(item.itemId); as icon) {
+                    <img class="item" [src]="icon" [alt]="ddragon.itemName(item.itemId)" />
+                  }
+                  <span class="sit-name">{{ ddragon.itemName(item.itemId) }}</span>
+                  <span class="lift">+{{ ((item.lift - 1) * 100).toFixed(0) }}%</span>
+                  <span class="muted">{{ percent(item.share, 0) }} das partidas</span>
+                </div>
+              }
+            </div>
+          } @else if (sit.games < 20) {
+            <p class="muted small-note">
+              Ainda juntando partidas contra times de {{ damageLabel(sit.damage) }} para este campeão. Os itens
+              situacionais aparecem conforme a coleta avança.
+            </p>
+          } @else {
+            <p class="muted small-note">Contra este perfil de time, a build geral já é a mais usada.</p>
+          }
+        }
+      </div>
+    }
+
     <div class="opponent-bar">
       <span class="muted">Contra</span>
-      <select [value]="opponentId() ?? ''" (change)="selectOpponent($any($event.target).value ? +$any($event.target).value : null)">
-        <option value="">Qualquer oponente</option>
+      <select (change)="selectOpponent($any($event.target).value ? +$any($event.target).value : null)">
+        <option value="" [selected]="opponentId() === null">Qualquer oponente</option>
         @for (champion of opponentOptions(); track champion.key) {
-          <option [value]="champion.key">{{ champion.name }}</option>
+          <option [value]="champion.key" [selected]="champion.key === opponentId()">{{ champion.name }}</option>
         }
       </select>
       @if (s.opponent; as vs) {

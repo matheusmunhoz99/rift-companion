@@ -31,6 +31,9 @@ Quando a partida começa, o Rift Companion mostra os dois times com o elo, a tax
 
 Além disso, avisa **quais jogadores estavam nas suas últimas 10 partidas** (no seu time ou contra você), com os campeões, o KDA de cada um e o resultado.
 
+### Uma build para cada partida
+Na seleção de campeões e na partida ao vivo, o Rift Companion descobre o seu **oponente de rota** e o **perfil de dano do time inimigo** (maioria mágico, maioria físico ou misto). Depois mostra a build do confronto e os itens que jogadores Mestre+ do seu campeão compram mais contra esse tipo de time.
+
 ### Builds, runas e tier list
 - Páginas de runas, itens iniciais, itens principais, botas e ordem de habilidades mais usados para cada campeão e rota.
 - Confrontos: taxa de vitórias contra cada oponente de rota e builds para confrontos específicos.

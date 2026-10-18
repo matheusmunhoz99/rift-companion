@@ -33,6 +33,9 @@ When a game starts, Rift Companion shows both teams with each player's rank, win
 
 It also tells you **which players were in your own last 10 matches** (on your team or against you), with both champions, both KDAs and the result.
 
+### A build for every match
+During champion select and the live game, Rift Companion works out your **lane opponent** and the **enemy team's damage profile** (mostly magic, mostly physical or mixed). It then shows the matchup build plus the items Master+ players of your champion buy more often against that kind of team.
+
 ### Builds, runes and tier list
 - Most popular rune pages, starting items, core items, boots and skill orders for every champion and role.
 - Matchup data: win rates against each lane opponent and builds for specific matchups.

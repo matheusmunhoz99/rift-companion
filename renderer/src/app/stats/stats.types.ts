@@ -45,12 +45,29 @@ export interface ChampionStats {
   skillStart?: StatsOption[];
   matchups?: Array<{ opponentId: number; games: number; winRate: number }>;
   opponent?: { opponentId: number; games: number; winRate: number | null; buildFromMatchup: boolean } | null;
+  /** Itens contra o perfil de dano do time inimigo (só quando pedido). */
+  situational?: Situational | null;
+}
+
+/** Perfil de dano do time inimigo: maioria mágico, maioria físico ou misto. */
+export type EnemyDamage = 'ap' | 'ad' | 'mixed';
+
+export interface Situational {
+  damage: EnemyDamage;
+  /** Partidas do campeão na rota contra esse perfil de dano. */
+  games: number;
+  items: Array<{ itemId: number; games: number; share: number; winRate: number; lift: number }>;
 }
 
 export interface StatsBridge {
   meta(): Promise<StatsMeta>;
   tierList(position: string | null): Promise<TierEntry[]>;
-  champion(championId: number, position: string | null, opponentId?: number | null): Promise<ChampionStats | null>;
+  champion(
+    championId: number,
+    position: string | null,
+    opponentId?: number | null,
+    damage?: EnemyDamage | null,
+  ): Promise<ChampionStats | null>;
 }
 
 declare global {

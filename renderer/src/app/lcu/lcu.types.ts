@@ -36,6 +36,8 @@ export interface ChampSelectState {
   allowRerolling: boolean;
   rerollsRemaining: number;
   trades: Trade[];
+  /** Campeões inimigos já revelados. */
+  enemyChampionIds?: number[];
 }
 
 export interface ChampSelectBridge {

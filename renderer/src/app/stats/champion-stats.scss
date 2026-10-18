@@ -1,6 +1,8 @@
 :host {
   display: grid;
   gap: 14px;
+  min-width: 0;
+  container-type: inline-size;
 }
 
 p,
@@ -27,6 +29,7 @@ h4 {
 
 .numbers {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 
   div {
@@ -281,5 +284,153 @@ h4 {
   &.active {
     border-color: var(--border);
     background: var(--surface-2);
+  }
+}
+
+.match-card {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 10px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%);
+
+  h4 {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+}
+
+.match-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+
+  .fact {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+
+    &.grow {
+      flex: 1 1 220px;
+    }
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+}
+
+img.mini {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+.damage-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #d9893b;
+  overflow: hidden;
+
+  .magic {
+    display: block;
+    height: 100%;
+    background: #6f8cff;
+  }
+}
+
+.damage-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+
+  .magic-dot,
+  .physical-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: #6f8cff;
+  }
+
+  .physical-dot {
+    margin-left: 8px;
+    background: #d9893b;
+  }
+}
+
+.small-note {
+  margin: 0;
+  font-size: 12px;
+}
+
+.situational {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 6px;
+}
+
+.sit-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+
+  .item {
+    grid-row: span 2;
+  }
+
+  .sit-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .lift {
+    grid-row: span 2;
+    color: var(--success);
+    font-weight: 700;
+  }
+}
+
+/* Painel estreito (janela pequena ou coluna lateral). */
+@container (max-width: 560px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+
+  .numbers div {
+    flex: 1 1 70px;
+    min-width: 0;
+  }
+
+  .opponent-bar select {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .icons img {
+    width: 22px;
+    height: 22px;
   }
 }

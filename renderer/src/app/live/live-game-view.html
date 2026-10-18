@@ -188,6 +188,15 @@
       </section>
     }
   </div>
+  @if (me(); as mine) {
+    @if (mine.championId > 0) {
+      <section class="match-build">
+        <h4>Sua build para esta partida</h4>
+        <app-champion-stats [championId]="mine.championId" [enemyIds]="enemyIds()" [allyIds]="allyIds()" />
+      </section>
+    }
+  }
+
   <p class="hint muted">Clique num jogador para ver o resumo das últimas 10 partidas, ou no nome para abrir o histórico completo.</p>
 } @else if (loading()) {
   <p class="muted">Carregando a partida…</p>

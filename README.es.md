@@ -33,6 +33,9 @@ Cuando empieza la partida, Rift Companion muestra los dos equipos con la divisi�
 
 Además, te avisa **qué jugadores estuvieron en tus últimas 10 partidas** (en tu equipo o en contra), con los campeones, el KDA de cada uno y el resultado.
 
+### Una build para cada partida
+En la selección de campeones y en la partida en vivo, Rift Companion detecta tu **rival de línea** y el **perfil de daño del equipo enemigo** (mayoría mágico, mayoría físico o mixto). Después muestra la build del enfrentamiento y los objetos que los jugadores Maestro+ de tu campeón compran más contra ese tipo de equipo.
+
 ### Builds, runas y tier list
 - Las páginas de runas, objetos iniciales, objetos principales, botas y orden de habilidades más usados para cada campeón y rol.
 - Enfrentamientos: porcentaje de victorias contra cada rival de línea y builds para enfrentamientos específicos.

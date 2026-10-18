@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import type { ItemBuild, RunePageSuggestion } from '../builds/builds.types';
 import { ToastService, errorText } from '../core/toast.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
@@ -11,6 +11,7 @@ import {
   type ChampionStats,
   type StatsOption,
 } from './stats.types';
+import { allPositionsTierList, damageProfile, guessLaneOpponent, guessOwnPosition } from './match-context';
 
 /** Estatísticas agregadas (Mestre+ BR, EUW e KR) de um campeão, com importação das opções. */
 @Component({
@@ -22,6 +23,10 @@ export class ChampionStatsPanel {
   readonly championId = input.required<number>();
   /** Rota pedida (ex.: a da seleção); sem ela, usa a rota mais jogada do campeão. */
   readonly position = input<string | null>(null);
+  /** Campeões do time inimigo na partida (seleção ou partida ao vivo): ativa a build da partida. */
+  readonly enemyIds = input<number[]>([]);
+  /** Campeões do seu time: na partida ao vivo, sem rota informada, deduzem a sua. */
+  readonly allyIds = input<number[]>([]);
 
   protected readonly ddragon = inject(DataDragonService);
   private readonly lcu = inject(LcuService);
@@ -33,6 +38,16 @@ export class ChampionStatsPanel {
   /** Oponente escolhido (build contra ele); null mostra a build geral. */
   protected readonly opponentId = signal<number | null>(null);
   protected readonly busy = signal<string | null>(null);
+  /** Oponente de rota detectado pelos campeões inimigos (antes de qualquer escolha manual). */
+  protected readonly detectedOpponentId = signal<number | null>(null);
+
+  /** Perfil de dano estimado do time inimigo. */
+  protected readonly enemyProfile = computed(() =>
+    damageProfile(this.enemyIds().map((id) => this.ddragon.champion(id))),
+  );
+  protected readonly matchMode = computed(() => this.enemyIds().some((id) => id > 0));
+  protected readonly damageLabel = (damage: string) =>
+    damage === 'ap' ? 'dano mágico' : damage === 'ad' ? 'dano físico' : 'dano misto';
 
   protected readonly percent = percent;
   protected readonly positionLabel = statsPositionLabel;
@@ -48,9 +63,13 @@ export class ChampionStatsPanel {
     effect(() => {
       const championId = this.championId();
       const position = this.position()?.toUpperCase() || null;
-      this.selectedPosition.set(position);
-      this.opponentId.set(null);
-      void this.load(championId, position, null);
+      const enemies = this.enemyIds().filter((id) => id > 0);
+      const allies = this.allyIds().filter((id) => id > 0);
+      this.ddragon.version();
+      untracked(() => {
+        this.selectedPosition.set(position);
+        void this.loadForMatch(championId, position, enemies, allies);
+      });
     });
     effect(() => {
       if (this.ddragon.version()) void this.ddragon.loadAbilities(this.championId());
@@ -59,14 +78,23 @@ export class ChampionStatsPanel {
 
   protected selectPosition(position: string): void {
     this.selectedPosition.set(position);
-    this.opponentId.set(null);
-    void this.load(this.championId(), position, null);
+    void this.loadForMatch(this.championId(), position, this.enemyIds().filter((id) => id > 0));
   }
 
   protected selectOpponent(opponentId: number | null): void {
     this.opponentId.set(opponentId);
     void this.load(this.championId(), this.stats()?.position ?? this.selectedPosition(), opponentId);
   }
+
+  /**
+   * Itens situacionais que valem destacar: fora do núcleo escolhido e comprados
+   * pelo menos 10% mais vezes contra este perfil de dano do que no geral.
+   */
+  protected readonly situationalPicks = computed(() => {
+    const s = this.stats();
+    const core = new Set((s?.core?.[0]?.key ?? '').split(',').map(Number));
+    return (s?.situational?.items ?? []).filter((i) => !core.has(i.itemId) && i.lift >= 1.1).slice(0, 6);
+  });
 
   /** Melhores e piores confrontos (já filtrados por amostra mínima no servidor). */
   protected readonly bestMatchups = computed(() =>
@@ -133,6 +161,9 @@ export class ChampionStatsPanel {
         ...(stats?.start?.[0] ? [{ name: 'Itens iniciais', items: this.items(stats.start[0]) }] : []),
         { name: `Núcleo (${percent(core.winRate, 0)} de vitórias)`, items: this.items(core) },
         ...(boots.length ? [{ name: 'Botas', items: boots }] : []),
+        ...(this.situationalPicks().length
+          ? [{ name: `Contra este time (${this.damageLabel(stats!.situational!.damage)})`, items: this.situationalPicks().map((i) => i.itemId) }]
+          : []),
       ],
     };
     await this.run(`items:${core.key}`, async () => {
@@ -141,11 +172,34 @@ export class ChampionStatsPanel {
     });
   }
 
+  /** Build da partida: detecta o oponente de rota e pede os itens para o perfil de dano inimigo. */
+  private async loadForMatch(
+    championId: number,
+    position: string | null,
+    enemies: number[],
+    allies: number[] = [],
+  ): Promise<void> {
+    let opponent: number | null = null;
+    if (enemies.length > 0) {
+      const tierList = await allPositionsTierList();
+      // Sem rota informada: deduz pelo seu time; sem time, usa a mais jogada do campeão.
+      position ??=
+        (allies.length > 0 ? guessOwnPosition(championId, allies, tierList) : null) ??
+        [...tierList].filter((t) => t.championId === championId).sort((a, b) => b.games - a.games)[0]?.position ??
+        null;
+      if (position) this.selectedPosition.set(position);
+      opponent = guessLaneOpponent(position, enemies, tierList);
+    }
+    this.detectedOpponentId.set(opponent);
+    this.opponentId.set(opponent);
+    await this.load(championId, position, opponent);
+  }
+
   private async load(championId: number, position: string | null, opponentId: number | null): Promise<void> {
     if (!window.stats) return;
     this.loading.set(true);
     try {
-      this.stats.set(await window.stats.champion(championId, position, opponentId));
+      this.stats.set(await window.stats.champion(championId, position, opponentId, this.enemyProfile()?.damage ?? null));
     } catch {
       this.stats.set(null);
     } finally {

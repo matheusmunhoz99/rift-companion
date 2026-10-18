@@ -19,7 +19,11 @@ import { Icon } from '../ui/icon';
           <h3 class="section-title">Build recomendada</h3>
           @if (championId() > 0) {
             <div class="stats-block">
-              <app-champion-stats [championId]="championId()" [position]="session.assignedPosition || null" />
+              <app-champion-stats
+                [championId]="championId()"
+                [position]="session.assignedPosition || null"
+                [enemyIds]="enemyIds()"
+              />
             </div>
             <app-build-panel [championId]="championId()" [position]="session.assignedPosition" [inChampSelect]="true" />
           } @else {
@@ -62,6 +66,11 @@ import { Icon } from '../ui/icon';
 export class ChampSelectView {
   private readonly lcu = inject(LcuService);
   protected readonly state = this.lcu.state;
+  /** Igualdade por conteúdo: o estado do cliente chega a cada evento, mas os inimigos mudam pouco. */
+  protected readonly enemyIds = computed(() => this.state().champSelect?.enemyChampionIds ?? [], {
+    equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
+  });
+
   protected readonly championId = computed(() => {
     const session = this.state().champSelect;
     return session ? session.championId || session.pickIntentChampionId : 0;

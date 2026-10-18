@@ -39,6 +39,8 @@ export interface ChampSelectState {
   allowRerolling: boolean;
   rerollsRemaining: number;
   trades: Trade[];
+  /** Campeões inimigos já revelados (0 enquanto escondidos ou na escolha às cegas). */
+  enemyChampionIds: number[];
 }
 
 export interface ChampSelectSession {
@@ -64,6 +66,7 @@ export interface ChampSelectSession {
     championPickIntent: number;
     assignedPosition: string;
   }>;
+  theirTeam?: Array<{ cellId: number; championId: number }>;
 }
 
 export function toChampSelect(
@@ -94,6 +97,7 @@ export function toChampSelect(
     allowRerolling: session.allowRerolling ?? false,
     rerollsRemaining: session.rerollsRemaining ?? 0,
     trades: (session.trades ?? []).map(({ id, cellId, state }) => ({ id, cellId, state })),
+    enemyChampionIds: (session.theirTeam ?? []).map((p) => p.championId).filter((id) => id > 0),
   };
 }
 

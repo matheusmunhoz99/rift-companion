@@ -8,14 +8,19 @@ const SIZE = 512;
 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${SIZE}" height="${SIZE}">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff6a7c"/>
-      <stop offset="1" stop-color="#d9324a"/>
+    <linearGradient id="logo-edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb35c" />
+      <stop offset="1" stop-color="#e8455a" />
+    </linearGradient>
+    <linearGradient id="logo-core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7184" />
+      <stop offset="1" stop-color="#c3233c" />
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="9" fill="url(#g)"/>
-  <path d="M10 23V9h7a4.5 4.5 0 0 1 0 9h-7m6 0 6 5" fill="none" stroke="#fff" stroke-width="2.6"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 1.8 28.3 8.9V23.1L16 30.2 3.7 23.1V8.9Z" fill="#141821" stroke="url(#logo-edge)" stroke-width="1.6" />
+  <path d="M16 6.5 23 16 16 25.5 9 16Z" fill="url(#logo-core)" />
+  <path d="M16.5 8.2 18.7 11.1" stroke="#ffd1d7" stroke-width="0.8" opacity="0.6" />
+  <path d="M8.6 12.6 23.4 19.4" stroke="#141821" stroke-width="1.8" />
 </svg>`;
 
 app.whenReady().then(async () => {
