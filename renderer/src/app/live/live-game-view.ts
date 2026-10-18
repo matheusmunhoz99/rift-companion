@@ -4,9 +4,12 @@ import type { LiveGame, LiveParticipant, MatchSummary } from '../history/riot.ty
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { mainRank, queueName, rankText, winRate } from '../riot/labels';
+import { findEncounters, type PlayerEncounters } from './encounters';
 import { estimateWinChance } from './win-chance';
 
 const RECENT_GAMES = 10;
+/** Quantas partidas suas são cruzadas com os jogadores da partida atual. */
+const ENCOUNTER_GAMES = 10;
 /** Enquanto a partida não aparece no spectator, tenta de novo a cada 20 s. */
 const RETRY_MS = 20_000;
 
@@ -57,6 +60,17 @@ export class LiveGameView {
     (this.game()?.participants ?? []).filter((p) => p.teamId !== this.allyTeamId()),
   );
 
+  /** Jogadores desta partida que estavam nas suas últimas 10 partidas. */
+  protected readonly encounters = signal<PlayerEncounters[] | 'loading' | null>(null);
+  protected readonly encounterByPuuid = computed(() => {
+    const list = this.encounters();
+    return new Map(Array.isArray(list) ? list.map((p) => [p.puuid, p]) : []);
+  });
+  protected readonly encounterList = computed(() => {
+    const list = this.encounters();
+    return Array.isArray(list) ? list : [];
+  });
+
   protected readonly winChance = computed(() => {
     const game = this.game();
     return game ? estimateWinChance(game.participants, this.allyTeamId()) : null;
@@ -92,9 +106,9 @@ export class LiveGameView {
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.game.set(
-        await window.riot.getLiveGame(summoner.gameName, summoner.tagLine, state.platformId ?? 'BR1'),
-      );
+      const game = await window.riot.getLiveGame(summoner.gameName, summoner.tagLine, state.platformId ?? 'BR1');
+      this.game.set(game);
+      void this.loadEncounters(game, state.platformId ?? 'BR1');
     } catch (error) {
       const text = cleanError(error);
       this.error.set(text);
@@ -123,7 +137,7 @@ export class LiveGameView {
     }
   }
 
-  protected openPlayer(participant: LiveParticipant): void {
+  protected openPlayer(participant: { riotId: string }): void {
     if (participant.riotId) this.nav.openPlayer(participant.riotId, this.lcu.state().platformId);
   }
 
@@ -151,6 +165,38 @@ export class LiveGameView {
     return { gameName: gameName || 'Jogador oculto', tag: tag ?? '' };
   }
 
+  protected encounterOf(participant: LiveParticipant): PlayerEncounters | null {
+    return this.encounterByPuuid().get(participant.puuid) ?? null;
+  }
+
+  protected kda(p: { kills: number; deaths: number; assists: number }): string {
+    return `${p.kills}/${p.deaths}/${p.assists}`;
+  }
+
+  protected timeAgo(timestamp: number): string {
+    const minutes = Math.round((Date.now() - timestamp) / 60_000);
+    if (minutes < 60) return `há ${minutes} min`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `há ${hours} h`;
+    const days = Math.round(hours / 24);
+    return days === 1 ? 'há 1 dia' : `há ${days} dias`;
+  }
+
+  /** Busca suas últimas 10 partidas e cruza com os jogadores desta. */
+  private async loadEncounters(game: LiveGame, platformId: string): Promise<void> {
+    const summoner = this.lcu.state().summoner;
+    const riotId = summoner ? `${summoner.gameName}#${summoner.tagLine}`.toLowerCase() : null;
+    const me = game.participants.find((p) => p.riotId.toLowerCase() === riotId);
+    if (!me?.puuid || !window.riot) return;
+    this.encounters.set('loading');
+    try {
+      const matches = await window.riot.getMatches(me.puuid, platformId, 0, ENCOUNTER_GAMES);
+      this.encounters.set(findEncounters(me.puuid, me.teamId, game.participants, matches));
+    } catch {
+      this.encounters.set(null);
+    }
+  }
+
   private setRecent(puuid: string, value: RecentSummary | 'loading' | 'error'): void {
     this.recent.update((current) => ({ ...current, [puuid]: value }));
   }
@@ -161,6 +207,7 @@ export class LiveGameView {
     this.error.set(null);
     this.expanded.set(null);
     this.recent.set({});
+    this.encounters.set(null);
   }
 
   private clearRetry(): void {

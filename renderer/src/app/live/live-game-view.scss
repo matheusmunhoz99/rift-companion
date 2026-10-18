@@ -265,3 +265,101 @@ img.small {
     text-decoration: underline;
   }
 }
+
+.encounters-note {
+  font-size: 12px;
+}
+
+.encounters {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg);
+
+  h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+}
+
+.encounter-player {
+  display: grid;
+  gap: 4px;
+}
+
+.encounter-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+
+  .side {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6d9eff;
+
+    &.enemy {
+      color: var(--danger);
+    }
+  }
+}
+
+.encounter {
+  display: grid;
+  grid-template-columns: 56px 1fr 1fr 64px auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 56px 1fr 64px;
+
+    .when {
+      grid-column: 2 / -1;
+    }
+  }
+
+  .tag {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(74, 127, 214, 0.18);
+    color: #6d9eff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+
+    &.enemy {
+      background: rgba(232, 64, 87, 0.15);
+      color: var(--danger);
+    }
+  }
+
+  .pair {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .outcome {
+    font-weight: 700;
+  }
+}
+
+.met {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+}

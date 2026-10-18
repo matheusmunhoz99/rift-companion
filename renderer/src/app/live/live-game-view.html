@@ -25,6 +25,47 @@
     </div>
   }
 
+  @if (encounters() === 'loading') {
+    <p class="muted encounters-note">Procurando jogadores das suas últimas 10 partidas…</p>
+  } @else if (encounterList().length > 0) {
+    <section class="encounters">
+      <h4>Já jogaram com você <span class="muted">· nas suas últimas 10 partidas</span></h4>
+      @for (player of encounterList(); track player.puuid) {
+        <div class="encounter-player">
+          <div class="encounter-head">
+            <span class="nick link" [title]="'Ver histórico de ' + player.riotId" (click)="openPlayer(player)">
+              {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
+            </span>
+            <span class="side" [class.enemy]="!player.allyNow">
+              {{ player.allyNow ? 'no seu time agora' : 'contra você agora' }}
+            </span>
+          </div>
+          @for (e of player.encounters; track e.matchId) {
+            <div class="encounter">
+              <span class="tag" [class.enemy]="!e.sameTeam">{{ e.sameTeam ? 'Juntos' : 'Contra' }}</span>
+              <span class="pair">
+                @if (iconUrl(e.you.championId); as icon) {
+                  <img class="small" [src]="icon" [alt]="ddragon.champion(e.you.championId)?.name ?? ''" />
+                }
+                Você de {{ ddragon.champion(e.you.championId)?.name }} <strong>{{ kda(e.you) }}</strong>
+              </span>
+              <span class="pair">
+                @if (iconUrl(e.them.championId); as icon) {
+                  <img class="small" [src]="icon" [alt]="ddragon.champion(e.them.championId)?.name ?? ''" />
+                }
+                {{ name(player.riotId).gameName }} de {{ ddragon.champion(e.them.championId)?.name }} <strong>{{ kda(e.them) }}</strong>
+              </span>
+              <span class="outcome" [class.good]="e.youWon" [class.bad]="!e.youWon">
+                {{ e.youWon ? 'Vitória' : 'Derrota' }}
+              </span>
+              <span class="muted when">{{ queueName(e.queueId) }} · {{ timeAgo(e.gameEndTimestamp) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <div class="teams">
     @for (team of [allies(), enemies()]; track $index) {
       <section class="team" [class.enemy-team]="$index === 1">
@@ -60,7 +101,14 @@
                 >
                   {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
                 </span>
-                <span class="muted champ-name">{{ ddragon.champion(player.championId)?.name }}</span>
+                <span class="muted champ-name">
+                  {{ ddragon.champion(player.championId)?.name }}
+                  @if (encounterOf(player); as met) {
+                    <span class="met" title="Esteve nas suas últimas 10 partidas">
+                      Já jogou com você · {{ met.encounters.length }}x
+                    </span>
+                  }
+                </span>
               </div>
 
               <div class="rank">
