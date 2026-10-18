@@ -27,6 +27,16 @@ On the server:
 - Build and tier list statistics are stored only as **aggregated numbers** per champion, role and patch, such as games played, wins and item choices. They are not linked to individual players.
 - The web server keeps standard access logs (IP address, time and requested path) for security and abuse prevention. They are deleted automatically after 14 days.
 
+## Telegram (optional)
+
+If you connect Telegram in the app's settings, our server stores:
+
+- your **Telegram chat ID** and a random code that identifies your PC, so notices go only to your chat and buttons you tap reach only your PC;
+- the ID of the panel message, so the bot can update it instead of sending new messages;
+- button taps and champion names you type, only until your PC picks them up (at most one minute).
+
+Messages you type to the bot are deleted from the chat after they are read. Send `/parar` to the bot or click "Desconectar" in the app to remove the link. The bot token is kept only on our server.
+
 ## Updates
 
 The app checks our server for new versions. This request does not include any personal data.
