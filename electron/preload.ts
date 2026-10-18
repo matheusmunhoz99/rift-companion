@@ -64,6 +64,14 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
 });
 
+contextBridge.exposeInMainWorld('telegram', {
+  status: () => ipcRenderer.invoke('telegram:status'),
+  connect: () => ipcRenderer.invoke('telegram:connect'),
+  cancel: () => ipcRenderer.invoke('telegram:cancel'),
+  test: () => ipcRenderer.invoke('telegram:test'),
+  disconnect: () => ipcRenderer.invoke('telegram:disconnect'),
+});
+
 contextBridge.exposeInMainWorld('stats', {
   meta: () => ipcRenderer.invoke('stats:meta'),
   tierList: (position: string | null) => ipcRenderer.invoke('stats:tierlist', position),

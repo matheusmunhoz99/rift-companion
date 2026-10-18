@@ -7,7 +7,7 @@ import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
 
 /** Servidor que guarda a chave da Riot (server/). Pode ser trocado em desenvolvimento. */
-const RIFT_API_URL = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
+export const RIFT_API_URL = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
 
 export function registerRiotHandlers(settings: Settings, connector: LcuConnector): void {
   ipcMain.handle('riot:get-settings', () => ({

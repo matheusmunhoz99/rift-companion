@@ -102,3 +102,30 @@ p {
     margin: 0;
   }
 }
+
+.telegram-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  p {
+    flex: 1 1 280px;
+    margin: 0;
+  }
+}
+
+.telegram-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--success);
+}

@@ -17,6 +17,11 @@ export interface Preferences {
   /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
   minimizeToTray: boolean;
   startWithWindows: boolean;
+  /** Avisos no Telegram (só valem com o Telegram conectado). */
+  telegramReadyCheck: boolean;
+  telegramChampion: boolean;
+  telegramGameStart: boolean;
+  telegramGameEnd: boolean;
 }
 
 const DEFAULT_PREFERENCES: Preferences = {
@@ -28,6 +33,10 @@ const DEFAULT_PREFERENCES: Preferences = {
   autoRunes: false,
   minimizeToTray: true,
   startWithWindows: false,
+  telegramReadyCheck: true,
+  telegramChampion: true,
+  telegramGameStart: true,
+  telegramGameEnd: true,
 };
 
 /** Validação de cada preferência: valores fora do formato são ignorados. */
@@ -42,6 +51,10 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   autoRunes: isBoolean,
   minimizeToTray: isBoolean,
   startWithWindows: isBoolean,
+  telegramReadyCheck: isBoolean,
+  telegramChampion: isBoolean,
+  telegramGameStart: isBoolean,
+  telegramGameEnd: isBoolean,
 };
 
 function isBoolean(value: unknown): value is boolean {
@@ -50,6 +63,8 @@ function isBoolean(value: unknown): value is boolean {
 
 interface StoredSettings extends Partial<Preferences> {
   platformId?: string;
+  /** Token do aparelho no bot do Telegram (dado pelo servidor ao conectar). */
+  telegramDevice?: string;
 }
 
 /** Configurações locais em %APPDATA%\<app>\settings.json. */
@@ -83,6 +98,16 @@ export class Settings {
     }
     this.write();
     return this.getPreferences();
+  }
+
+  getTelegramDevice(): string | null {
+    return this.data.telegramDevice ?? null;
+  }
+
+  setTelegramDevice(device: string | null): void {
+    if (device) this.data.telegramDevice = device;
+    else delete this.data.telegramDevice;
+    this.write();
   }
 
   getAutoAccept(): boolean {

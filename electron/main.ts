@@ -10,6 +10,7 @@ import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
 import { OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
 import { registerRiotHandlers } from './riot/ipc';
+import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
 import { createTray } from './tray';
 import { Updater } from './updater';
@@ -156,6 +157,8 @@ void acquireInstance().then((acquired) => {
       () => prefs.getAutoAccept(),
       () => mainWindow?.webContents.send('auto-accept:accepted', Date.now()),
     );
+
+    new TelegramNotifications(connector, prefs);
 
     new AutoRunes(
       connector,

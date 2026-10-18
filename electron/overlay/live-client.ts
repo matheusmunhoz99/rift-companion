@@ -4,7 +4,8 @@ import https from 'node:https';
  * Live Client Data API: exposta pelo próprio jogo em https://127.0.0.1:2999
  * durante a partida. Só traz informação que o jogador já vê no jogo.
  */
-const LIVE_CLIENT_URL = 'https://127.0.0.1:2999/liveclientdata/allgamedata';
+// RIFT_LIVE_CLIENT_URL: só para testes com um jogo falso.
+const LIVE_CLIENT_URL = process.env.RIFT_LIVE_CLIENT_URL ?? 'https://127.0.0.1:2999/liveclientdata/allgamedata';
 
 // Certificado autoassinado da Riot; só fala com localhost.
 const localAgent = new https.Agent({ rejectUnauthorized: false, keepAlive: true });

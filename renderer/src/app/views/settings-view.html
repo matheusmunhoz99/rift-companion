@@ -24,6 +24,65 @@
   </section>
 
   <section class="card">
+    <h3 class="section-title">Avisos no Telegram</h3>
+    @switch (telegram()) {
+      @case ('connected') {
+        <div class="telegram-row">
+          <p><span class="status-dot"></span> Conectado. Mande <strong>/jogar</strong> no bot para começar pelo celular. Funciona com o app na bandeja.</p>
+          <div class="telegram-actions">
+            <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="testTelegram()">Enviar teste</button>
+            <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="disconnectTelegram()">Desconectar</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <app-switch
+          label="Partida encontrada"
+          description="Com botões para aceitar ou recusar a fila pelo celular."
+          [checked]="prefs.preferences().telegramReadyCheck"
+          (toggled)="prefs.set({ telegramReadyCheck: $event })"
+        />
+        <div class="divider"></div>
+        <app-switch
+          label="Seleção e campeão"
+          description="Avisa quando a seleção começa e o seu campeão, com a arte. No ARAM, o campeão que você pegou e o banco."
+          [checked]="prefs.preferences().telegramChampion"
+          (toggled)="prefs.set({ telegramChampion: $event })"
+        />
+        <div class="divider"></div>
+        <app-switch
+          label="Início da partida"
+          description="Quando o jogo carrega e a partida começa."
+          [checked]="prefs.preferences().telegramGameStart"
+          (toggled)="prefs.set({ telegramGameStart: $event })"
+        />
+        <div class="divider"></div>
+        <app-switch
+          label="Resultado"
+          description="Vitória ou derrota, com KDA, CS e duração."
+          [checked]="prefs.preferences().telegramGameEnd"
+          (toggled)="prefs.set({ telegramGameEnd: $event })"
+        />
+      }
+      @case ('waiting') {
+        <div class="telegram-row">
+          <p>Abrimos o bot no Telegram. Toque em <strong>Iniciar</strong> lá para terminar de conectar…</p>
+          <button type="button" class="btn ghost small" (click)="cancelTelegram()">Cancelar</button>
+        </div>
+      }
+      @default {
+        <div class="telegram-row">
+          <p class="muted">
+            Controle o LoL pelo celular: mande /jogar para escolher a fila e as rotas e entrar na fila, aceite a partida,
+            escolha e bana campeões (por botão ou digitando o nome), troque com o banco no ARAM e importe runas e
+            feitiços. Também avisa o início e o resultado de cada partida. Grátis, pelo bot do Rift Companion.
+          </p>
+          <button type="button" class="btn" (click)="connectTelegram()">Conectar Telegram</button>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="card">
     <h3 class="section-title">Overlay no jogo</h3>
     <app-switch
       label="Mostrar overlay durante a partida"

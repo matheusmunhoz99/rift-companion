@@ -17,6 +17,10 @@ export class PreferencesService {
     autoRunes: false,
     minimizeToTray: true,
     startWithWindows: false,
+    telegramReadyCheck: true,
+    telegramChampion: true,
+    telegramGameStart: true,
+    telegramGameEnd: true,
   });
   readonly info = signal<AppInfo | null>(null);
   readonly lastAutoAccept = signal<string | null>(null);

@@ -11,6 +11,10 @@ export interface Preferences {
   autoRunes: boolean;
   minimizeToTray: boolean;
   startWithWindows: boolean;
+  telegramReadyCheck: boolean;
+  telegramChampion: boolean;
+  telegramGameStart: boolean;
+  telegramGameEnd: boolean;
 }
 
 export interface AppInfo {

@@ -31,6 +31,8 @@ export interface ChampSelectState {
   team: TeamMember[];
   /** Ação de escolha do jogador em andamento (ex.: escolha inicial); null se não for a vez dele. */
   pickActionId: number | null;
+  /** Ação de banimento do jogador em andamento; null se não for a vez dele. */
+  banActionId: number | null;
   /** Campeões que o jogador pode escolher na ação atual. */
   pickableChampionIds: number[];
   /** Banco do ARAM ("campeões disponíveis"). */
@@ -91,6 +93,7 @@ export function toChampSelect(
       isMe: player.cellId === session.localPlayerCellId,
     })),
     pickActionId,
+    banActionId: findMyAction(session, 'ban'),
     pickableChampionIds: pickActionId === null ? [] : pickableChampionIds,
     benchEnabled: session.benchEnabled ?? benchChampionIds.length > 0,
     benchChampionIds: benchChampionIds.filter((id) => id > 0),
@@ -103,11 +106,16 @@ export function toChampSelect(
 
 /** Ação de escolha do jogador que está em andamento e ainda não foi concluída. */
 export function findMyPickAction(session: ChampSelectSession): number | null {
+  return findMyAction(session, 'pick');
+}
+
+/** Ação do jogador (escolha ou banimento) que está em andamento e ainda não foi concluída. */
+export function findMyAction(session: ChampSelectSession, type: 'pick' | 'ban'): number | null {
   for (const turn of session.actions ?? []) {
     for (const action of turn) {
       if (
         action.actorCellId === session.localPlayerCellId &&
-        action.type === 'pick' &&
+        action.type === type &&
         action.isInProgress &&
         !action.completed
       ) {
@@ -138,6 +146,15 @@ export async function pickChampion(
   await lcuRequest(credentials, 'PATCH', `/lol-champ-select/v1/session/actions/${actionId}`, {
     championId,
   });
+  await lcuRequest(credentials, 'POST', `/lol-champ-select/v1/session/actions/${actionId}/complete`);
+}
+
+/** Bane o campeão na ação de banimento em andamento. */
+export async function banChampion(credentials: LcuCredentials, championId: number): Promise<void> {
+  const session = await lcuRequest<ChampSelectSession>(credentials, 'GET', '/lol-champ-select/v1/session');
+  const actionId = findMyAction(session, 'ban');
+  if (actionId === null) throw new Error('Não é a sua vez de banir.');
+  await lcuRequest(credentials, 'PATCH', `/lol-champ-select/v1/session/actions/${actionId}`, { championId });
   await lcuRequest(credentials, 'POST', `/lol-champ-select/v1/session/actions/${actionId}/complete`);
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "rift-companion",
-  "version": "0.5.0-beta.1",
+  "version": "0.5.0-beta.6",
   "private": true,
   "description": "Companion app para League of Legends: builds, runas, partida ao vivo e histórico.",
   "main": "dist-electron/main.js",
