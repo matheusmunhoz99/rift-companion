@@ -1,6 +1,8 @@
 import { app, ipcMain } from 'electron';
 import { readFileSync } from 'node:fs';
 import type { LcuConnector } from '../lcu/connector';
+import { lcuRequest } from '../lcu/http';
+import { fetchRawGameData, toLocalPlayers } from '../overlay/live-client';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
 
@@ -38,6 +40,22 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
       );
     },
   );
+
+  // Partida pelos dados locais do jogo: aparece na hora, antes da Riot API liberar a partida.
+  ipcMain.handle('riot:get-local-game', async () => {
+    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_LOCAL;
+    const raw = demo ? JSON.parse(readFileSync(demo, 'utf8')) : await fetchRawGameData();
+    if (!raw?.allPlayers?.length) return null;
+    const credentials = connector.getCredentials();
+    const session = credentials
+      ? await lcuRequest<{ gameData?: { queue?: { id?: number } } }>(credentials, 'GET', '/lol-gameflow/v1/session').catch(() => null)
+      : null;
+    return {
+      queueId: session?.gameData?.queue?.id ?? 0,
+      gameStartTime: Date.now() - Math.round((raw.gameData?.gameTime ?? 0) * 1000),
+      players: toLocalPlayers(raw),
+    };
+  });
 
   ipcMain.handle('stats:meta', () => apiGet('/v1/stats/meta'));
   ipcMain.handle('stats:tierlist', (_event, position: string | null) =>

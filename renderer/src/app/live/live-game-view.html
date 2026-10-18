@@ -1,13 +1,21 @@
 @if (game(); as live) {
   <header class="live-header">
     <div>
-      <h3>{{ queueName(live.queueId) }}</h3>
+      <h3>{{ live.queueId ? queueName(live.queueId) : 'Partida em andamento' }}</h3>
       <p class="muted">Iniciada às {{ startTime(live.gameStartTime) }}</p>
     </div>
     <button type="button" class="ghost" [disabled]="loading()" (click)="load()">
       {{ loading() ? 'Atualizando…' : 'Atualizar' }}
     </button>
   </header>
+
+  @if (waitingRiot()) {
+    <p class="waiting">
+      <span class="pulse"></span>
+      Times carregados direto do jogo. Elo, maestria e chance de vitória chegam quando a Riot liberar a partida,
+      cerca de 2 a 3 minutos após o início. Atualiza sozinho.
+    </p>
+  }
 
   @if (winChance(); as chance) {
     <div class="win-chance">
@@ -34,7 +42,7 @@
         <div class="encounter-player">
           <div class="encounter-head">
             <span class="nick link" [title]="'Ver histórico de ' + player.riotId" (click)="openPlayer(player)">
-              {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
+              {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
             </span>
             <span class="side" [class.enemy]="!player.allyNow">
               {{ player.allyNow ? 'no seu time agora' : 'contra você agora' }}
@@ -99,7 +107,7 @@
                   [title]="'Ver histórico de ' + player.riotId"
                   (click)="$event.stopPropagation(); openPlayer(player)"
                 >
-                  {{ name(player.riotId).gameName }}<span class="muted">#{{ name(player.riotId).tag }}</span>
+                  {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
                 </span>
                 <span class="muted champ-name">
                   {{ ddragon.champion(player.championId)?.name }}
@@ -120,6 +128,8 @@
                       · <span [class.good]="rate >= 52" [class.bad]="rate < 48">{{ rate }}%</span>
                     }
                   </span>
+                } @else if (waitingRiot()) {
+                  <span class="muted">Carregando…</span>
                 } @else {
                   <span class="muted">Sem elo</span>
                 }
@@ -129,7 +139,7 @@
                 @if (player.mastery; as mastery) {
                   <span>Maestria {{ mastery.level }}</span>
                   <span class="muted">{{ (mastery.points / 1000).toFixed(1) }}k pts</span>
-                } @else {
+                } @else if (!waitingRiot()) {
                   <span class="muted">Primeira vez?</span>
                 }
               </div>

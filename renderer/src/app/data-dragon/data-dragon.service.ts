@@ -24,6 +24,11 @@ export class DataDragonService {
   private readonly runeNames = signal<Map<number, string>>(new Map());
   private readonly spells = signal<Map<number, { name: string; image: string }>>(new Map());
   private readonly itemNames = signal<Map<number, string>>(new Map());
+  /** Nome interno do feitiço ("SummonerFlash") -> id numérico. */
+  private readonly spellIds = signal<Map<string, number>>(new Map());
+  private readonly championKeysById = computed(
+    () => new Map([...this.champions().values()].map((c) => [c.id.toLowerCase(), c.key])),
+  );
 
   readonly championList = computed(() =>
     [...this.champions().values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
@@ -35,6 +40,16 @@ export class DataDragonService {
 
   champion(key: number): ChampionInfo | null {
     return this.champions().get(key) ?? null;
+  }
+
+  /** Id numérico do campeão pelo nome interno ("MonkeyKing"); 0 se não achar. */
+  championKeyOf(id: string): number {
+    return this.championKeysById().get(id.toLowerCase()) ?? 0;
+  }
+
+  /** Id numérico do feitiço pelo nome interno ("SummonerFlash"); 0 se não achar. */
+  spellIdOf(name: string): number {
+    return this.spellIds().get(name) ?? 0;
   }
 
   /** Habilidades Q, W, E, R do campeão (carregadas sob demanda e guardadas). */
@@ -163,6 +178,8 @@ export class DataDragonService {
           ]),
         ),
       );
+
+      this.spellIds.set(new Map(Object.entries(spells.data).map(([name, s]) => [name, Number(s.key)])));
 
       this.itemNames.set(
         new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.name])),

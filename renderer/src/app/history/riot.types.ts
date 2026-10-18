@@ -80,8 +80,23 @@ export interface LiveGame {
   participants: LiveParticipant[];
 }
 
+/** Partida pelos dados locais do jogo (sem elo, maestria nem puuid). */
+export interface LocalGame {
+  queueId: number;
+  gameStartTime: number;
+  players: Array<{
+    riotId: string;
+    championKey: string;
+    team: 'ORDER' | 'CHAOS';
+    spellKeys: string[];
+    keystoneId: number;
+    subStyleId: number;
+  }>;
+}
+
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
+  getLocalGame(): Promise<LocalGame | null>;
   getSettings(): Promise<RiotSettings>;
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;

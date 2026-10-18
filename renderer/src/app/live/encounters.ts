@@ -24,9 +24,11 @@ export interface PlayerEncounters {
 /**
  * Cruza os jogadores da partida atual com as suas partidas recentes.
  * Os puuids do spectator e do match-v5 são os mesmos (criptografados pela mesma chave).
+ * Nos dados locais do jogo não há puuid: aí o jogador é reconhecido pelo Riot ID.
  */
 export function findEncounters(
   myPuuid: string,
+  myRiotId: string,
   myTeamId: number,
   participants: LiveParticipant[],
   myMatches: MatchSummary[],
@@ -34,12 +36,15 @@ export function findEncounters(
   const result: PlayerEncounters[] = [];
 
   for (const player of participants) {
-    if (!player.puuid || player.puuid === myPuuid) continue;
+    const riotId = player.riotId.toLowerCase();
+    if (player.puuid === myPuuid || riotId === myRiotId.toLowerCase() || (!player.puuid && !riotId)) continue;
     const encounters: Encounter[] = [];
 
     for (const match of myMatches) {
       const me = match.participants.find((p) => p.puuid === myPuuid);
-      const them = match.participants.find((p) => p.puuid === player.puuid);
+      const them = match.participants.find((p) =>
+        player.puuid ? p.puuid === player.puuid : p.riotId.toLowerCase() === riotId,
+      );
       if (!me || !them) continue;
       encounters.push({
         matchId: match.matchId,

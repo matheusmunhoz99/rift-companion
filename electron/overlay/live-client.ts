@@ -48,7 +48,10 @@ interface RawPlayer {
   riotId?: string;
   summonerName?: string;
   championName: string;
+  rawChampionName?: string;
   team: string;
+  summonerSpells?: Record<'summonerSpellOne' | 'summonerSpellTwo', { rawDisplayName?: string } | undefined>;
+  runes?: { keystone?: { id: number }; secondaryRuneTree?: { id: number } };
   level: number;
   scores: { kills: number; deaths: number; assists: number; creepScore: number; wardScore: number };
 }
@@ -60,7 +63,12 @@ export interface RawGameData {
   gameData: { gameTime: number; gameMode: string };
 }
 
-export function fetchLiveClientData(): Promise<OverlayData | null> {
+export async function fetchLiveClientData(): Promise<OverlayData | null> {
+  const raw = await fetchRawGameData();
+  return raw ? toOverlayData(raw) : null;
+}
+
+export function fetchRawGameData(): Promise<RawGameData | null> {
   return new Promise((resolve) => {
     const request = https.get(LIVE_CLIENT_URL, { agent: localAgent, timeout: 1500 }, (response) => {
       const chunks: Buffer[] = [];
@@ -68,7 +76,7 @@ export function fetchLiveClientData(): Promise<OverlayData | null> {
       response.on('end', () => {
         if (response.statusCode !== 200) return resolve(null);
         try {
-          resolve(toOverlayData(JSON.parse(Buffer.concat(chunks).toString('utf8')) as RawGameData));
+          resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')) as RawGameData);
         } catch {
           resolve(null);
         }
@@ -77,6 +85,35 @@ export function fetchLiveClientData(): Promise<OverlayData | null> {
     request.on('timeout', () => request.destroy());
     request.on('error', () => resolve(null));
   });
+}
+
+/** Jogador da partida pelos dados locais do jogo, sem elo nem maestria. */
+export interface LocalPlayer {
+  riotId: string;
+  /** Nome interno do campeão no Data Dragon (ex.: "MonkeyKing"). */
+  championKey: string;
+  team: 'ORDER' | 'CHAOS';
+  /** Nomes internos dos feitiços (ex.: "SummonerFlash"). */
+  spellKeys: string[];
+  keystoneId: number;
+  subStyleId: number;
+}
+
+/**
+ * Os dois times direto do jogo, disponíveis assim que a partida carrega
+ * (a Riot API só libera a partida no spectator alguns minutos depois).
+ */
+export function toLocalPlayers(raw: RawGameData): LocalPlayer[] {
+  return raw.allPlayers.map((p) => ({
+    riotId: p.riotId ?? p.summonerName ?? '',
+    championKey: (p.rawChampionName ?? '').replace('game_character_displayname_', '') || p.championName,
+    team: p.team === 'CHAOS' ? 'CHAOS' : 'ORDER',
+    spellKeys: (['summonerSpellOne', 'summonerSpellTwo'] as const).map(
+      (slot) => p.summonerSpells?.[slot]?.rawDisplayName?.match(/SummonerSpell_(\w+?)_DisplayName/)?.[1] ?? '',
+    ),
+    keystoneId: p.runes?.keystone?.id ?? 0,
+    subStyleId: p.runes?.secondaryRuneTree?.id ?? 0,
+  }));
 }
 
 export function toOverlayData(raw: RawGameData): OverlayData {

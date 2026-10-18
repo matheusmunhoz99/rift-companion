@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:find-player', gameName, tagLine, platformId),
   getLiveGame: (gameName: string, tagLine: string, platformId: string) =>
     ipcRenderer.invoke('riot:get-live-game', gameName, tagLine, platformId),
+  getLocalGame: () => ipcRenderer.invoke('riot:get-local-game'),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
 });
