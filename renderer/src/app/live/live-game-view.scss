@@ -355,7 +355,9 @@ img.small {
 }
 
 .met {
+  display: inline-block;
   margin-left: 6px;
+  white-space: nowrap;
   padding: 0 5px;
   border-radius: 4px;
   background: var(--accent);
