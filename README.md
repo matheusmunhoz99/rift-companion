@@ -1,4 +1,8 @@
 <p align="center">
+  <strong>English</strong> · <a href="README.pt-BR.md">Português</a> · <a href="README.es.md">Español</a>
+</p>
+
+<p align="center">
   <img src="assets/icon.png" width="96" alt="Rift Companion icon" />
 </p>
 
@@ -19,6 +23,8 @@
 <p align="center">
   <img src="docs/screenshots/live.png" alt="Live game view" width="900" />
 </p>
+
+<p align="center"><sub>The app interface is in Portuguese for now.</sub></p>
 
 ## Features
 
