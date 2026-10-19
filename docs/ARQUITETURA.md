@@ -50,7 +50,7 @@ Botão na aba Cliente (salvo em `settings.json`). Ao receber o evento
 
 ## Histórico (Riot API)
 
-O app não tem chave da Riot. Ele chama o proxy `server/` em `https://rift-api.workscanner.com.br`,
+O app não tem chave da Riot. Ele chama o servidor (rift-api) em `https://rift-api.workscanner.com.br`,
 que guarda a chave e faz cache (em desenvolvimento, `RIFT_API_URL` troca o endereço).
 
 - `GET /v1/players/:plataforma/:nome/:tag`: conta (`account-v1`), nível e ícone (`summoner-v4`) e elo (`league-v4`).
@@ -67,33 +67,11 @@ A chance de vitória é uma estimativa simples pela diferença do elo médio dos
 limitada a 10–90%); não é um modelo treinado e não considera campeões nem modo de jogo.
 - Em cada partida dá para abrir os 10 jogadores e importar runas, feitiços e itens de qualquer um deles.
 
-## Servidor (`server/`)
+## Servidor
 
-- Node sem dependências de runtime; `npm run build` em `server/` gera `dist/`.
-- Variáveis: `RIOT_API_KEY` (obrigatória), `PORT` (3092), `HOST` (127.0.0.1), `CACHE_DIR`,
-  `TRUST_PROXY=1` (usa `X-Real-IP` do Nginx para o limite por IP).
-- Proteções: 60 buscas/min por IP no app e 5 req/s no Nginx, só GET, validação de entradas;
-  erros de chave aparecem só no log do servidor (`journalctl -u rift-api`).
-- Deploy na VPS (arquivos em `server/deploy/`):
-  - código em `/opt/rift-api`, cache em `/var/lib/rift-api`, chave em `/etc/rift-api.env` (root, 600);
-  - serviço `rift-api.service` com usuário próprio e isolamento do systemd;
-  - Nginx: `sites-available/rift-api` e `conf.d/rift-api-limits.conf`; certificado
-    Let's Encrypt próprio (`--cert-name rift-api.workscanner.com.br`), renovado pelo `certbot.timer`.
-- Atualizar o servidor: gerar `dist/`, enviar para `/opt/rift-api` e `systemctl restart rift-api`.
-- Remover: `systemctl disable --now rift-api`, apagar os arquivos acima, `certbot delete --cert-name rift-api.workscanner.com.br`, `nginx -t && systemctl reload nginx`.
-
-## Estatísticas (tier list e builds)
-
-O servidor coleta continuamente partidas Ranqueadas Solo/Duo de jogadores Mestre+ do BR (listas
-challenger/grandmaster/master da league-v4) e agrega por campeão e rota, no patch atual: vitórias,
-escolha, banimento, páginas de runas, feitiços, núcleo de 3 itens completos e botas
-(`server/src/stats/`, SQLite em `/var/lib/rift-api/stats.sqlite`). A coleta usa no máximo 60% do limite
-da chave (`RIOT_LOW_PRIORITY_SHARE`); as buscas dos usuários sempre passam na frente.
-Coleta em BR, EUW e KR em paralelo (cada rota da Riot tem o próprio limite). Cada partida usa também a
-linha do tempo (`/timeline`) para itens iniciais, núcleo na ordem real de compra e ordem de habilidades, e
-registra o confronto direto (mesma rota) para winrate e build contra cada campeão.
-Rotas: `/v1/stats/meta`, `/v1/stats/tierlist?position=`, `/v1/stats/champion/:id?position=&vs=`.
-O tier é por percentil do winrate ajustado (prior bayesiano de 60 partidas) dentro de cada rota.
+O servidor (rift-api) fica num repositório privado: proxy da Riot API com cache, bot do Telegram e
+coletor de estatísticas Mestre+. O app só conhece as rotas públicas dele em
+`https://rift-api.workscanner.com.br`; a chave da Riot e o token do bot nunca saem do servidor.
 
 ## Atualização automática
 
@@ -108,7 +86,6 @@ RELEASE_NOTES="Nota 1; Nota 2" npm run release
 ## Testes
 
 - `npm test` (raiz): conversão dos dados do jogo para o overlay e timers.
-- `npm test` em `server/`: servidor ponta a ponta com uma Riot API falsa (coleta, estatísticas, jogador).
 
 ## Overlay
 

@@ -20,6 +20,7 @@
   <img alt="Sin anuncios" src="https://img.shields.io/badge/anuncios-ninguno-2fbf71?style=flat-square" />
   <img alt="Datos Maestro+" src="https://img.shields.io/badge/datos-Maestro%2B%20BR%20%C2%B7%20EUW%20%C2%B7%20KR-e84057?style=flat-square" />
   <img alt="Beta" src="https://img.shields.io/badge/estado-beta-ffb35c?style=flat-square" />
+  <a href="LICENSE"><img alt="Todos los derechos reservados" src="https://img.shields.io/badge/c%C3%B3digo-todos%20los%20derechos%20reservados-8b93a7?style=flat-square" /></a>
 </p>
 
 <p align="center">
@@ -186,9 +187,15 @@ npm start
 | `npm test` | Ejecuta las pruebas |
 | `npm run dist` | Genera el ejecutable portátil en `release/` |
 
-Carpetas: `electron/` (proceso principal, cliente de LoL, Telegram, overlay), `renderer/` (interfaz Angular), `server/` (rift-api: proxy de la Riot API, bot de Telegram y recolector de estadísticas) y `docs/ARQUITETURA.md` (notas técnicas, en portugués).
+Carpetas: `electron/` (proceso principal, cliente de LoL, Telegram, overlay), `renderer/` (interfaz Angular) y `docs/ARQUITETURA.md` (notas técnicas, en portugués). El servidor (rift-api: Riot API, bot de Telegram y estadísticas) está en un repositorio privado.
 
 Sugerencias y problemas: [abre una issue](https://github.com/matheusmunhoz99/rift-companion/issues).
+
+## Derechos de autor
+
+**© 2026 Matheus Munhoz. Todos los derechos reservados.** El código está abierto para consulta, para que cualquiera pueda comprobar que el app es seguro, pero **no puede copiarse, modificarse, redistribuirse ni usarse en otros proyectos** sin autorización por escrito. El nombre, el logotipo y los iconos de Rift Companion también están protegidos. Detalles en [LICENSE](LICENSE).
+
+Descarga el app siempre desde los canales oficiales: el [sitio web](https://matheusmunhoz99.github.io/rift-companion/) y este repositorio. Cómo se tratan los datos personales: [Política de privacidad](PRIVACY.md).
 
 ## Aviso legal
 

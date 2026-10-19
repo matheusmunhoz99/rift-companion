@@ -2,8 +2,6 @@ node_modules/
 dist-electron/
 renderer/dist/
 renderer/.angular/
-server/dist/
-server/cache/
 *.env
 *.log
 .omc/
