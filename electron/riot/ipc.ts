@@ -57,6 +57,13 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     };
   });
 
+  ipcMain.handle('riot:get-premades', (_event, gameName: string, tagLine: string, platformId: string) => {
+    // Só no desenvolvimento: grupos fictícios para revisar o visual.
+    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_PREMADES;
+    if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+    return apiGet<{ groups: string[][] }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
+  });
+
   ipcMain.handle('stats:meta', () => apiGet('/v1/stats/meta'));
   ipcMain.handle('stats:tierlist', (_event, position: string | null) =>
     apiGet(`/v1/stats/tierlist${position ? `?position=${enc(position)}` : ''}`),

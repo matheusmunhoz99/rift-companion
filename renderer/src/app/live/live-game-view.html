@@ -107,10 +107,13 @@
                   [title]="'Ver histórico de ' + player.riotId"
                   (click)="$event.stopPropagation(); openPlayer(player)"
                 >
-                  {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
+                  @if (partyOf(player); as party) {<span class="party-dot" [style.background]="party.color" [title]="party.label + ' (jogando juntos)'"></span>}{{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
                 </span>
                 <span class="muted champ-name">
                   {{ ddragon.champion(player.championId)?.name }}
+                  @if (partyOf(player); as party) {
+                    <span class="party-tag" [style.color]="party.color" [style.border-color]="party.color">{{ party.label }}</span>
+                  }
                   @if (encounterOf(player); as met) {
                     <span class="met" title="Já jogou com você nas suas últimas 10 partidas">
                       Já jogou · {{ met.encounters.length }}x

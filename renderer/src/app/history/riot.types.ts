@@ -97,6 +97,8 @@ export interface LocalGame {
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getLocalGame(): Promise<LocalGame | null>;
+  /** Grupos (duo, trio...) da partida em andamento, em puuids. */
+  getPremades(gameName: string, tagLine: string, platformId: string): Promise<{ groups: string[][] }>;
   getSettings(): Promise<RiotSettings>;
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;

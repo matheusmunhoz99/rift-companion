@@ -16,6 +16,9 @@ const ENCOUNTER_GAMES = 10;
  * Enquanto isso a tela usa os dados locais do jogo e tenta de novo a cada 15 s.
  */
 const RETRY_MS = 15_000;
+/** Cores das bolinhas de grupo (duo, trio...), uma por grupo. */
+const PARTY_COLORS = ['#ffb35c', '#6f8cff', '#3ecf8e', '#c77dff', '#ff6fae'];
+const PARTY_NAMES: Record<number, string> = { 2: 'Duo', 3: 'Trio', 4: 'Grupo de 4', 5: 'Grupo de 5' };
 
 interface RecentSummary {
   games: number;
@@ -76,6 +79,44 @@ export class LiveGameView {
     equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
   });
 
+  /** Grupos deduzidos pelo histórico no servidor (puuids). */
+  private readonly premades = signal<string[][]>([]);
+  private premadesFor = 0;
+
+  /**
+   * Grupo de cada jogador (por Riot ID): os do histórico mais o seu grupo da sala,
+   * que o app sabe com certeza. Cada grupo ganha uma cor.
+   */
+  protected readonly parties = computed(() => {
+    const game = this.game();
+    if (!game) return new Map<string, { color: string; label: string }>();
+    const byPuuid = new Map(game.participants.filter((p) => p.puuid).map((p) => [p.puuid, p.riotId.toLowerCase()]));
+    const inGame = new Set(game.participants.map((p) => p.riotId.toLowerCase()));
+    const groups: string[][] = this.premades().map((g) => g.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id));
+    const party = this.lcu.party().filter((id) => inGame.has(id));
+    if (party.length > 1) groups.push(party);
+
+    // Junta grupos que se sobrepõem (ex.: o histórico achou parte do seu grupo).
+    const merged: Array<Set<string>> = [];
+    for (const group of groups) {
+      const touching = merged.filter((m) => group.some((id) => m.has(id)));
+      const union = new Set([...group, ...touching.flatMap((m) => [...m])]);
+      for (const m of touching) merged.splice(merged.indexOf(m), 1);
+      if (union.size > 1) merged.push(union);
+    }
+
+    const result = new Map<string, { color: string; label: string }>();
+    merged.forEach((group, index) => {
+      const info = { color: PARTY_COLORS[index % PARTY_COLORS.length], label: PARTY_NAMES[group.size] ?? `Grupo de ${group.size}` };
+      for (const id of group) result.set(id, info);
+    });
+    return result;
+  });
+
+  protected partyOf(participant: LiveParticipant) {
+    return this.parties().get(participant.riotId.toLowerCase()) ?? null;
+  }
+
   /** Jogadores desta partida que estavam nas suas últimas 10 partidas. */
   protected readonly encounters = signal<PlayerEncounters[] | 'loading' | null>(null);
   /** Por Riot ID, que existe tanto nos dados locais quanto nos da Riot. */
@@ -128,6 +169,7 @@ export class LiveGameView {
       this.game.set(game);
       this.waitingRiot.set(false);
       void this.loadEncounters(game, platformId);
+      void this.loadPremades(game, summoner.gameName, summoner.tagLine, platformId);
     } catch (error) {
       const text = cleanError(error);
       if (!/não está em partida/.test(text)) {
@@ -229,6 +271,17 @@ export class LiveGameView {
     }
   }
 
+  /** Grupos pelo histórico (uma vez por partida; o servidor guarda o resultado). */
+  private async loadPremades(game: LiveGame, gameName: string, tagLine: string, platformId: string): Promise<void> {
+    if (!window.riot || this.premadesFor === game.gameId) return;
+    this.premadesFor = game.gameId;
+    try {
+      this.premades.set((await window.riot.getPremades(gameName, tagLine, platformId)).groups);
+    } catch {
+      this.premadesFor = 0;
+    }
+  }
+
   /** Monta a partida com os dados locais do jogo (sem elo, maestria nem puuid). */
   private fromLocal(local: LocalGame): LiveGame {
     return {
@@ -262,6 +315,8 @@ export class LiveGameView {
     this.recent.set({});
     this.encounters.set(null);
     this.waitingRiot.set(false);
+    this.premades.set([]);
+    this.premadesFor = 0;
   }
 
   private clearRetry(): void {
