@@ -111,6 +111,8 @@ Duas linhas: você (KDA, CS por minuto, ouro), a diferença para o inimigo da su
 
 A dica de habilidade usa o início e a ordem de maximizar mais jogados do campeão na rota (`skillStart`/`skillOrder` das estatísticas): R nos níveis 6/11/16, as três primeiras pelo início e o resto pela ordem, sem passar de metade do nível numa básica. Só aparece "Evolua" quando sobra ponto (níveis de Q/W/E/R vêm de `activePlayer.abilities`); sem ponto, mostra a ordem. Jayce, Elise, Nidalee, Udyr, Karma e Aphelios ficam de fora (habilidades fora da regra comum).
 
+**Mestre+ (benchmark):** o servidor guarda, pela linha do tempo das partidas coletadas, o CS (tropas + selva), o ouro total e o nível de cada jogador aos 5, 10, 15 e 20 minutos, e devolve a média do campeão na rota em `benchmarks` (`/v1/stats/champion/:id`, 20 partidas por minuto no mínimo). O overlay liga esses pontos com retas (a partir de 0 CS e 500 de ouro) e mostra você menos a referência no minuto atual, até 5 min depois do último medido. O seu ouro total é estimado pelo valor dos itens mais o ouro no bolso (consumíveis gastos e itens vendidos não entram). O painel de build mostra a tabela "Ritmo Mestre+".
+
 ### Aba Ao vivo (`electron/overlay/live-dashboard.ts`)
 
 Lê a Live Client Data API (`allgamedata`) a cada 2 s: placar, objetivos por time, rota a rota, mortos, seus atributos e lances. A API não informa dano nem o ouro dos outros: o "ouro" de cada jogador é o valor dos itens comprados (preço total no Data Dragon).

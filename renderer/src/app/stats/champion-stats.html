@@ -192,6 +192,31 @@
       </section>
     </div>
 
+    @if (s.benchmarks?.length) {
+      <section>
+        <h4>Ritmo Mestre+</h4>
+        <div class="bench" [style.grid-template-columns]="'56px repeat(' + s.benchmarks!.length + ', minmax(0, 1fr))'">
+          <span class="muted small"></span>
+          @for (b of s.benchmarks; track b.minute) {
+            <span class="bench-head muted small">{{ b.minute }} min</span>
+          }
+          <span class="muted small">CS</span>
+          @for (b of s.benchmarks; track b.minute) {
+            <strong class="num">{{ b.cs.toFixed(0) }}</strong>
+          }
+          <span class="muted small">Ouro</span>
+          @for (b of s.benchmarks; track b.minute) {
+            <strong class="num">{{ (b.gold / 1000).toFixed(1) }}k</strong>
+          }
+          <span class="muted small">Nível</span>
+          @for (b of s.benchmarks; track b.minute) {
+            <strong class="num">{{ b.level.toFixed(1) }}</strong>
+          }
+        </div>
+        <p class="muted small">Média de quem joga o campeão nesta rota; o overlay compara com você durante a partida.</p>
+      </section>
+    }
+
     <section>
       <h4>Núcleo de itens</h4>
       @for (option of s.core ?? []; track option.key) {

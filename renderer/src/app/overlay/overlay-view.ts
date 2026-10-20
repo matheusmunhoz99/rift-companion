@@ -1,6 +1,8 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import type { OverlayData, OverlayPlayer } from '../core/app.types';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
+import type { Benchmark } from '../stats/stats.types';
+import { expectedAt } from './benchmark';
 import { nextSkill, parseSkillKey, skillAdviceSupported } from './skill-advice';
 
 const SKILL_KEYS = ['Q', 'W', 'E', 'R'];
@@ -12,12 +14,16 @@ const SHORT_NAMES: Record<string, string> = {
   baron: 'Barão',
 };
 
-interface SkillPlan {
+/** O que o overlay busca uma vez por partida: habilidades e ritmo Mestre+ do campeão na rota. */
+interface ChampionPlan {
   championId: number;
   position: string | null;
   start: number[];
   order: number[];
+  benchmarks: Benchmark[];
 }
+
+const STARTING_GOLD = 500;
 
 /** Conteúdo da janela transparente exibida sobre o jogo. */
 @Component({
@@ -31,7 +37,7 @@ export class OverlayView {
   protected readonly data = signal<OverlayData | null>(null);
   private readonly receivedAt = signal(0);
   private readonly now = signal(Date.now());
-  private readonly plan = signal<SkillPlan | null>(null);
+  private readonly plan = signal<ChampionPlan | null>(null);
 
   /** O jogo é lido a cada 2 s; entre leituras o relógio anda sozinho (o jogo não pausa). */
   protected readonly clock = computed(() => {
@@ -63,12 +69,25 @@ export class OverlayView {
     const me = this.data()?.me;
     const plan = this.plan();
     if (!me?.skills || !plan || plan.championId !== this.championId() || plan.order.length === 0) return null;
+    if (!skillAdviceSupported(me.championKey)) return null;
     const next = nextSkill(me.level, me.skills, plan.start, plan.order);
     const icons = this.ddragon.abilities().get(plan.championId);
     return {
       next: next === null ? null : { key: SKILL_KEYS[next], icon: icons?.[next]?.icon ?? null },
       order: plan.order.map((i) => SKILL_KEYS[i]),
     };
+  });
+
+  /** Você menos a média Mestre+ do campeão na rota neste minuto (ouro = itens + bolso, aproximado). */
+  protected readonly bench = computed(() => {
+    const me = this.data()?.me;
+    const plan = this.plan();
+    if (!me || !plan?.benchmarks.length || plan.championId !== this.championId()) return null;
+    const minute = this.clock() / 60;
+    const cs = expectedAt(plan.benchmarks, minute, (b) => b.cs, 0);
+    const gold = expectedAt(plan.benchmarks, minute, (b) => b.gold, STARTING_GOLD);
+    if (cs === null || gold === null) return null;
+    return { cs: Math.round(me.cs - cs), gold: Math.round(this.itemValue(me) + me.gold - gold) };
   });
 
   protected readonly upcoming = computed(() => {
@@ -99,7 +118,7 @@ export class OverlayView {
     effect(() => {
       const championId = this.championId();
       const me = this.data()?.me;
-      if (!championId || !me || !skillAdviceSupported(me.championKey)) return;
+      if (!championId || !me) return;
       const position = me.position || null;
       untracked(() => this.loadPlan(championId, position));
     });
@@ -109,7 +128,7 @@ export class OverlayView {
     const current = this.plan();
     if (current && current.championId === championId && current.position === position) return;
     // Marca antes de buscar: a leitura chega a cada 2 s e não deve repetir a consulta.
-    this.plan.set({ championId, position, start: [], order: [] });
+    this.plan.set({ championId, position, start: [], order: [], benchmarks: [] });
     void this.ddragon.loadAbilities(championId);
     window.stats
       ?.champion(championId, position)
@@ -120,6 +139,7 @@ export class OverlayView {
           position,
           start: parseSkillKey(stats?.skillStart?.[0]?.key),
           order: parseSkillKey(stats?.skillOrder?.[0]?.key).filter((i) => i < 3),
+          benchmarks: stats?.benchmarks ?? [],
         });
       })
       .catch(() => undefined);

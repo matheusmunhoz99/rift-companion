@@ -47,6 +47,17 @@ export interface ChampionStats {
   opponent?: { opponentId: number; games: number; winRate: number | null; buildFromMatchup: boolean } | null;
   /** Itens contra o perfil de dano do time inimigo (só quando pedido). */
   situational?: Situational | null;
+  /** Média Mestre+ do campeão na rota em minutos fixos (5, 10, 15, 20). */
+  benchmarks?: Benchmark[];
+}
+
+export interface Benchmark {
+  minute: number;
+  games: number;
+  cs: number;
+  /** Ouro total ganho até o minuto (inclui os 500 iniciais). */
+  gold: number;
+  level: number;
 }
 
 /** Perfil de dano do time inimigo: maioria mágico, maioria físico ou misto. */

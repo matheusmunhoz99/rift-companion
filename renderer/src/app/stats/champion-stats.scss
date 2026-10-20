@@ -199,6 +199,21 @@ h4 {
   }
 }
 
+.bench {
+  display: grid;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+
+  strong,
+  .bench-head {
+    text-align: right;
+  }
+}
+
 .skills {
   display: grid;
   gap: 8px;

@@ -8,6 +8,14 @@
         <span class="stat"><b>{{ me.cs }}</b>&nbsp;CS <small>{{ me.csPerMinute.toFixed(1) }}/min</small></span>
         <span class="stat gold"><b>{{ me.gold }}</b>&nbsp;ouro</span>
       }
+      @if (bench(); as b) {
+        <span class="sep"></span>
+        <span class="stat bench" title="Você menos a média Mestre+ do campeão na rota neste minuto">
+          <small>Mestre+</small>
+          <span class="diff" [class.up]="b.cs > 0" [class.down]="b.cs < 0"><b>{{ signed(b.cs) }}</b> CS</span>
+          <span class="diff" [class.up]="b.gold > 0" [class.down]="b.gold < 0"><b>{{ gold(b.gold) }}</b> ouro</span>
+        </span>
+      }
       @if (lane(); as l) {
         <span class="sep"></span>
         <span class="stat lane">
