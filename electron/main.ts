@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, type Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { registerBuildHandlers } from './builds/ipc';
@@ -12,21 +12,55 @@ import { OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/ov
 import { registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
-import { createTray } from './tray';
-import { Updater } from './updater';
+import { createTray, invisibleSummary, type AppTray } from './tray';
+import { removeOldVersions, Updater } from './updater';
 import { compareVersions } from './version';
+import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
+import { InvisibleModeProxy } from './invisible/proxy';
+import { isRiotClientRunning, launchLeague, type LeagueLaunchResult } from './lcu/riot-client';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
 const BACKGROUND = '#0b0d13';
 const ICON = path.join(__dirname, '..', 'assets', 'icon.png');
+/** Uma saudação do contato e um aviso na bandeja por sessão, não a cada reconexão do chat. */
+const GREETING_INTERVAL_MS = 30 * 60 * 1000;
 
 const connector = new LcuConnector();
 let mainWindow: BrowserWindow | null = null;
 let overlay: OverlayController | null = null;
 let settings: Settings | null = null;
-let tray: Tray | null = null;
+let appTray: AppTray | null = null;
+let invisibleMode: InvisibleModeProxy | null = null;
 let quitting = false;
+
+/**
+ * Com o chat do LoL passando pelo proxy, fechar o app derruba o chat até o
+ * Rift Companion abrir de novo. Pergunta antes; devolve true para fechar.
+ */
+function confirmQuitWithChat(keepLabel = 'Manter aberto'): boolean {
+  if (!invisibleMode?.hasActiveChat()) return true;
+  const choice = dialog.showMessageBoxSync({
+    type: 'warning',
+    title: 'Rift Companion',
+    message: 'O chat do LoL está passando pelo Rift Companion (modo invisível).',
+    detail: 'Se você fechar agora, o chat do LoL fica sem conexão até abrir o Rift Companion de novo: ' +
+      'ele reconecta sozinho, sem reiniciar o jogo.',
+    buttons: [keepLabel, 'Fechar mesmo assim'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+  return choice === 1;
+}
+
+function invisibleState(preferences: Preferences): InvisibleState {
+  return {
+    enabled: preferences.appearOffline,
+    status: preferences.invisibleStatus,
+    lobbyChat: preferences.invisibleLobbyChat,
+  };
+}
 
 /** Só no desenvolvimento: estado fictício e captura de tela para revisar o visual. */
 const devOnly = (name: string) => (app.isPackaged ? undefined : process.env[name]);
@@ -68,9 +102,18 @@ function createWindow(): void {
   scheduleCapture(mainWindow);
 
   mainWindow.on('close', (event) => {
-    if (quitting || !settings?.getPreferences().minimizeToTray || !tray) return;
+    if (quitting) return;
+    if (settings?.getPreferences().minimizeToTray && appTray) {
+      event.preventDefault();
+      mainWindow?.hide();
+      return;
+    }
+    if (!invisibleMode?.hasActiveChat()) return;
     event.preventDefault();
-    mainWindow?.hide();
+    if (confirmQuitWithChat(appTray ? 'Minimizar para a bandeja' : 'Manter aberto')) {
+      quitting = true;
+      app.quit();
+    } else if (appTray) mainWindow?.hide();
   });
 
   mainWindow.on('closed', () => {
@@ -147,6 +190,75 @@ void acquireInstance().then((acquired) => {
     // Settings usa app.getPath, que só fica disponível após o ready.
     const prefs = new Settings();
     settings = prefs;
+    const invisible = new InvisibleModeProxy(path.join(app.getPath('userData'), 'invisible'));
+    invisibleMode = invisible;
+    invisible.configure(invisibleState(prefs.getPreferences()));
+
+    /** Toda mudança de preferência passa por aqui: proxy, overlay, bandeja e janela ficam em sincronia. */
+    const applyPreferences = (changes: Partial<Preferences>): Preferences => {
+      const preferences = prefs.updatePreferences(changes);
+      invisible.configure(invisibleState(preferences));
+      overlay?.sync();
+      applyStartWithWindows(preferences.startWithWindows);
+      appTray?.refresh();
+      mainWindow?.webContents.send('prefs:changed', preferences);
+      return preferences;
+    };
+
+    // Pedidos feitos pelo chat do LoL ao contato Rift Companion.
+    invisible.on('command', (changes) => {
+      applyPreferences({
+        ...(changes.enabled !== undefined && { appearOffline: changes.enabled }),
+        ...(changes.status && { invisibleStatus: changes.status }),
+        ...(changes.lobbyChat !== undefined && { invisibleLobbyChat: changes.lobbyChat }),
+      });
+    });
+    // Reconexões do chat no meio da sessão não repetem aviso nem saudação.
+    let lastGreeting = 0;
+    invisible.on('buddy-ready', () => {
+      if (Date.now() - lastGreeting < GREETING_INTERVAL_MS) return;
+      lastGreeting = Date.now();
+      setTimeout(() => {
+        const state = invisible.getState();
+        invisible.sendBuddyMessages(prefs.takeInvisibleIntro()
+          ? introduction(state)
+          : [`Rift Companion ativo. ${statusLine(state)} Mande "ajuda" para ver os comandos.`]);
+      }, 5_000).unref();
+    });
+    let lastBalloon = 0;
+    invisible.on('connected', () => {
+      const preferences = prefs.getPreferences();
+      if (!preferences.appearOffline || Date.now() - lastBalloon < GREETING_INTERVAL_MS) return;
+      lastBalloon = Date.now();
+      appTray?.tray.displayBalloon({
+        iconType: 'info',
+        title: `Modo invisível: ${invisibleSummary(preferences)}`,
+        content: 'O Rift Companion está protegendo seu status. Clique com o botão direito no ícone para trocar.',
+      });
+    });
+
+    // Riot Client que continuou aberto depois que o app fechou (ou travou): o proxy
+    // volta nas mesmas portas e o chat do LoL reconecta sozinho.
+    if (!capturing && invisible.hasSavedSession()) void isRiotClientRunning().then((running) => {
+      if (running) invisible.start().catch((error) => console.warn('[invisible] Não foi possível retomar:', error));
+    });
+
+    let configuredLaunch: Promise<LeagueLaunchResult> | null = null;
+    const launchConfiguredLeague = (): Promise<LeagueLaunchResult> => {
+      configuredLaunch ??= (async () => {
+        const current = prefs.getPreferences();
+        // "Status ao abrir o LoL" vale para uma sessão nova, não para reabrir o LoL no mesmo Riot Client.
+        const startup = current.invisibleStartupStatus;
+        if (current.appearOffline && !invisible.hasActiveChat() && startup !== 'last' && startup !== current.invisibleStatus) {
+          applyPreferences({ invisibleStatus: startup });
+        }
+        const configUrl = current.appearOffline ? await invisible.start() : undefined;
+        // A preferência pode mudar enquanto DNS/certificado estão sendo preparados.
+        invisible.configure(invisibleState(prefs.getPreferences()));
+        return launchLeague(configUrl, invisible.hasActiveChat());
+      })().finally(() => { configuredLaunch = null; });
+      return configuredLaunch;
+    };
     registerRiotHandlers(prefs, connector);
     applyStartWithWindows(prefs.getPreferences().startWithWindows);
     if (!app.isPackaged) connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));
@@ -158,7 +270,7 @@ void acquireInstance().then((acquired) => {
       () => mainWindow?.webContents.send('auto-accept:accepted', Date.now()),
     );
 
-    new TelegramNotifications(connector, prefs);
+    new TelegramNotifications(connector, prefs, launchConfiguredLeague);
 
     new AutoRunes(
       connector,
@@ -174,17 +286,18 @@ void acquireInstance().then((acquired) => {
     );
 
     ipcMain.handle('prefs:get', () => prefs.getPreferences());
-    ipcMain.handle('prefs:set', (_event, changes: Partial<Preferences>) => {
-      const preferences = prefs.updatePreferences(changes ?? {});
-      overlay?.sync();
-      applyStartWithWindows(preferences.startWithWindows);
-      return preferences;
-    });
+    ipcMain.handle('prefs:set', (_event, changes: Partial<Preferences>) => applyPreferences(changes ?? {}));
     const updater = new Updater((status) => mainWindow?.webContents.send('update:status', status));
     ipcMain.handle('update:status', () => updater.getStatus());
     ipcMain.handle('update:check', () => updater.check());
     ipcMain.handle('update:install', () => updater.install());
     if (!capturing) updater.start();
+    // Versão nova aberta pela atualização: apaga o .exe antigo da mesma pasta.
+    if (app.isPackaged && !capturing) {
+      void removeOldVersions().then((removed) => {
+        if (removed.length) console.log('[updater] Versões antigas removidas:', removed.join(', '));
+      });
+    }
 
     ipcMain.handle('app:game-window-mode', () =>
       readGameWindowMode(connector.getCredentials()?.installDirectory ?? null),
@@ -199,6 +312,7 @@ void acquireInstance().then((acquired) => {
       await import('node:fs/promises').then((fs) => fs.mkdir(directory, { recursive: true }));
       await shell.openPath(directory);
     });
+    ipcMain.handle('app:launch-league', launchConfiguredLeague);
 
     const demoOverlay = devOnly('RIFT_DEMO_OVERLAY');
     if (demoOverlay) {
@@ -208,16 +322,36 @@ void acquireInstance().then((acquired) => {
 
     createWindow();
     connector.start();
-    tray = createTray(ICON, {
+    appTray = createTray(ICON, {
       show: showMainWindow,
       quit: () => {
+        if (!confirmQuitWithChat()) return;
         quitting = true;
         app.quit();
       },
-      isAutoAccept: () => prefs.getAutoAccept(),
-      setAutoAccept: (enabled) => {
-        prefs.updatePreferences({ autoAccept: enabled });
-        mainWindow?.webContents.send('prefs:changed', prefs.getPreferences());
+      getPreferences: () => prefs.getPreferences(),
+      updatePreferences: (changes) => void applyPreferences(changes),
+      launchLeague: () => {
+        void launchConfiguredLeague().then(
+          (result) => {
+            if (result === 'restart-required' || result === null) {
+              showMainWindow();
+              void dialog.showMessageBox({
+                type: 'info', title: 'Rift Companion',
+                message: result === 'restart-required'
+                  ? 'Feche o Riot Client por completo e abra o LoL novamente pelo Rift Companion para entrar invisível.'
+                  : 'Não encontrei o Riot Client neste PC. Abra o LoL uma vez para registrar a instalação.',
+              });
+            }
+          },
+          (error) => {
+            showMainWindow();
+            void dialog.showMessageBox({
+              type: 'error', title: 'Não foi possível abrir o LoL',
+              message: error instanceof Error ? error.message : 'Tente novamente.',
+            });
+          },
+        );
       },
     });
 
@@ -229,7 +363,10 @@ void acquireInstance().then((acquired) => {
   app.on('before-quit', () => {
     quitting = true;
   });
-  app.on('will-quit', () => overlay?.dispose());
+  app.on('will-quit', () => {
+    overlay?.dispose();
+    invisibleMode?.dispose();
+  });
 
   app.on('window-all-closed', () => {
     connector.stop();

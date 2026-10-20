@@ -1,6 +1,9 @@
 :host {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+
+  --ally-text: #6d9eff;
+  --ally-strong: #4a7fd6;
 }
 
 p,
@@ -9,15 +12,11 @@ h4 {
   margin: 0;
 }
 
-.live-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  h3 {
-    font-size: 18px;
-    font-weight: 700;
-  }
+h4 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 button {
@@ -35,6 +34,7 @@ button {
     color: var(--muted);
 
     &:hover:not(:disabled) {
+      border-color: var(--border-strong);
       color: var(--text);
     }
   }
@@ -45,47 +45,384 @@ button {
   }
 }
 
+.muted {
+  color: var(--muted);
+}
+
+.good {
+  color: var(--success);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+// Cabeçalho: fila, relógio e chance de vitória num só bloco.
+.hero {
+  display: grid;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--ally-strong) 14%, transparent), transparent 55%),
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--danger) 12%, transparent), transparent 55%),
+    var(--bg);
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h3 {
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  p {
+    margin-top: 2px;
+    font-size: 13px;
+  }
+}
+
+.clock {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.live-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 25%, transparent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
 .win-chance {
   display: grid;
   gap: 6px;
 
   .labels {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    font-weight: 600;
+    font-size: 13px;
   }
 
   .ally {
-    color: #6d9eff;
+    color: var(--ally-text);
   }
 
   .enemy {
     color: var(--danger);
   }
 
+  strong {
+    font-size: 16px;
+  }
+
+  .chance-title {
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
   .bar {
     height: 8px;
+    overflow: hidden;
     border-radius: 4px;
     background: var(--danger);
-    overflow: hidden;
   }
 
   .fill {
     display: block;
     height: 100%;
-    background: #4a7fd6;
+    background: linear-gradient(90deg, var(--ally-strong), var(--ally-text));
+    box-shadow: 2px 0 0 var(--bg);
+    transition: width 0.4s ease;
   }
 
   .note {
+    color: var(--faint);
     font-size: 11px;
-    color: var(--muted);
   }
 }
 
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+
+  .pulse {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+// "Já jogaram com você": uma linha por pessoa, expansível.
+.encounters-note {
+  font-size: 12px;
+}
+
+.encounters {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%), var(--bg);
+}
+
+.encounters-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 2px;
+
+  h4 {
+    color: var(--accent);
+  }
+
+  span {
+    font-size: 12px;
+  }
+}
+
+.encounter-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+
+  &.open {
+    border-color: var(--border-strong);
+
+    > .encounter-row .chevron {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.encounter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+}
+
+.side-pill {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ally-strong) 20%, transparent);
+  color: var(--ally-text);
+  font-size: 11px;
+  font-weight: 700;
+
+  &.enemy {
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger);
+  }
+}
+
+.who {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.champs {
+  display: flex;
+  gap: 3px;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+  }
+}
+
+.record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.chip {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &.ally {
+    background: color-mix(in srgb, var(--ally-strong) 18%, transparent);
+    color: var(--ally-text);
+  }
+
+  &.enemy {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+    color: var(--danger);
+  }
+}
+
+.chevron {
+  flex: none;
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.15s;
+}
+
+.encounter-games {
+  container-type: inline-size;
+  display: grid;
+  gap: 6px;
+  padding: 4px 10px 10px;
+}
+
+.encounter-game {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr) 64px minmax(0, auto) 14px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--side);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 400;
+  text-align: left;
+
+  --side: var(--win);
+
+  &.loss {
+    --side: var(--loss);
+  }
+
+  &:hover,
+  &.active {
+    background: var(--surface-2);
+  }
+
+  &.active .chevron {
+    transform: rotate(180deg);
+  }
+
+  .tag {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--ally-strong) 18%, transparent);
+    color: var(--ally-text);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+
+    &.enemy {
+      background: color-mix(in srgb, var(--danger) 15%, transparent);
+      color: var(--danger);
+    }
+  }
+
+  .pair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+
+    img {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+    }
+  }
+
+  .outcome {
+    color: var(--side);
+    font-weight: 700;
+  }
+
+  .when {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @container (max-width: 640px) {
+    grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr) 14px;
+
+    .outcome,
+    .when {
+      display: none;
+    }
+  }
+}
+
+.inline-details {
+  margin: 2px 0 6px;
+}
+
+.history-link {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Times.
 .teams {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
@@ -94,14 +431,11 @@ button {
 
 .team {
   display: grid;
-  gap: 6px;
   align-content: start;
+  gap: 6px;
 
   h4 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #6d9eff;
+    color: var(--ally-text);
   }
 
   &.enemy-team h4 {
@@ -110,18 +444,41 @@ button {
 }
 
 .player {
+  position: relative;
   border: 1px solid var(--border);
-  border-left: 3px solid #4a7fd6;
+  border-left: 3px solid var(--ally-strong);
   border-radius: 8px;
   background: var(--bg);
+  transition: border-color 0.15s;
 
   .enemy-team & {
     border-left-color: var(--danger);
   }
 
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
   &.me {
     border-color: var(--accent);
     border-left-color: var(--accent);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%), var(--bg);
+  }
+
+  // Grupo: faixa na cor do grupo logo depois da borda do time.
+  &.in-party::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 2px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--party);
+  }
+
+  &.open {
+    border-color: var(--border-strong);
   }
 }
 
@@ -130,7 +487,7 @@ button {
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 7px 10px 7px 12px;
   border: none;
   border-radius: 8px;
   color: var(--text);
@@ -138,13 +495,25 @@ button {
   text-align: left;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.025);
   }
 
   &:disabled {
     opacity: 1;
   }
+}
+
+.lane-pill {
+  flex: none;
+  width: 30px;
+  padding: 2px 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .champ {
@@ -162,6 +531,15 @@ img.small {
   width: 19px;
   height: 19px;
   border-radius: 3px;
+
+  &.rune {
+    border-radius: 50%;
+    background: var(--surface-2);
+  }
+
+  &.sub {
+    padding: 2px;
+  }
 }
 
 .identity {
@@ -172,15 +550,50 @@ img.small {
 
   .nick {
     overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 600;
-    font-size: 13px;
   }
 
   .champ-name {
+    overflow: hidden;
     font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+}
+
+.nick.link {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+}
+
+.party-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.met {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .rank,
@@ -199,18 +612,12 @@ img.small {
   width: 78px;
 }
 
-.good {
-  color: var(--success);
-}
-
-.bad {
-  color: var(--danger);
-}
-
+// Resumo das últimas partidas de um jogador da partida.
 .recent {
+  container-type: inline-size;
   display: grid;
-  gap: 4px;
-  padding: 8px 10px 10px;
+  gap: 10px;
+  padding: 10px 12px 12px;
   border-top: 1px solid var(--border);
   font-size: 12px;
 
@@ -219,182 +626,64 @@ img.small {
   }
 }
 
-.results {
+.recent-head {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+
+  .history-link {
+    margin-left: auto;
+  }
+}
+
+.recent-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+
+  strong {
+    font-size: 15px;
+  }
+}
+
+.recent-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 6px;
+}
+
+.recent-game {
+  display: grid;
+  justify-items: center;
   gap: 3px;
-
-  .result {
-    width: 14px;
-    height: 6px;
-    border-radius: 2px;
-    background: var(--danger);
-
-    &.win {
-      background: #4a7fd6;
-    }
-  }
-}
-
-.hint {
-  font-size: 12px;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.nick.link {
-  cursor: pointer;
-
-  &:hover {
-    color: var(--accent);
-    text-decoration: underline;
-  }
-}
-
-.history-link {
-  justify-self: start;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.encounters-note {
-  font-size: 12px;
-}
-
-.encounters {
-  container-type: inline-size;
-  display: grid;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: var(--bg);
-
-  h4 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-  }
-}
-
-.encounter-player {
-  display: grid;
-  gap: 4px;
-}
-
-.encounter-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-
-  .side {
-    font-size: 11px;
-    font-weight: 600;
-    color: #6d9eff;
-
-    &.enemy {
-      color: var(--danger);
-    }
-  }
-}
-
-.encounter {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 64px auto;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-
-  @container (max-width: 720px) {
-    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
-    row-gap: 2px;
-
-    .outcome {
-      grid-column: 2;
-    }
-
-    .when {
-      grid-column: 3;
-    }
-  }
-
-  .tag {
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: rgba(74, 127, 214, 0.18);
-    color: #6d9eff;
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-
-    &.enemy {
-      background: rgba(232, 64, 87, 0.15);
-      color: var(--danger);
-    }
-  }
-
-  .pair {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .outcome {
-    font-weight: 700;
-  }
-}
-
-.met {
-  display: inline-block;
-  margin-left: 6px;
-  white-space: nowrap;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--accent);
-  color: var(--bg);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.waiting {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  padding: 5px 2px 4px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--muted);
+  border-bottom: 3px solid var(--loss);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
 
-  .pulse {
-    flex: none;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.4s ease-in-out infinite;
+  &.win {
+    border-bottom-color: var(--win);
   }
-}
 
-@keyframes pulse {
-  50% {
-    opacity: 0.3;
+  &:hover,
+  &.active {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+
+  &.active {
+    outline: 1px solid var(--accent);
+  }
+
+  img {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
   }
 }
 
@@ -403,35 +692,69 @@ img.small {
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--bg);
 
   h4 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
     color: var(--accent);
   }
 }
 
-.party-dot {
-  display: inline-block;
-  flex: none;
-  width: 9px;
-  height: 9px;
-  margin-right: 6px;
-  border-radius: 50%;
-  vertical-align: 1px;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+.hint {
+  font-size: 12px;
 }
 
-.party-tag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 5px;
-  border: 1px solid;
-  border-radius: 4px;
-  font-size: 10px;
+// Abas: jogadores x dados ao vivo do jogo.
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.tab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
   font-weight: 700;
-  white-space: nowrap;
+
+  &:hover {
+    color: var(--text);
+  }
+
+  &.active {
+    background: var(--surface-2);
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+}
+
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+
+  &.on {
+    background: var(--danger);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+}
+
+.tab-hint {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
 }

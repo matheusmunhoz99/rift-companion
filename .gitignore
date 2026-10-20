@@ -6,3 +6,4 @@ renderer/.angular/
 *.log
 .omc/
 release/
+release-check*/

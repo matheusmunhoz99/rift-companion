@@ -91,12 +91,91 @@ export interface LocalGame {
     spellKeys: string[];
     keystoneId: number;
     subStyleId: number;
+    /** Rota informada pelo jogo, ou vazio. */
+    position: string;
   }>;
+  /** Rotas escolhidas na seleção (pela sessão do cliente), por time e campeão. */
+  championPositions: Array<{ teamId: number; championId: number; position: string }>;
+}
+
+// Espelha electron/overlay/live-dashboard.ts.
+export interface LivePlayer {
+  riotId: string;
+  championKey: string;
+  championName: string;
+  ally: boolean;
+  isMe: boolean;
+  position: string;
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  wardScore: number;
+  isDead: boolean;
+  respawnTimer: number;
+  items: Array<{ id: number; count: number }>;
+  spellKeys: string[];
+  keystoneId: number;
+}
+
+export interface LiveTeam {
+  kills: number;
+  towers: number;
+  inhibitors: number;
+  dragons: string[];
+  barons: number;
+  heralds: number;
+  grubs: number;
+  atakhan: number;
+}
+
+export type LiveEventKind =
+  | 'kill' | 'first-blood' | 'multikill' | 'ace' | 'dragon' | 'baron' | 'herald' | 'grubs' | 'atakhan' | 'tower' | 'inhibitor';
+
+export interface LiveEvent {
+  time: number;
+  kind: LiveEventKind;
+  ally: boolean | null;
+  killer: string;
+  victim: string;
+  detail: string;
+}
+
+export interface LiveDashboard {
+  gameTime: number;
+  gameMode: string;
+  players: LivePlayer[];
+  me: {
+    riotId: string;
+    currentGold: number;
+    stats: {
+      attackDamage: number;
+      abilityPower: number;
+      armor: number;
+      magicResist: number;
+      attackSpeed: number;
+      moveSpeed: number;
+      critChance: number;
+      lifeSteal: number;
+      abilityHaste: number;
+      currentHealth: number;
+      maxHealth: number;
+    } | null;
+  } | null;
+  teams: { ally: LiveTeam; enemy: LiveTeam };
+  timers: {
+    dragon: { at: number; elder: boolean } | null;
+    baron: number | null;
+    inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
+  } | null;
+  events: LiveEvent[];
 }
 
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getLocalGame(): Promise<LocalGame | null>;
+  getLiveDashboard(): Promise<LiveDashboard | null>;
   /** Grupos (duo, trio...) da partida em andamento, em puuids. */
   getPremades(gameName: string, tagLine: string, platformId: string): Promise<{ groups: string[][] }>;
   getSettings(): Promise<RiotSettings>;

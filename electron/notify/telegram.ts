@@ -19,7 +19,7 @@ import {
   type QueueOption,
   type RawLobby,
 } from '../lcu/lobby';
-import { launchLeague } from '../lcu/riot-client';
+import type { LeagueLaunchResult } from '../lcu/riot-client';
 import { applyRunePage, getRecommendedRunePages, type RunePageSuggestion } from '../lcu/perks';
 import { applySummonerSpells } from '../lcu/spells';
 import { fetchRawGameData } from '../overlay/live-client';
@@ -135,6 +135,7 @@ export class TelegramNotifications {
   constructor(
     private readonly connector: LcuConnector,
     private readonly settings: Settings,
+    private readonly launchLeague: () => Promise<LeagueLaunchResult>,
   ) {
     connector.on('state', (state: LcuState) => this.onState(state));
     this.registerIpc();
@@ -620,9 +621,11 @@ export class TelegramNotifications {
     try {
       // Comandos que não precisam do cliente aberto.
       if (name === 'open') {
-        const how = await launchLeague();
+        const how = await this.launchLeague();
         this.note =
-          how === 'already-open'
+          how === 'restart-required'
+            ? 'Para ficar invisível, feche o Riot Client por completo e toque em Abrir de novo.'
+            : how === 'already-open'
             ? 'O LoL já está aberto (ou terminando de abrir).'
             : how
               ? 'Abrindo o LoL… leva alguns segundos. Se pedir login, entre pelo PC.'

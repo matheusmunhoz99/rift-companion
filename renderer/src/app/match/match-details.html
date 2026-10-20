@@ -1,0 +1,126 @@
+<div class="details" [class.with-import]="showImport()">
+  @for (team of teams(); track team.teamId) {
+    <section class="team" [class.win]="team.win" [class.loss]="!team.win">
+      <header class="team-head">
+        <span class="team-result">{{ team.win ? 'Vitória' : 'Derrota' }}</span>
+        <span class="team-side">{{ team.teamId === 100 ? 'Time azul' : 'Time vermelho' }}</span>
+        <span class="team-totals">
+          <span><strong>{{ team.kills }}</strong> / {{ team.deaths }} / {{ team.assists }}</span>
+          <span><strong>{{ thousands(team.gold) }}</strong> ouro</span>
+          <span><strong>{{ thousands(team.damage) }}</strong> dano</span>
+        </span>
+      </header>
+
+      <div class="columns" aria-hidden="true">
+        <span class="col-player">Jogador</span>
+        <span class="col-kda">KDA</span>
+        <span class="col-damage">Dano a campeões</span>
+        <span class="col-gold">Ouro</span>
+        <span class="col-cs">CS</span>
+        <span class="col-vision">Visão</span>
+        <span class="col-items">Itens</span>
+      </div>
+
+      @for (line of team.lines; track line.player.puuid || $index) {
+        <div
+          class="line"
+          [class.focus]="line.player.puuid === focusPuuid()"
+          [class.mark]="line.player.puuid === markPuuid()"
+          [style.--party]="line.party?.color ?? null"
+          [class.in-party]="!!line.party"
+        >
+          <div class="col-player">
+            <div class="champ">
+              @if (ddragon.champion(line.player.championId); as champion) {
+                <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name" />
+              }
+              <span class="level">{{ line.player.champLevel }}</span>
+            </div>
+            <div class="stack">
+              @for (spellId of line.player.summonerSpellIds; track $index) {
+                @if (ddragon.spellIconUrl(spellId); as spell) {
+                  <img [src]="spell" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+                }
+              }
+            </div>
+            <div class="stack">
+              @if (ddragon.runeIconUrl(line.player.perks.selections[0]); as rune) {
+                <img class="rune" [src]="rune" [alt]="ddragon.runeName(line.player.perks.selections[0])" [title]="ddragon.runeName(line.player.perks.selections[0])" />
+              }
+              @if (ddragon.runeIconUrl(line.player.perks.subStyleId); as sub) {
+                <img class="rune sub" [src]="sub" [alt]="ddragon.runeName(line.player.perks.subStyleId)" [title]="ddragon.runeName(line.player.perks.subStyleId)" />
+              }
+            </div>
+            <div class="identity">
+              <button type="button" class="nick" [title]="'Ver histórico de ' + line.player.riotId" (click)="openPlayer.emit(line.player)">
+                {{ name(line.player.riotId).gameName }}<span class="tag">#{{ name(line.player.riotId).tag }}</span>
+              </button>
+              <span class="sub-line">
+                {{ ddragon.champion(line.player.championId)?.name }}
+                @if (line.lane) {<span class="lane">· {{ line.lane }}</span>}
+                @if (line.party; as party) {
+                  <span
+                    class="party"
+                    [class.estimated]="!party.confirmed"
+                    [title]="party.confirmed ? 'Grupo visto na partida ao vivo' : 'Provável: estiveram no mesmo time em outra partida desta lista'"
+                  >{{ party.label }}{{ party.confirmed ? '' : '?' }}</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="col-kda">
+            <span class="score">{{ line.player.kills }} / <span class="deaths">{{ line.player.deaths }}</span> / {{ line.player.assists }}</span>
+            <span class="muted"><span [class]="kdaClass(line.kda)">{{ line.kda }}</span> · {{ line.killShare }}% PA</span>
+          </div>
+
+          <div class="col-damage" [title]="line.damageShare + '% do dano do time'">
+            <span class="damage-value">
+              {{ line.player.damageToChampions.toLocaleString('pt-BR') }}
+              <span class="muted">{{ line.damageShare }}%</span>
+              @if (line.topDamage) {<span class="top" title="Maior dano da partida">★</span>}
+            </span>
+            <span class="bar"><span [style.width.%]="line.damageBar"></span></span>
+          </div>
+
+          <div class="col-gold">{{ thousands(line.player.gold) }}</div>
+
+          <div class="col-cs">
+            <span>{{ line.player.cs }}</span>
+            <span class="muted">{{ line.csPerMinute }}/min</span>
+          </div>
+
+          <div class="col-vision">{{ line.player.visionScore }}</div>
+
+          <div class="col-items">
+            @for (itemId of line.player.items; track $index) {
+              @if (itemId > 0) {
+                <img [class.trinket]="$index === 6" [src]="ddragon.itemIconUrl(itemId)" [alt]="ddragon.itemName(itemId)" [title]="ddragon.itemName(itemId)" />
+              } @else {
+                <span class="empty" [class.trinket]="$index === 6"></span>
+              }
+            }
+            @if (showImport()) {
+              <button
+                type="button"
+                class="import"
+                [disabled]="importBusy() !== null || importDisabled()"
+                [title]="importDisabled() ? 'Abra o cliente do LoL para importar' : 'Copiar runas, feitiços e itens para o cliente'"
+                (click)="importBuild.emit(line.player)"
+              >
+                {{ importBusy() === line.player.puuid ? '…' : 'Importar' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  @if (confirmedParties() || estimatedParties()) {
+    <p class="legend">
+      @if (confirmedParties()) {Duo, Trio: grupo visto pelo Rift Companion durante a partida.}
+      @if (estimatedParties()) {Com "?": provável, porque estiveram no mesmo time em outra partida desta lista.}
+    </p>
+  }
+</div>

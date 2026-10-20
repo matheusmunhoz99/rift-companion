@@ -3,9 +3,19 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 export type OverlayPosition = 'left' | 'center' | 'right';
+export type InvisibleStatus = 'online' | 'offline' | 'mobile';
+export type InvisibleStartupStatus = InvisibleStatus | 'last';
 
 export interface Preferences {
   autoAccept: boolean;
+  /** Modo invisível: o LoL aberto pelo Rift Companion passa pelo proxy de chat. */
+  appearOffline: boolean;
+  /** Como os amigos veem você enquanto o modo invisível está ativo. */
+  invisibleStatus: InvisibleStatus;
+  /** Status aplicado ao abrir o LoL; "last" mantém o da última sessão. */
+  invisibleStartupStatus: InvisibleStartupStatus;
+  /** Desligado, você também some das salas (lobby e seleção). */
+  invisibleLobbyChat: boolean;
   overlayEnabled: boolean;
   overlayPosition: OverlayPosition;
   /** Opacidade do overlay, de 0.4 a 1. */
@@ -26,6 +36,10 @@ export interface Preferences {
 
 const DEFAULT_PREFERENCES: Preferences = {
   autoAccept: false,
+  appearOffline: false,
+  invisibleStatus: 'offline',
+  invisibleStartupStatus: 'last',
+  invisibleLobbyChat: true,
   overlayEnabled: true,
   overlayPosition: 'center',
   overlayOpacity: 0.9,
@@ -42,6 +56,10 @@ const DEFAULT_PREFERENCES: Preferences = {
 /** Validação de cada preferência: valores fora do formato são ignorados. */
 const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Preferences[K] } = {
   autoAccept: isBoolean,
+  appearOffline: isBoolean,
+  invisibleStatus: isInvisibleStatus,
+  invisibleStartupStatus: (value): value is InvisibleStartupStatus => value === 'last' || isInvisibleStatus(value),
+  invisibleLobbyChat: isBoolean,
   overlayEnabled: isBoolean,
   overlayPosition: (value): value is OverlayPosition =>
     value === 'left' || value === 'center' || value === 'right',
@@ -61,10 +79,16 @@ function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
 }
 
+function isInvisibleStatus(value: unknown): value is InvisibleStatus {
+  return value === 'online' || value === 'offline' || value === 'mobile';
+}
+
 interface StoredSettings extends Partial<Preferences> {
   platformId?: string;
   /** Token do aparelho no bot do Telegram (dado pelo servidor ao conectar). */
   telegramDevice?: string;
+  /** O contato Rift Companion já mandou a apresentação completa no chat. */
+  invisibleIntroShown?: boolean;
 }
 
 /** Configurações locais em %APPDATA%\<app>\settings.json. */
@@ -108,6 +132,14 @@ export class Settings {
     if (device) this.data.telegramDevice = device;
     else delete this.data.telegramDevice;
     this.write();
+  }
+
+  /** Marca a apresentação do contato como enviada; devolve se ela ainda faltava. */
+  takeInvisibleIntro(): boolean {
+    if (this.data.invisibleIntroShown) return false;
+    this.data.invisibleIntroShown = true;
+    this.write();
+    return true;
   }
 
   getAutoAccept(): boolean {

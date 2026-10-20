@@ -51,6 +51,8 @@ interface RawPlayer {
   championName: string;
   rawChampionName?: string;
   team: string;
+  /** TOP, JUNGLE, MIDDLE, BOTTOM ou UTILITY; vazio quando o modo não atribui rotas. */
+  position?: string;
   summonerSpells?: Record<'summonerSpellOne' | 'summonerSpellTwo', { rawDisplayName?: string } | undefined>;
   runes?: { keystone?: { id: number }; secondaryRuneTree?: { id: number } };
   level: number;
@@ -98,6 +100,16 @@ export interface LocalPlayer {
   spellKeys: string[];
   keystoneId: number;
   subStyleId: number;
+  /** Rota informada pelo jogo, ou vazio. */
+  position: string;
+}
+
+const LANES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+
+/** Só aceita as cinco rotas; o jogo manda "", "NONE" ou "INVALID" quando não sabe. */
+export function lanePosition(value: unknown): string {
+  const lane = typeof value === 'string' ? value.toUpperCase() : '';
+  return LANES.includes(lane) ? lane : '';
 }
 
 /**
@@ -114,6 +126,7 @@ export function toLocalPlayers(raw: RawGameData): LocalPlayer[] {
     ),
     keystoneId: p.runes?.keystone?.id ?? 0,
     subStyleId: p.runes?.secondaryRuneTree?.id ?? 0,
+    position: lanePosition(p.position),
   }));
 }
 

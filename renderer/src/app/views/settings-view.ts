@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import type { OverlayPosition } from '../core/app.types';
+import { Component, computed, inject, signal } from '@angular/core';
+import type { InvisibleStartupStatus, InvisibleStatus, OverlayPosition } from '../core/app.types';
 import { PreferencesService } from '../core/preferences.service';
 import { ToastService, errorText } from '../core/toast.service';
 import { Icon } from '../ui/icon';
@@ -25,6 +25,20 @@ const POSITIONS: Array<{ value: OverlayPosition; label: string }> = [
   { value: 'right', label: 'Direita' },
 ];
 
+// Espelha electron/tray.ts.
+const STATUSES: Array<{ value: InvisibleStatus; label: string; description: string }> = [
+  { value: 'offline', label: 'Offline', description: 'Ninguém vê você conectado nem o que está jogando.' },
+  { value: 'mobile', label: 'Celular', description: 'Aparece como no app do celular, sem fila nem partida.' },
+  { value: 'online', label: 'Online', description: 'Status normal, com fila e partida visíveis.' },
+];
+
+const STARTUP_STATUSES: Array<{ value: InvisibleStartupStatus; label: string }> = [
+  { value: 'last', label: 'Lembrar o último' },
+  { value: 'offline', label: 'Offline' },
+  { value: 'mobile', label: 'Celular' },
+  { value: 'online', label: 'Online' },
+];
+
 @Component({
   selector: 'app-settings-view',
   imports: [Switch, Icon],
@@ -34,6 +48,20 @@ const POSITIONS: Array<{ value: OverlayPosition; label: string }> = [
 export class SettingsView {
   protected readonly prefs = inject(PreferencesService);
   protected readonly positions = POSITIONS;
+  protected readonly statuses = STATUSES;
+  protected readonly startupStatuses = STARTUP_STATUSES;
+
+  /** Como os amigos veem você agora; desativado conta como online. */
+  protected readonly currentStatus = computed<InvisibleStatus | 'disabled'>(() => {
+    const p = this.prefs.preferences();
+    return p.appearOffline ? p.invisibleStatus : 'disabled';
+  });
+  protected readonly statusSummary = computed(() => ({
+    disabled: 'Desativado',
+    offline: 'Você aparece offline',
+    mobile: 'Você aparece no celular',
+    online: 'Você aparece online',
+  })[this.currentStatus()]);
 
   private readonly toast = inject(ToastService);
   /** Telegram: conectado, desconectado ou esperando a pessoa tocar em "Iniciar" no bot. */

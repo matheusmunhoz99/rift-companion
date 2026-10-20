@@ -27,6 +27,8 @@ export class DataDragonService {
   private readonly runeNames = signal<Map<number, string>>(new Map());
   private readonly spells = signal<Map<number, { name: string; image: string }>>(new Map());
   private readonly itemNames = signal<Map<number, string>>(new Map());
+  /** Preço total de cada item (com receita), para estimar o ouro gasto ao vivo. */
+  private readonly itemGold = signal<Map<number, number>>(new Map());
   /** Nome interno do feitiço ("SummonerFlash") -> id numérico. */
   private readonly spellIds = signal<Map<string, number>>(new Map());
   private readonly championKeysById = computed(
@@ -121,6 +123,11 @@ export class DataDragonService {
     return this.itemNames().get(this.baseItemId(id)) ?? String(id);
   }
 
+  /** Preço total do item; 0 quando desconhecido. */
+  itemCost(id: number): number {
+    return this.itemGold().get(this.baseItemId(id)) ?? 0;
+  }
+
   /**
    * Alguns modos usam variantes com prefixo (ex.: 323075 = Armadura de Espinhos 3075)
    * que não existem no Data Dragon; nesse caso usa o item base.
@@ -146,7 +153,7 @@ export class DataDragonService {
         getJson<{ data: Record<string, { key: string; name: string; image: { full: string } }> }>(
           `${data}/summoner.json`,
         ),
-        getJson<{ data: Record<string, { name: string }> }>(`${data}/item.json`),
+        getJson<{ data: Record<string, { name: string; gold?: { total?: number } }> }>(`${data}/item.json`),
       ]);
 
       this.champions.set(
@@ -186,6 +193,9 @@ export class DataDragonService {
 
       this.itemNames.set(
         new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.name])),
+      );
+      this.itemGold.set(
+        new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.gold?.total ?? 0])),
       );
       this.version.set(version);
     } catch {

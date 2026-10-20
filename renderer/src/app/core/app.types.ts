@@ -1,9 +1,15 @@
 // Espelha electron/settings.ts, electron/main.ts e electron/overlay/live-client.ts.
 export type OverlayPosition = 'left' | 'center' | 'right';
 export type GameWindowMode = 'fullscreen' | 'windowed' | 'borderless' | 'unknown';
+export type InvisibleStatus = 'online' | 'offline' | 'mobile';
+export type InvisibleStartupStatus = InvisibleStatus | 'last';
 
 export interface Preferences {
   autoAccept: boolean;
+  appearOffline: boolean;
+  invisibleStatus: InvisibleStatus;
+  invisibleStartupStatus: InvisibleStartupStatus;
+  invisibleLobbyChat: boolean;
   overlayEnabled: boolean;
   overlayPosition: OverlayPosition;
   overlayOpacity: number;
@@ -66,6 +72,7 @@ export interface AppBridge {
   getPreferences(): Promise<Preferences>;
   setPreferences(changes: Partial<Preferences>): Promise<Preferences>;
   openBuildsFolder(): Promise<void>;
+  launchLeague(): Promise<'riot-client' | 'already-open' | 'started' | 'restart-required' | null>;
   onAutoAccepted(callback: (timestamp: number) => void): () => void;
   onOverlayData(callback: (data: OverlayData) => void): () => void;
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;

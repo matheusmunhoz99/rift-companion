@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import type { InvisibleStatus } from '../core/app.types';
 import { NavigationService } from '../core/navigation.service';
 import { PreferencesService } from '../core/preferences.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
@@ -7,6 +8,9 @@ import { LcuService } from '../lcu/lcu.service';
 import { queueName, rankQueueLabel, rankText, winRate } from '../riot/labels';
 import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
+import { ToastService, errorText } from '../core/toast.service';
+
+const INVISIBLE_LABELS: Record<InvisibleStatus, string> = { offline: 'offline', mobile: 'celular', online: 'online' };
 
 const PHASE_LABELS: Record<string, string> = {
   None: 'No menu principal',
@@ -39,6 +43,7 @@ export class HomeView {
   protected readonly nav = inject(NavigationService);
 
   private readonly lcu = inject(LcuService);
+  private readonly toast = inject(ToastService);
   protected readonly prefs = inject(PreferencesService);
   protected readonly ddragon = inject(DataDragonService);
 
@@ -46,6 +51,7 @@ export class HomeView {
   protected readonly profile = signal<PlayerProfile | null>(null);
   protected readonly recent = signal<RecentRow[] | null>(null);
   protected readonly profileError = signal<string | null>(null);
+  protected readonly openingLeague = signal(false);
 
   protected readonly phaseLabel = computed(() => {
     const phase = this.state().gameflowPhase;
@@ -105,6 +111,29 @@ export class HomeView {
 
   protected kda(p: MatchParticipant): string {
     return p.deaths === 0 ? 'Perfeito' : ((p.kills + p.assists) / p.deaths).toFixed(1);
+  }
+
+  protected async openLeague(): Promise<void> {
+    if (!window.app || this.openingLeague()) return;
+    this.openingLeague.set(true);
+    try {
+      const result = await window.app.launchLeague();
+      const message =
+        result === 'restart-required'
+          ? 'Feche o Riot Client por completo e tente novamente para entrar invisível.'
+          : result === 'already-open'
+            ? 'O LoL já está abrindo.'
+            : result
+              ? this.prefs.preferences().appearOffline
+                ? `Abrindo o LoL em modo invisível (${INVISIBLE_LABELS[this.prefs.preferences().invisibleStatus]})…`
+                : 'Abrindo o LoL…'
+              : 'Não encontrei o Riot Client neste PC.';
+      this.toast.show(message, result && result !== 'restart-required' ? 'success' : 'error');
+    } catch (error) {
+      this.toast.show(errorText(error), 'error');
+    } finally {
+      this.openingLeague.set(false);
+    }
   }
 
   private async loadProfile(): Promise<void> {

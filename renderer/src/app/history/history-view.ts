@@ -4,6 +4,7 @@ import { NavigationService } from '../core/navigation.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName, rankQueueLabel, tierName } from '../riot/labels';
+import { MatchDetails } from '../match/match-details';
 import { PlayerSummary } from './player-summary';
 import type { MatchParticipant, MatchSummary, PlayerProfile, RiotSettings } from './riot.types';
 
@@ -16,7 +17,7 @@ interface Feedback {
 
 @Component({
   selector: 'app-history-view',
-  imports: [PlayerSummary],
+  imports: [PlayerSummary, MatchDetails],
   templateUrl: './history-view.html',
   styleUrl: './history-view.scss',
 })
@@ -116,8 +117,11 @@ export class HistoryView {
     return match.participants.find((p) => p.puuid === puuid) ?? null;
   }
 
-  protected team(match: MatchSummary, teamId: number): MatchParticipant[] {
-    return match.participants.filter((p) => p.teamId === teamId);
+  /** Jogador importando nesta partida; '' quando a importação é em outra (botões ficam desativados). */
+  protected busyIn(match: MatchSummary): string | null {
+    const key = this.busyKey();
+    if (!key) return null;
+    return key.startsWith(match.matchId + ':') ? key.slice(match.matchId.length + 1) : '';
   }
 
   protected readonly queueName = queueName;

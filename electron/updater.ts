@@ -2,7 +2,7 @@ import { app } from 'electron';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { mkdir, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { compareVersions } from './version';
 
@@ -126,6 +126,49 @@ export class Updater {
     this.status = status;
     this.onStatus(status);
   }
+}
+
+/** Só os .exe publicados pelo release ("RiftCompanion-Beta-0.5.0-beta.7.exe"), nunca cópias renomeadas. */
+const RELEASE_FILE = /^RiftCompanion-Beta-(\d+\.\d+\.\d+(?:-beta\.\d+)?)\.exe$/;
+const CLEANUP_ATTEMPTS = 24;
+const CLEANUP_RETRY_MS = 5_000;
+
+/**
+ * Depois de atualizar, apaga da pasta do .exe portátil as versões mais antigas.
+ * A anterior ainda pode estar fechando (arquivo em uso), por isso tenta por até 2 min.
+ * Vale também para a atualização a partir de versões que não tinham esta limpeza.
+ */
+export async function removeOldVersions(
+  directory = process.env.PORTABLE_EXECUTABLE_DIR,
+  currentVersion = app.getVersion(),
+  retryMs = CLEANUP_RETRY_MS,
+): Promise<string[]> {
+  if (!directory) return [];
+  const removed: string[] = [];
+  let pending: string[];
+  try {
+    pending = (await readdir(directory)).filter((name) => {
+      const version = RELEASE_FILE.exec(name)?.[1];
+      return !!version && compareVersions(version, currentVersion) < 0;
+    });
+  } catch {
+    return [];
+  }
+  for (let attempt = 0; attempt < CLEANUP_ATTEMPTS && pending.length; attempt++) {
+    if (attempt) await new Promise((resolve) => setTimeout(resolve, retryMs));
+    const still: string[] = [];
+    for (const name of pending) {
+      try {
+        await rm(path.join(directory, name));
+        removed.push(name);
+      } catch (error) {
+        // Em uso (a versão antiga ainda fechando): tenta de novo; sumiu: nada a fazer.
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') still.push(name);
+      }
+    }
+    pending = still;
+  }
+  return removed;
 }
 
 function parseRelease(raw: unknown): ReleaseInfo | null {

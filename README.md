@@ -58,8 +58,8 @@
       Os campeões mais fortes de cada rota no patch atual, com dados de dezenas de milhares de partidas.
     </td>
     <td valign="top">
-      <h3>Seguro para a conta</h3>
-      Não injeta nada, não lê a memória do jogo e não mostra informação escondida. Só APIs oficiais da Riot.
+      <h3>Modo invisível</h3>
+      Apareça offline para os amigos sem perder chat de sala e seleção, filas ou convites enviados. Sem injeção e sem leitura de memória.
     </td>
   </tr>
 </table>
@@ -121,6 +121,7 @@ Tier list por rota, com taxa de vitória, escolha e banimento, e a página de bu
 
 ## E ainda
 
+- **Modo invisível:** apareça offline, no celular ou online e troque a qualquer momento pela bandeja, pelas configurações ou pelo contato **Rift Companion** no chat do LoL. Chat de sala/seleção e convites enviados continuam funcionando.
 - **Aceite automático** da fila.
 - **Fila pelo app:** criar sala, escolher rotas (incluindo os campeões do Jogo Dinâmico, com as rotas prioritárias), convidar amigos.
 - **Histórico de qualquer jogador** pelo Riot ID: elo, maestria, partidas com campeões, KDA e itens.
@@ -132,6 +133,8 @@ Tier list por rota, com taxa de vitória, escolha e banimento, e a página de bu
 1. Baixe o **[RiftCompanion.exe](https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe)** (Windows 10 ou 11, cerca de 100 MB). Esse link sempre baixa a versão mais nova.
 2. Abra o arquivo. Ele roda direto, sem instalador.
 3. Abra o LoL. O app conecta sozinho e se atualiza sozinho.
+
+Para usar o **modo invisível**, ligue **Configurações → Ativar modo invisível**, escolha o status e abra o LoL pelo botão do Rift Companion, pelo ícone na bandeja ou pelo Telegram. O Riot Client precisa estar totalmente fechado antes de abrir em modo invisível.
 
 > **O Windows mostrou "O Windows protegeu o computador"?** Esse aviso aparece com apps novos que ainda não têm reputação na Microsoft. Clique em **Mais informações → Executar assim mesmo**. O código é aberto e está todo aqui.
 
@@ -154,6 +157,7 @@ Tier list por rota, com taxa de vitória, escolha e banimento, e a página de bu
 ```
 
 - **API do cliente do LoL (LCU)** e **Live Client Data API**: só no seu PC.
+- **Modo invisível**: um proxy TLS local filtra somente a presença global do chat XMPP. Mensagens e presenças de sala passam intactas; nenhum dado do chat vai ao servidor do Rift Companion.
 - **Riot API** (account-v1, summoner-v4, league-v4, champion-mastery-v4, match-v5, spectator-v5): **só pelo nosso servidor**. A chave nunca vai junto com o app.
 - **Bot do Telegram**: o token do bot também fica só no servidor.
 
@@ -162,6 +166,7 @@ Tier list por rota, com taxa de vitória, escolha e banimento, e a página de bu
 O Rift Companion segue as [políticas para desenvolvedores](https://developer.riotgames.com/policies/general) da Riot:
 
 - **Sem injeção, leitura de memória ou alteração de arquivos do jogo.** O overlay é uma janela separada.
+- O modo invisível inicia o Riot Client com uma configuração de chat local e filtra a presença no processo do Rift Companion; ele não modifica nem injeta código no cliente.
 - **Sem informação escondida:** nada de timers da selva inimiga ou do que está na névoa de guerra.
 - **Sem automação de jogabilidade:** só facilidades do cliente que você liga (fila, seleção, runas).
 
@@ -171,7 +176,7 @@ Sem contas, sem senhas e sem anúncios. O servidor guarda só estatísticas agre
 
 ## Desenvolvimento
 
-Requisitos: Node.js 22+, Windows 10/11 e o cliente do League of Legends.
+Requisitos: Node.js 24.21+, Windows 10/11 e o cliente do League of Legends.
 
 ```bash
 npm install
@@ -188,6 +193,10 @@ npm start
 Pastas: `electron/` (processo principal, cliente do LoL, Telegram, overlay), `renderer/` (interface Angular) e `docs/ARQUITETURA.md` (notas técnicas). O servidor (rift-api: Riot API, bot do Telegram e estatísticas) fica num repositório privado.
 
 Sugestões e problemas: [abra uma issue](https://github.com/matheusmunhoz99/rift-companion/issues).
+
+## Créditos
+
+O modo invisível usa o mesmo mecanismo de proxy local popularizado pelo projeto open source [Deceive](https://github.com/molenzwiebel/Deceive) e o certificado de localhost publicado por ele. A implementação do Rift Companion é em TypeScript e integrada ao seu próprio processo Electron.
 
 ## Direitos autorais
 

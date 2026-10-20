@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('app', {
   getPreferences: () => ipcRenderer.invoke('prefs:get'),
   setPreferences: (changes: unknown) => ipcRenderer.invoke('prefs:set', changes),
   openBuildsFolder: () => ipcRenderer.invoke('app:open-builds-folder'),
+  launchLeague: () => ipcRenderer.invoke('app:launch-league'),
   onAutoAccepted: (callback: (timestamp: number) => void) =>
     subscribe('auto-accept:accepted', callback),
   onOverlayData: (callback: (data: unknown) => void) => subscribe('overlay:data', callback),
@@ -60,6 +61,7 @@ contextBridge.exposeInMainWorld('riot', {
   getLiveGame: (gameName: string, tagLine: string, platformId: string) =>
     ipcRenderer.invoke('riot:get-live-game', gameName, tagLine, platformId),
   getLocalGame: () => ipcRenderer.invoke('riot:get-local-game'),
+  getLiveDashboard: () => ipcRenderer.invoke('riot:get-live-dashboard'),
   getPremades: (gameName: string, tagLine: string, platformId: string) =>
     ipcRenderer.invoke('riot:get-premades', gameName, tagLine, platformId),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>

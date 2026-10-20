@@ -102,45 +102,16 @@
 
         @if (expandedMatchId() === match.matchId) {
           <div class="match-details">
-            @for (teamId of [100, 200]; track teamId) {
-              <table>
-                <tbody>
-                  @for (player of team(match, teamId); track player.puuid) {
-                    <tr [class.highlight]="player.puuid === p.puuid">
-                      <td class="player">
-                        @if (ddragon.champion(player.championId); as champion) {
-                          <img class="small" [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name" />
-                        }
-                        <button type="button" class="name" [title]="'Ver histórico de ' + player.riotId" (click)="openParticipant(player)">{{ player.riotId.split('#')[0] }}</button>
-                      </td>
-                      <td>{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</td>
-                      <td class="muted">{{ player.cs }} CS</td>
-                      <td class="muted">{{ (player.damageToChampions / 1000).toFixed(1) }}k dano</td>
-                      <td class="items">
-                        @for (itemId of player.items; track $index) {
-                          @if (itemId > 0) {
-                            <img [src]="ddragon.itemIconUrl(itemId)" [alt]="ddragon.itemName(itemId)" [title]="ddragon.itemName(itemId)" />
-                          } @else {
-                            <span class="empty-slot"></span>
-                          }
-                        }
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          class="import"
-                          [disabled]="busyKey() !== null || lcuDisconnected()"
-                          [title]="lcuDisconnected() ? 'Abra o cliente do LoL para importar' : 'Copiar runas, feitiços e itens para o cliente'"
-                          (click)="importBuild(match, player)"
-                        >
-                          {{ busyKey() === match.matchId + ':' + player.puuid ? '…' : 'Importar' }}
-                        </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            }
+            <app-match-details
+              [match]="match"
+              [focusPuuid]="p.puuid"
+              [context]="matches()"
+              [showImport]="true"
+              [importDisabled]="lcuDisconnected()"
+              [importBusy]="busyIn(match)"
+              (openPlayer)="openParticipant($event)"
+              (importBuild)="importBuild(match, $event)"
+            />
           </div>
         }
       </article>

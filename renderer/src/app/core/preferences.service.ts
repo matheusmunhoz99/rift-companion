@@ -10,6 +10,10 @@ export class PreferencesService {
 
   readonly preferences = signal<Preferences>({
     autoAccept: false,
+    appearOffline: false,
+    invisibleStatus: 'offline',
+    invisibleStartupStatus: 'last',
+    invisibleLobbyChat: true,
     overlayEnabled: true,
     overlayPosition: 'center',
     overlayOpacity: 0.9,

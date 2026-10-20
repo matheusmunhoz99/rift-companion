@@ -2,7 +2,8 @@ import { app, ipcMain } from 'electron';
 import { readFileSync } from 'node:fs';
 import type { LcuConnector } from '../lcu/connector';
 import { lcuRequest } from '../lcu/http';
-import { fetchRawGameData, toLocalPlayers } from '../overlay/live-client';
+import { fetchRawGameData, lanePosition, toLocalPlayers } from '../overlay/live-client';
+import { toLiveDashboard, type RawDashboardData } from '../overlay/live-dashboard';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
 
@@ -47,14 +48,32 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     const raw = demo ? JSON.parse(readFileSync(demo, 'utf8')) : await fetchRawGameData();
     if (!raw?.allPlayers?.length) return null;
     const credentials = connector.getCredentials();
+    type SessionPlayer = { championId?: number; selectedPosition?: string };
     const session = credentials
-      ? await lcuRequest<{ gameData?: { queue?: { id?: number } } }>(credentials, 'GET', '/lol-gameflow/v1/session').catch(() => null)
+      ? await lcuRequest<{ gameData?: { queue?: { id?: number }; teamOne?: SessionPlayer[]; teamTwo?: SessionPlayer[] } }>(
+          credentials, 'GET', '/lol-gameflow/v1/session',
+        ).catch(() => null)
       : null;
+    // Rotas escolhidas na seleção; às vezes faltam jogadores. teamOne é o time azul (100).
+    // O time entra na chave porque a Partida Rápida permite o mesmo campeão nos dois lados.
+    const championPositions = (['teamOne', 'teamTwo'] as const).flatMap((team) =>
+      (session?.gameData?.[team] ?? [])
+        .map((p) => ({ teamId: team === 'teamOne' ? 100 : 200, championId: p.championId ?? 0, position: lanePosition(p.selectedPosition) }))
+        .filter((p) => p.championId > 0 && p.position),
+    );
     return {
       queueId: session?.gameData?.queue?.id ?? 0,
       gameStartTime: Date.now() - Math.round((raw.gameData?.gameTime ?? 0) * 1000),
       players: toLocalPlayers(raw),
+      championPositions,
     };
+  });
+
+  // Painel ao vivo (timers, objetivos, placar, seus atributos), direto do jogo.
+  ipcMain.handle('riot:get-live-dashboard', async () => {
+    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_LOCAL;
+    const raw = demo ? JSON.parse(readFileSync(demo, 'utf8')) : await fetchRawGameData();
+    return raw?.allPlayers?.length ? toLiveDashboard(raw as RawDashboardData) : null;
   });
 
   ipcMain.handle('riot:get-premades', (_event, gameName: string, tagLine: string, platformId: string) => {

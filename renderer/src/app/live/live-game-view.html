@@ -1,13 +1,53 @@
 @if (game(); as live) {
-  <header class="live-header">
-    <div>
-      <h3>{{ live.queueId ? queueName(live.queueId) : 'Partida em andamento' }}</h3>
-      <p class="muted">Iniciada às {{ startTime(live.gameStartTime) }}</p>
+  <section class="hero">
+    <div class="hero-top">
+      <div class="title">
+        <span class="live-dot" title="Partida em andamento"></span>
+        <div>
+          <h3>{{ live.queueId ? queueName(live.queueId) : 'Partida em andamento' }}</h3>
+          <p class="muted">
+            Iniciada às {{ startTime(live.gameStartTime) }}
+            @if (elapsed(); as clock) {· <strong class="clock">{{ clock }}</strong> de jogo}
+          </p>
+        </div>
+      </div>
+      <button type="button" class="ghost" [disabled]="loading()" (click)="load()">
+        {{ loading() ? 'Atualizando…' : 'Atualizar' }}
+      </button>
     </div>
-    <button type="button" class="ghost" [disabled]="loading()" (click)="load()">
-      {{ loading() ? 'Atualizando…' : 'Atualizar' }}
+
+    @if (winChance(); as chance) {
+      <div class="win-chance">
+        <div class="labels">
+          <span class="ally"><strong>{{ chance.allyPercent }}%</strong> seu time</span>
+          <span class="chance-title">Chance de vitória</span>
+          <span class="enemy">inimigos <strong>{{ 100 - chance.allyPercent }}%</strong></span>
+        </div>
+        <div class="bar">
+          <span class="fill" [style.width.%]="chance.allyPercent"></span>
+        </div>
+        <p class="note">
+          Estimativa pelo elo médio dos times ({{ chance.rankedPlayers }} de {{ chance.totalPlayers }} jogadores com elo).
+          Não considera campeões, composição nem o modo de jogo.
+        </p>
+      </div>
+    }
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'players'" [attr.aria-selected]="tab() === 'players'" (click)="tab.set('players')">
+      Jogadores
     </button>
-  </header>
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'live'" [attr.aria-selected]="tab() === 'live'" (click)="tab.set('live')">
+      <span class="tab-dot" [class.on]="!!liveData.data()"></span>
+      Ao vivo
+      <span class="tab-hint">timers, objetivos e rota a rota</span>
+    </button>
+  </nav>
+
+  @if (tab() === 'live') {
+    <app-live-dashboard />
+  } @else {
 
   @if (waitingRiot()) {
     <p class="waiting">
@@ -17,56 +57,82 @@
     </p>
   }
 
-  @if (winChance(); as chance) {
-    <div class="win-chance">
-      <div class="labels">
-        <span class="ally">Seu time {{ chance.allyPercent }}%</span>
-        <span class="enemy">{{ 100 - chance.allyPercent }}% Inimigos</span>
-      </div>
-      <div class="bar">
-        <span class="fill" [style.width.%]="chance.allyPercent"></span>
-      </div>
-      <p class="note">
-        Estimativa simples pelo elo médio dos times ({{ chance.rankedPlayers }} de {{ chance.totalPlayers }} jogadores com elo).
-        Não considera campeões, composição nem o modo de jogo.
-      </p>
-    </div>
-  }
-
   @if (encounters() === 'loading') {
     <p class="muted encounters-note">Procurando jogadores das suas últimas 10 partidas…</p>
-  } @else if (encounterList().length > 0) {
+  } @else if (encounterSummaries().length > 0) {
     <section class="encounters">
-      <h4>Já jogaram com você <span class="muted">· nas suas últimas 10 partidas</span></h4>
-      @for (player of encounterList(); track player.puuid) {
-        <div class="encounter-player">
-          <div class="encounter-head">
-            <span class="nick link" [title]="'Ver histórico de ' + player.riotId" (click)="openPlayer(player)">
-              {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
+      <header class="encounters-head">
+        <h4>Já jogaram com você</h4>
+        <span class="muted">nas suas últimas 10 partidas · clique para ver as partidas</span>
+      </header>
+
+      @for (summary of encounterSummaries(); track summary.player.riotId) {
+        <div class="encounter-card" [class.open]="openEncounter() === summary.player.riotId">
+          <button type="button" class="encounter-row" (click)="toggleEncounter(summary.player.riotId)">
+            <span class="side-pill" [class.enemy]="!summary.player.allyNow">
+              {{ summary.player.allyNow ? 'Aliado agora' : 'Inimigo agora' }}
             </span>
-            <span class="side" [class.enemy]="!player.allyNow">
-              {{ player.allyNow ? 'no seu time agora' : 'contra você agora' }}
+            <span class="who">
+              {{ name(summary.player.riotId).gameName }}@if (name(summary.player.riotId).tag) {<span class="muted">#{{ name(summary.player.riotId).tag }}</span>}
             </span>
-          </div>
-          @for (e of player.encounters; track e.matchId) {
-            <div class="encounter">
-              <span class="tag" [class.enemy]="!e.sameTeam">{{ e.sameTeam ? 'Juntos' : 'Contra' }}</span>
-              <span class="pair">
-                @if (iconUrl(e.you.championId); as icon) {
-                  <img class="small" [src]="icon" [alt]="ddragon.champion(e.you.championId)?.name ?? ''" />
+            <span class="champs">
+              @for (championId of summary.champions; track championId) {
+                @if (iconUrl(championId); as icon) {
+                  <img [src]="icon" [alt]="ddragon.champion(championId)?.name ?? ''" [title]="ddragon.champion(championId)?.name ?? ''" />
                 }
-                Você de {{ ddragon.champion(e.you.championId)?.name }} <strong>{{ kda(e.you) }}</strong>
-              </span>
-              <span class="pair">
-                @if (iconUrl(e.them.championId); as icon) {
-                  <img class="small" [src]="icon" [alt]="ddragon.champion(e.them.championId)?.name ?? ''" />
+              }
+            </span>
+            <span class="record">
+              @if (summary.together) {
+                <span class="chip ally">Juntos {{ summary.together }} · {{ summary.togetherWins }}V</span>
+              }
+              @if (summary.against) {
+                <span class="chip enemy">Contra {{ summary.against }} · {{ summary.againstWins }}V</span>
+              }
+            </span>
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+
+          @if (openEncounter() === summary.player.riotId) {
+            <div class="encounter-games">
+              @for (e of summary.player.encounters; track e.matchId) {
+                <button
+                  type="button"
+                  class="encounter-game"
+                  [class.win]="e.youWon"
+                  [class.loss]="!e.youWon"
+                  [class.active]="openMatchId() === e.matchId"
+                  (click)="toggleMatch(e.matchId)"
+                >
+                  <span class="tag" [class.enemy]="!e.sameTeam">{{ e.sameTeam ? 'Juntos' : 'Contra' }}</span>
+                  <span class="pair">
+                    @if (iconUrl(e.you.championId); as icon) {<img [src]="icon" alt="" />}
+                    <span class="muted">Você</span> <strong>{{ kda(e.you) }}</strong>
+                  </span>
+                  <span class="pair">
+                    @if (iconUrl(e.them.championId); as icon) {<img [src]="icon" alt="" />}
+                    <span class="muted">{{ name(summary.player.riotId).gameName }}</span> <strong>{{ kda(e.them) }}</strong>
+                  </span>
+                  <span class="outcome">{{ e.youWon ? 'Vitória' : 'Derrota' }}</span>
+                  <span class="muted when">{{ queueName(e.queueId) }} · {{ timeAgo(e.gameEndTimestamp) }}</span>
+                  <span class="chevron" aria-hidden="true">▾</span>
+                </button>
+                @if (openMatchId() === e.matchId) {
+                  @if (matchById(e.matchId); as match) {
+                    <app-match-details
+                      class="inline-details"
+                      [match]="match"
+                      [focusPuuid]="myPuuid()"
+                      [markPuuid]="summary.player.puuid || null"
+                      [context]="myMatchList()"
+                      (openPlayer)="openPlayer($event)"
+                    />
+                  }
                 }
-                {{ name(player.riotId).gameName }} de {{ ddragon.champion(e.them.championId)?.name }} <strong>{{ kda(e.them) }}</strong>
-              </span>
-              <span class="outcome" [class.good]="e.youWon" [class.bad]="!e.youWon">
-                {{ e.youWon ? 'Vitória' : 'Derrota' }}
-              </span>
-              <span class="muted when">{{ queueName(e.queueId) }} · {{ timeAgo(e.gameEndTimestamp) }}</span>
+              }
+              <button type="button" class="history-link" (click)="openPlayer(summary.player)">
+                Ver histórico completo de {{ name(summary.player.riotId).gameName }}
+              </button>
             </div>
           }
         </div>
@@ -79,8 +145,17 @@
       <section class="team" [class.enemy-team]="$index === 1">
         <h4>{{ $index === 0 ? 'Seu time' : 'Inimigos' }}</h4>
         @for (player of team; track player.puuid || $index) {
-          <article class="player" [class.me]="player === me()">
+          <article
+            class="player"
+            [class.me]="player === me()"
+            [class.open]="expanded() === player.puuid"
+            [class.in-party]="!!partyOf(player)"
+            [style.--party]="partyOf(player)?.color ?? null"
+          >
             <button type="button" class="player-row" [disabled]="!player.puuid" (click)="toggle(player)">
+              @if (laneShort(player); as lane) {
+                <span class="lane-pill" [title]="positionLabel(player)">{{ lane }}</span>
+              }
               @if (iconUrl(player.championId); as icon) {
                 <img class="champ" [src]="icon" [alt]="ddragon.champion(player.championId)?.name ?? ''" />
               }
@@ -93,10 +168,10 @@
               </div>
               <div class="stack">
                 @if (ddragon.runeIconUrl(player.keystoneId); as rune) {
-                  <img class="small" [src]="rune" [alt]="ddragon.runeName(player.keystoneId)" [title]="ddragon.runeName(player.keystoneId)" />
+                  <img class="small rune" [src]="rune" [alt]="ddragon.runeName(player.keystoneId)" [title]="ddragon.runeName(player.keystoneId)" />
                 }
                 @if (ddragon.runeIconUrl(player.subStyleId); as sub) {
-                  <img class="small" [src]="sub" [alt]="ddragon.runeName(player.subStyleId)" />
+                  <img class="small rune sub" [src]="sub" [alt]="ddragon.runeName(player.subStyleId)" />
                 }
               </div>
 
@@ -107,12 +182,12 @@
                   [title]="'Ver histórico de ' + player.riotId"
                   (click)="$event.stopPropagation(); openPlayer(player)"
                 >
-                  @if (partyOf(player); as party) {<span class="party-dot" [style.background]="party.color" [title]="party.label + ' (jogando juntos)'"></span>}{{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
+                  {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
                 </span>
                 <span class="muted champ-name">
                   {{ ddragon.champion(player.championId)?.name }}
                   @if (partyOf(player); as party) {
-                    <span class="party-tag" [style.color]="party.color" [style.border-color]="party.color">{{ party.label }}</span>
+                    <span class="party-tag" [style.color]="party.color" [style.border-color]="party.color" [title]="party.label + ' (jogando juntos)'">{{ party.label }}</span>
                   }
                   @if (encounterOf(player); as met) {
                     <span class="met" title="Já jogou com você nas suas últimas 10 partidas">
@@ -162,24 +237,48 @@
                       @if (summary.games === 0) {
                         <span class="muted">Sem partidas recentes.</span>
                       } @else {
-                        <div class="results">
-                          @for (won of summary.results; track $index) {
-                            <span class="result" [class.win]="won" [title]="won ? 'Vitória' : 'Derrota'"></span>
+                        <div class="recent-head">
+                          <span class="recent-stat">
+                            <strong [class.good]="summary.winRate >= 55" [class.bad]="summary.winRate < 45">{{ summary.winRate }}%</strong>
+                            <span class="muted">vitórias nas últimas {{ summary.games }}</span>
+                          </span>
+                          <span class="recent-stat">
+                            <strong>{{ summary.kda }}</strong>
+                            <span class="muted">KDA</span>
+                          </span>
+                          <span class="recent-stat">
+                            <strong>{{ summary.championGames }}</strong>
+                            <span class="muted">
+                              com {{ ddragon.champion(player.championId)?.name }}
+                              @if (summary.championGames > 0) {({{ summary.championWins }}V)}
+                            </span>
+                          </span>
+                          <button type="button" class="history-link" (click)="openPlayer(player)">Histórico completo</button>
+                        </div>
+                        <div class="recent-games">
+                          @for (g of summary.recentGames; track g.match.matchId) {
+                            <button
+                              type="button"
+                              class="recent-game"
+                              [class.win]="g.win"
+                              [class.active]="openRecent()?.matchId === g.match.matchId"
+                              [title]="(g.win ? 'Vitória' : 'Derrota') + ' · ' + queueName(g.match.queueId) + ' · ' + timeAgo(g.match.gameEndTimestamp)"
+                              (click)="toggleRecent(player.puuid, g.match.matchId)"
+                            >
+                              @if (iconUrl(g.championId); as icon) {<img [src]="icon" alt="" />}
+                              <span>{{ g.kda }}</span>
+                            </button>
                           }
                         </div>
-                        <span>
-                          Últimas {{ summary.games }}: <strong>{{ summary.winRate }}%</strong> de vitórias · KDA {{ summary.kda }}
-                        </span>
-                        <button type="button" class="history-link" (click)="openPlayer(player)">
-                          Ver histórico completo
-                        </button>
-                        <span class="muted">
-                          Com {{ ddragon.champion(player.championId)?.name }}:
-                          {{ summary.championGames }} partida{{ summary.championGames === 1 ? '' : 's' }}
-                          @if (summary.championGames > 0) {
-                            ({{ summary.championWins }}V)
-                          }
-                        </span>
+                        @if (recentMatch(player); as match) {
+                          <app-match-details
+                            class="inline-details"
+                            [match]="match"
+                            [focusPuuid]="player.puuid"
+                            [context]="recentMatches(summary)"
+                            (openPlayer)="openPlayer($event)"
+                          />
+                        }
                       }
                     }
                   }
@@ -191,6 +290,7 @@
       </section>
     }
   </div>
+
   @if (me(); as mine) {
     @if (mine.championId > 0) {
       <section class="match-build">
@@ -200,7 +300,10 @@
     }
   }
 
-  <p class="hint muted">Clique num jogador para ver o resumo das últimas 10 partidas, ou no nome para abrir o histórico completo.</p>
+  <p class="hint muted">
+    Clique num jogador para ver as últimas partidas dele (e o placar de cada uma), ou no nome para abrir o histórico completo.
+  </p>
+  }
 } @else if (loading()) {
   <p class="muted">Carregando a partida…</p>
 } @else if (error(); as message) {

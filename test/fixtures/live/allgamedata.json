@@ -1,0 +1,688 @@
+{
+ "activePlayer": {
+  "riotId": "Eu era o Jungle#jung",
+  "summonerName": "Eu era o Jungle#jung",
+  "currentGold": 1342.6,
+  "level": 12,
+  "championStats": {
+   "attackDamage": 212.4,
+   "abilityPower": 0,
+   "armor": 118.2,
+   "magicResist": 72.5,
+   "attackSpeed": 1.42,
+   "moveSpeed": 412.3,
+   "critChance": 0.25,
+   "lifeSteal": 0.12,
+   "abilityHaste": 20,
+   "currentHealth": 1520.4,
+   "maxHealth": 2390.2
+  }
+ },
+ "allPlayers": [
+  {
+   "riotId": "Suave#2415",
+   "summonerName": "Suave#2415",
+   "championName": "Darius",
+   "rawChampionName": "game_character_displayname_Darius",
+   "team": "ORDER",
+   "position": "TOP",
+   "level": 13,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 3078,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3047,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 6333,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 1037,
+     "count": 1,
+     "slot": 3
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 4,
+    "deaths": 2,
+    "assists": 3,
+    "creepScore": 148,
+    "wardScore": 9.4
+   }
+  },
+  {
+   "riotId": "Eu era o Jungle#jung",
+   "summonerName": "Eu era o Jungle#jung",
+   "championName": "Warwick",
+   "rawChampionName": "game_character_displayname_Warwick",
+   "team": "ORDER",
+   "position": "JUNGLE",
+   "level": 12,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 1103,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3153,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 3047,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 6672,
+     "count": 1,
+     "slot": 3
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 6,
+    "deaths": 3,
+    "assists": 7,
+    "creepScore": 121,
+    "wardScore": 14.2
+   }
+  },
+  {
+   "riotId": "Diodraekan#BR1",
+   "summonerName": "Diodraekan#BR1",
+   "championName": "Fizz",
+   "rawChampionName": "game_character_displayname_Fizz",
+   "team": "ORDER",
+   "position": "MIDDLE",
+   "level": 13,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 3152,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3020,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 4645,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 5,
+    "deaths": 4,
+    "assists": 4,
+    "creepScore": 139,
+    "wardScore": 8.1
+   }
+  },
+  {
+   "riotId": "Skadi#CWB",
+   "summonerName": "Skadi#CWB",
+   "championName": "Miss Fortune",
+   "rawChampionName": "game_character_displayname_MissFortune",
+   "team": "ORDER",
+   "position": "BOTTOM",
+   "level": 11,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 6672,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3006,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 3036,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 3,
+    "deaths": 2,
+    "assists": 6,
+    "creepScore": 162,
+    "wardScore": 10.5
+   }
+  },
+  {
+   "riotId": "barack o brahma#zl2",
+   "summonerName": "barack o brahma#zl2",
+   "championName": "Lux",
+   "rawChampionName": "game_character_displayname_Lux",
+   "team": "ORDER",
+   "position": "UTILITY",
+   "level": 10,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 3870,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3020,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 6655,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3364,
+     "count": 1,
+     "slot": 3
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 0,
+    "deaths": 3,
+    "assists": 11,
+    "creepScore": 22,
+    "wardScore": 31.7
+   }
+  },
+  {
+   "riotId": "THCPrôce#666",
+   "summonerName": "THCPrôce#666",
+   "championName": "Yasuo",
+   "rawChampionName": "game_character_displayname_Yasuo",
+   "team": "CHAOS",
+   "position": "TOP",
+   "level": 12,
+   "isDead": true,
+   "respawnTimer": 18,
+   "items": [
+    {
+     "itemID": 6673,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3006,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 1055,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 2,
+    "deaths": 4,
+    "assists": 1,
+    "creepScore": 131,
+    "wardScore": 6.2
+   }
+  },
+  {
+   "riotId": "Nsoumtbom#8472",
+   "summonerName": "Nsoumtbom#8472",
+   "championName": "Rek'Sai",
+   "rawChampionName": "game_character_displayname_RekSai",
+   "team": "CHAOS",
+   "position": "JUNGLE",
+   "level": 11,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 1103,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 6692,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 3047,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 3,
+    "deaths": 5,
+    "assists": 4,
+    "creepScore": 98,
+    "wardScore": 11.8
+   }
+  },
+  {
+   "riotId": "ZED RUIM#LOL",
+   "summonerName": "ZED RUIM#LOL",
+   "championName": "LeBlanc",
+   "rawChampionName": "game_character_displayname_Leblanc",
+   "team": "CHAOS",
+   "position": "MIDDLE",
+   "level": 12,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 6655,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3020,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 1058,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 4,
+    "deaths": 3,
+    "assists": 2,
+    "creepScore": 128,
+    "wardScore": 7.4
+   }
+  },
+  {
+   "riotId": "NuntShaco#br1",
+   "summonerName": "NuntShaco#br1",
+   "championName": "Caitlyn",
+   "rawChampionName": "game_character_displayname_Caitlyn",
+   "team": "CHAOS",
+   "position": "BOTTOM",
+   "level": 11,
+   "isDead": true,
+   "respawnTimer": 7,
+   "items": [
+    {
+     "itemID": 6672,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3006,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 1038,
+     "count": 1,
+     "slot": 2
+    },
+    {
+     "itemID": 3340,
+     "count": 1,
+     "slot": 6
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 2,
+    "deaths": 3,
+    "assists": 3,
+    "creepScore": 150,
+    "wardScore": 8.8
+   }
+  },
+  {
+   "riotId": "CLAN Em0#BR1",
+   "summonerName": "CLAN Em0#BR1",
+   "championName": "Seraphine",
+   "rawChampionName": "game_character_displayname_Seraphine",
+   "team": "CHAOS",
+   "position": "UTILITY",
+   "level": 9,
+   "isDead": false,
+   "respawnTimer": 0,
+   "items": [
+    {
+     "itemID": 3869,
+     "count": 1,
+     "slot": 0
+    },
+    {
+     "itemID": 3158,
+     "count": 1,
+     "slot": 1
+    },
+    {
+     "itemID": 3364,
+     "count": 1,
+     "slot": 2
+    }
+   ],
+   "summonerSpells": {
+    "summonerSpellOne": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"
+    },
+    "summonerSpellTwo": {
+     "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerTeleport_DisplayName"
+    }
+   },
+   "runes": {
+    "keystone": {
+     "id": 8010
+    }
+   },
+   "scores": {
+    "kills": 0,
+    "deaths": 3,
+    "assists": 6,
+    "creepScore": 18,
+    "wardScore": 26.3
+   }
+  }
+ ],
+ "events": {
+  "Events": [
+   {
+    "EventName": "GameStart",
+    "EventTime": 0
+   },
+   {
+    "EventName": "FirstBlood",
+    "EventTime": 212.4,
+    "Recipient": "Eu era o Jungle#jung"
+   },
+   {
+    "EventName": "ChampionKill",
+    "EventTime": 212.4,
+    "KillerName": "Eu era o Jungle#jung",
+    "VictimName": "THCPrôce#666",
+    "Assisters": [
+     "Suave#2415"
+    ]
+   },
+   {
+    "EventName": "HordeKill",
+    "EventTime": 360.2,
+    "KillerName": "Eu era o Jungle#jung"
+   },
+   {
+    "EventName": "HordeKill",
+    "EventTime": 361,
+    "KillerName": "Eu era o Jungle#jung"
+   },
+   {
+    "EventName": "HordeKill",
+    "EventTime": 362,
+    "KillerName": "Nsoumtbom#8472"
+   },
+   {
+    "EventName": "DragonKill",
+    "EventTime": 415.9,
+    "KillerName": "Nsoumtbom#8472",
+    "DragonType": "Fire",
+    "Stolen": "False"
+   },
+   {
+    "EventName": "TurretKilled",
+    "EventTime": 640.1,
+    "KillerName": "Minion_T100L_S07N0181",
+    "TurretKilled": "Turret_T2_L_03_A"
+   },
+   {
+    "EventName": "DragonKill",
+    "EventTime": 745.3,
+    "KillerName": "Eu era o Jungle#jung",
+    "DragonType": "Water",
+    "Stolen": "False"
+   },
+   {
+    "EventName": "ChampionKill",
+    "EventTime": 801.2,
+    "KillerName": "ZED RUIM#LOL",
+    "VictimName": "Diodraekan#BR1",
+    "Assisters": []
+   },
+   {
+    "EventName": "HeraldKill",
+    "EventTime": 880,
+    "KillerName": "Suave#2415"
+   },
+   {
+    "EventName": "TurretKilled",
+    "EventTime": 905.5,
+    "KillerName": "Suave#2415",
+    "TurretKilled": "Turret_T2_C_05_A"
+   },
+   {
+    "EventName": "TurretKilled",
+    "EventTime": 950.5,
+    "KillerName": "Caitlyn",
+    "TurretKilled": "Turret_T1_R_03_A"
+   },
+   {
+    "EventName": "DragonKill",
+    "EventTime": 1102.7,
+    "KillerName": "Eu era o Jungle#jung",
+    "DragonType": "Hextech",
+    "Stolen": "True"
+   },
+   {
+    "EventName": "Multikill",
+    "EventTime": 1180.1,
+    "KillerName": "Skadi#CWB",
+    "KillStreak": 3
+   },
+   {
+    "EventName": "ChampionKill",
+    "EventTime": 1180.1,
+    "KillerName": "Skadi#CWB",
+    "VictimName": "NuntShaco#br1",
+    "Assisters": [
+     "barack o brahma#zl2"
+    ]
+   },
+   {
+    "EventName": "ChampionKill",
+    "EventTime": 1195,
+    "KillerName": "Turret_T1_L_02_A",
+    "VictimName": "Suave#2415",
+    "Assisters": []
+   },
+   {
+    "EventName": "InhibKilled",
+    "EventTime": 1230.4,
+    "KillerName": "Fizz",
+    "InhibKilled": "Barracks_T2_C1"
+   },
+   {
+    "EventName": "ChampionKill",
+    "EventTime": 1248,
+    "KillerName": "Suave#2415",
+    "VictimName": "THCPrôce#666",
+    "Assisters": [
+     "Eu era o Jungle#jung"
+    ]
+   }
+  ]
+ },
+ "gameData": {
+  "gameMode": "CLASSIC",
+  "gameTime": 1262.5,
+  "mapNumber": 11
+ }
+}

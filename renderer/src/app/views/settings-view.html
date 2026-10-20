@@ -1,4 +1,73 @@
 <div class="settings">
+  <section class="card invisible">
+    <div class="invisible-head">
+      <h3 class="section-title">Modo invisível</h3>
+      <span class="presence-chip" [attr.data-status]="currentStatus()">
+        <span class="presence-dot"></span>{{ statusSummary() }}
+      </span>
+    </div>
+    <app-switch
+      label="Ativar modo invisível"
+      description="O LoL aberto pelo Rift Companion passa por um proxy de chat no seu PC. Troque o status a qualquer momento, sem reiniciar."
+      [checked]="prefs.preferences().appearOffline"
+      (toggled)="prefs.set({ appearOffline: $event })"
+    />
+
+    <div class="status-options" role="radiogroup" aria-label="Como os amigos veem você">
+      @for (option of statuses; track option.value) {
+        <button
+          type="button"
+          role="radio"
+          class="status-option"
+          [attr.data-status]="option.value"
+          [class.active]="prefs.preferences().appearOffline && prefs.preferences().invisibleStatus === option.value"
+          [attr.aria-checked]="prefs.preferences().appearOffline && prefs.preferences().invisibleStatus === option.value"
+          (click)="prefs.set({ appearOffline: true, invisibleStatus: option.value })"
+        >
+          <span class="option-title"><span class="presence-dot"></span>{{ option.label }}</span>
+          <span class="option-description">{{ option.description }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="row">
+      <span class="row-label wide">Ao abrir o LoL</span>
+      <div class="segmented">
+        @for (option of startupStatuses; track option.value) {
+          <button
+            type="button"
+            [class.active]="prefs.preferences().invisibleStartupStatus === option.value"
+            (click)="prefs.set({ invisibleStartupStatus: option.value })"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <app-switch
+      label="Chat de sala e seleção"
+      description="Desligado, você também some das salas de grupo e da seleção, mas o chat delas deixa de funcionar."
+      [checked]="prefs.preferences().invisibleLobbyChat"
+      (toggled)="prefs.set({ invisibleLobbyChat: $event })"
+    />
+
+    <div class="buddy">
+      <span class="buddy-avatar"><app-icon name="chat" [size]="16" /></span>
+      <p>
+        Na sua lista de amigos aparece o contato <strong>Rift Companion</strong>, que mostra o seu status e avisa cada troca.
+        Mande para ele <code>offline</code>, <code>celular</code>, <code>online</code>, <code>ativar</code>,
+        <code>desativar</code>, <code>sala</code>, <code>status</code> ou <code>ajuda</code>.
+      </p>
+    </div>
+    <p class="hint">
+      Abra o LoL pelo botão <strong>Abrir LoL</strong> do app, pelo ícone na bandeja ou pelo Telegram. Se o Riot Client
+      já estava aberto, feche-o por completo antes. O seu cliente continua mostrando você online; quem muda é o que os
+      amigos veem. Mantenha o Rift Companion aberto ou na bandeja enquanto jogar.
+    </p>
+  </section>
+
   <section class="card">
     <h3 class="section-title">Fila e seleção</h3>
     <app-switch

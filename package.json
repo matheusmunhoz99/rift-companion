@@ -1,8 +1,11 @@
 {
   "name": "rift-companion",
-  "version": "0.5.0-beta.7",
+  "version": "0.5.0-beta.8",
   "private": true,
   "description": "Companion app para League of Legends: builds, runas, partida ao vivo e histórico.",
+  "engines": {
+    "node": ">=24.21"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "build:electron": "node scripts/clean.js dist-electron && tsc -p electron/tsconfig.json",
@@ -16,6 +19,8 @@
     "release": "npm run dist && node scripts/publish-release.js"
   },
   "dependencies": {
+    "@blamejs/pki": "^0.9.5",
+    "saxes": "^6.0.0",
     "ws": "^8.22.0"
   },
   "devDependencies": {

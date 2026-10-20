@@ -26,6 +26,25 @@ Botão na aba Cliente (salvo em `settings.json`). Ao receber o evento
 `/lol-matchmaking/v1/ready-check` em andamento e sem resposta do jogador, o app envia
 `POST /lol-matchmaking/v1/ready-check/accept`. Se você recusar manualmente, nada é enviado.
 
+## Modo invisível
+
+Com `appearOffline` ligado, o LoL deve ser aberto pelo Rift Companion. O app:
+
+1. reutiliza o PFX válido de `deceive-localhost.molenzwiebel.xyz`, renovando quando faltam até 20 dias;
+2. abre um proxy HTTP em loopback do `clientconfig` (upstream HTTPS) e um proxy TLS local do chat;
+3. inicia `RiotClientServices.exe` com `--client-config-url=http://127.0.0.1:<porta>`;
+4. troca `chat.host`, `chat.port` e todas as afinidades pelo proxy local, conservando o servidor regional real;
+5. no fluxo XMPP cliente → Riot, reescreve somente as presenças globais conforme o status (`electron/invisible/presence.ts`):
+   - **offline**: esvazia `games`, remove `status` e envia `show=offline`;
+   - **celular**: conserva só `league_of_legends` sem `p`, `m` e `pd` (fila, partida, grupo), com `st` e `show` iguais a `mobile`;
+   - **online** (ou modo desativado): a presença original passa intacta.
+
+Trocar o status reenvia a última presença global já reescrita, sem reiniciar nada. As preferências `invisibleStatus`, `invisibleStartupStatus` (status ao abrir o LoL ou "lembrar o último") e `invisibleLobbyChat` seguem o Deceive. Com o chat de sala desligado e o status oculto, presenças com `to` (lobby, seleção) também são retidas; ligado, elas passam sem alteração.
+
+No sentido Riot → cliente (`electron/invisible/roster.ts`), o primeiro resultado do roster recebe o contato local **Rift Companion**. A presença dele mostra o seu status atual. As mensagens dele (boas-vindas na primeira vez, saudação por sessão e aviso de cada troca) só entram entre stanzas completas. Tudo que o cliente envia para esse JID fica retido no proxy; o texto vira comando (`offline`, `celular`, `online`, `ativar`, `desativar`, `sala`, `status`, `ajuda`). Se o XML do servidor fugir do formato esperado, o fluxo passa a ser repassado sem filtro e o contato fica inativo naquela conexão.
+
+O proxy não envia conversas ao backend do Rift Companion. O diagnóstico vai para `%APPDATA%\Rift Companion\invisible\debug.log`, recriado a cada inicialização do proxy, sem autenticação nem mensagens. Um Riot Client que já estava aberto precisa ser fechado, pois `client-config-url` só é lido na inicialização.
+
 ## Builds
 
 - Runas: páginas recomendadas pelo próprio cliente (`/lol-perks/v1/recommended-pages/...`).

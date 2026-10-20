@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: October 18, 2026_
+_Last updated: October 19, 2026_
 
 Rift Companion is a free desktop app for League of Legends. This policy explains what data the app uses and what it doesn't.
 
@@ -9,13 +9,19 @@ Rift Companion is a free desktop app for League of Legends. This policy explains
 - It does not create accounts or ask for a login.
 - It does not read, store or send your Riot password or any other credentials.
 - It does not read game memory or change game files.
-- It does not show ads or sell or share data with third parties.
+- It does not show ads or sell personal data.
 
 ## Data used on your computer
 
 The app connects to the League of Legends client and game running on your PC through Riot's local APIs (League Client API and Live Client Data API). It uses that data to show your account, lobby, champion select and in-game information. This data stays on your computer.
 
 Your settings (for example, auto-accept and preferred region) are saved in a local file in the app's data folder (`%APPDATA%\Rift Companion`).
+
+## Invisible mode (optional)
+
+When you enable invisible mode and open League through Rift Companion, the app runs a TLS proxy on your own computer. It changes only your global XMPP presence; room/champion-select presence and chat messages pass through unchanged. Chat contents are not stored and are not sent to the Rift Companion server.
+
+To establish that local TLS connection, the app downloads and caches the public localhost certificate used by the open-source [Deceive](https://github.com/molenzwiebel/Deceive) project from `mln.cx`. That download exposes the usual connection metadata (such as IP address and time) to that service, but sends no Riot ID, account information or chat contents.
 
 ## Data sent to our server
 

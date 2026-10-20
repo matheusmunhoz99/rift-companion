@@ -1,0 +1,11 @@
+# Certificado exclusivamente de testes; a chave publicada aqui não protege dados reais.
+[req]
+distinguished_name = subject
+x509_extensions = extensions
+prompt = no
+[subject]
+CN = localhost
+[extensions]
+subjectAltName = DNS:localhost,IP:127.0.0.1
+basicConstraints = critical,CA:TRUE
+keyUsage = critical,digitalSignature,keyCertSign

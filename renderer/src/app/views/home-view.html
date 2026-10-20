@@ -5,8 +5,15 @@
       <h2>Abra o cliente do League of Legends</h2>
       <p>
         O Rift Companion conecta sozinho assim que o cliente estiver aberto e logado.
-        Nada precisa ser configurado.
+        @if (prefs.preferences().appearOffline) {
+          Abra por aqui para aparecer offline aos seus amigos.
+        } @else {
+          Nada precisa ser configurado.
+        }
       </p>
+      <button type="button" class="btn" [disabled]="openingLeague()" (click)="openLeague()">
+        {{ openingLeague() ? 'Abrindo…' : prefs.preferences().appearOffline ? 'Abrir LoL invisível' : 'Abrir LoL' }}
+      </button>
     </div>
   </section>
 } @else {
