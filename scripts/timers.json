@@ -1,0 +1,30 @@
+{
+  "_comment": "Tempos de surgimento em segundos de jogo. 'default' = Summoner's Rift 2026; 'queues' = por id da fila (480 = Partida Rápida). Surgimento 0 tira o objetivo do modo. dragonMax 0 = sem limite.",
+  "default": {
+    "dragonFirst": 300,
+    "dragonRespawn": 300,
+    "dragonMax": 0,
+    "soulStacks": 4,
+    "elderFirst": 0,
+    "elderRespawn": 360,
+    "grubsSpawn": 480,
+    "grubsCount": 3,
+    "grubsDespawn": 885,
+    "heraldSpawn": 900,
+    "heraldDespawn": 1185,
+    "atakhanSpawn": 0,
+    "baronFirst": 1200,
+    "baronRespawn": 360
+  },
+  "queues": {
+    "480": {
+      "dragonMax": 2,
+      "soulStacks": 2,
+      "elderFirst": 900,
+      "grubsSpawn": 0,
+      "heraldSpawn": 0,
+      "atakhanSpawn": 0,
+      "baronFirst": 720
+    }
+  }
+}

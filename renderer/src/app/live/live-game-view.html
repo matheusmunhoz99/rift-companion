@@ -1,52 +1,53 @@
 @if (game(); as live) {
-  <section class="hero">
-    <div class="hero-top">
-      <div class="title">
-        <span class="live-dot" title="Partida em andamento"></span>
-        <div>
-          <h3>{{ live.queueId ? queueName(live.queueId) : 'Partida em andamento' }}</h3>
-          <p class="muted">
-            Iniciada às {{ startTime(live.gameStartTime) }}
-            @if (elapsed(); as clock) {· <strong class="clock">{{ clock }}</strong> de jogo}
-          </p>
-        </div>
-      </div>
-      <button type="button" class="ghost" [disabled]="loading()" (click)="load()">
-        {{ loading() ? 'Atualizando…' : 'Atualizar' }}
-      </button>
+  <!-- Barra única: partida, abas, chance de vitória e atualizar. Libera a tela para os dados. -->
+  <header class="match-bar">
+    <div class="match-title">
+      <span class="live-dot" title="Partida em andamento"></span>
+      <h3>{{ live.queueId ? queueName(live.queueId) : 'Partida em andamento' }}</h3>
+      @if (elapsed(); as clock) {
+        <span class="clock num" [title]="'Iniciada às ' + startTime(live.gameStartTime)">{{ clock }}</span>
+      }
     </div>
 
+    <nav class="tabs" role="tablist" aria-label="Seções da partida">
+      <button type="button" role="tab" class="tab" [class.active]="tab() === 'players'" [attr.aria-selected]="tab() === 'players'" (click)="tab.set('players')">
+        Jogadores
+      </button>
+      <button type="button" role="tab" class="tab" [class.active]="tab() === 'live'" [attr.aria-selected]="tab() === 'live'" (click)="tab.set('live')">
+        <span class="tab-dot" [class.on]="!!liveData.data()"></span>
+        Ao vivo
+      </button>
+      @if (me()?.championId) {
+        <button type="button" role="tab" class="tab" [class.active]="tab() === 'build'" [attr.aria-selected]="tab() === 'build'" (click)="tab.set('build')">
+          Sua build
+        </button>
+      }
+    </nav>
+
     @if (winChance(); as chance) {
-      <div class="win-chance">
-        <div class="labels">
-          <span class="ally"><strong>{{ chance.allyPercent }}%</strong> seu time</span>
-          <span class="chance-title">Chance de vitória</span>
-          <span class="enemy">inimigos <strong>{{ 100 - chance.allyPercent }}%</strong></span>
-        </div>
-        <div class="bar">
-          <span class="fill" [style.width.%]="chance.allyPercent"></span>
-        </div>
-        <p class="note">
-          Estimativa pelo elo médio dos times ({{ chance.rankedPlayers }} de {{ chance.totalPlayers }} jogadores com elo).
-          Não considera campeões, composição nem o modo de jogo.
-        </p>
+      <div
+        class="win-chance"
+        [title]="'Chance de vitória estimada pelo elo médio dos times (' + chance.rankedPlayers + ' de ' + chance.totalPlayers + ' jogadores com elo). Não considera campeões, composição nem o modo de jogo.'"
+      >
+        <span class="ally num">{{ chance.allyPercent }}%</span>
+        <span class="bar" aria-hidden="true"><span class="fill" [style.width.%]="chance.allyPercent"></span></span>
+        <span class="enemy num">{{ 100 - chance.allyPercent }}%</span>
       </div>
     }
-  </section>
 
-  <nav class="tabs" role="tablist">
-    <button type="button" role="tab" class="tab" [class.active]="tab() === 'players'" [attr.aria-selected]="tab() === 'players'" (click)="tab.set('players')">
-      Jogadores
+    <button type="button" class="ghost refresh" [disabled]="loading()" [title]="loading() ? 'Atualizando…' : 'Atualizar'" (click)="load()">
+      {{ loading() ? 'Atualizando…' : 'Atualizar' }}
     </button>
-    <button type="button" role="tab" class="tab" [class.active]="tab() === 'live'" [attr.aria-selected]="tab() === 'live'" (click)="tab.set('live')">
-      <span class="tab-dot" [class.on]="!!liveData.data()"></span>
-      Ao vivo
-      <span class="tab-hint">timers, objetivos e rota a rota</span>
-    </button>
-  </nav>
+  </header>
 
   @if (tab() === 'live') {
     <app-live-dashboard />
+  } @else if (tab() === 'build') {
+    @if (me(); as mine) {
+      <section class="match-build">
+        <app-champion-stats [championId]="mine.championId" [enemyIds]="enemyIds()" [allyIds]="allyIds()" [wide]="true" />
+      </section>
+    }
   } @else {
 
   @if (waitingRiot()) {
@@ -290,15 +291,6 @@
       </section>
     }
   </div>
-
-  @if (me(); as mine) {
-    @if (mine.championId > 0) {
-      <section class="match-build">
-        <h4>Sua build para esta partida</h4>
-        <app-champion-stats [championId]="mine.championId" [enemyIds]="enemyIds()" [allyIds]="allyIds()" />
-      </section>
-    }
-  }
 
   <p class="hint muted">
     Clique num jogador para ver as últimas partidas dele (e o placar de cada uma), ou no nome para abrir o histórico completo.

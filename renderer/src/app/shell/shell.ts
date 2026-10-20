@@ -4,6 +4,7 @@ import { PreferencesService } from '../core/preferences.service';
 import { ToastService, errorText } from '../core/toast.service';
 import { HistoryView } from '../history/history-view';
 import { LcuService } from '../lcu/lcu.service';
+import { LiveDataService } from '../live/live-data.service';
 import { Icon } from '../ui/icon';
 import { BuildsView } from '../views/builds-view';
 import { ChampSelectView } from '../views/champ-select-view';
@@ -19,25 +20,51 @@ interface NavItem {
   icon: string;
 }
 
-const NAV: NavItem[] = [
-  { view: 'home', label: 'Início', icon: 'home' },
-  { view: 'play', label: 'Jogar', icon: 'play' },
-  { view: 'champ-select', label: 'Seleção', icon: 'swords' },
-  { view: 'live', label: 'Partida ao vivo', icon: 'live' },
-  { view: 'tierlist', label: 'Tier list', icon: 'layers' },
-  { view: 'builds', label: 'Builds', icon: 'book' },
-  { view: 'history', label: 'Histórico', icon: 'history' },
+/** Fluxo da partida (da sala à partida) e, separado, as consultas. */
+const NAV_GROUPS: NavItem[][] = [
+  [
+    { view: 'home', label: 'Início', icon: 'home' },
+    { view: 'play', label: 'Jogar', icon: 'play' },
+    { view: 'champ-select', label: 'Seleção', icon: 'swords' },
+    { view: 'live', label: 'Partida ao vivo', icon: 'live' },
+  ],
+  [
+    { view: 'tierlist', label: 'Tier list', icon: 'layers' },
+    { view: 'builds', label: 'Builds', icon: 'book' },
+    { view: 'history', label: 'Histórico', icon: 'history' },
+  ],
 ];
 
-const STATUS_LABELS = {
-  'waiting-client': 'Cliente fechado',
-  connecting: 'Conectando…',
-  connected: 'Cliente conectado',
-} as const;
+/** Tom do indicador de fase: cor e se pulsa. */
+type PhaseTone = 'off' | 'idle' | 'queue' | 'alert' | 'active' | 'live';
+
+interface PhaseInfo {
+  tone: PhaseTone;
+  label: string;
+  /** Tempo na fila ou relógio da partida. */
+  detail: string | null;
+  /** Tela que o indicador abre ao clicar. */
+  view: View | null;
+}
+
+function clock(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
 
 @Component({
   selector: 'app-shell',
-  imports: [Icon, HomeView, PlayView, ChampSelectView, LiveView, TierListView, BuildsView, HistoryView, SettingsView],
+  imports: [
+    Icon,
+    HomeView,
+    PlayView,
+    ChampSelectView,
+    LiveView,
+    TierListView,
+    BuildsView,
+    HistoryView,
+    SettingsView,
+  ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -47,10 +74,60 @@ export class Shell {
   protected readonly nav = inject(NavigationService);
   protected readonly toast = inject(ToastService);
 
+  private readonly live = inject(LiveDataService);
+
   protected readonly state = this.lcu.state;
-  protected readonly items = NAV;
+  protected readonly groups = NAV_GROUPS;
   protected readonly title = computed(() => VIEW_TITLES[this.nav.view()]);
-  protected readonly statusLabel = computed(() => STATUS_LABELS[this.state().status]);
+
+  protected viewTitle(view: View): string {
+    return VIEW_TITLES[view];
+  }
+
+  protected readonly phase = computed<PhaseInfo>(() => {
+    const state = this.state();
+    if (state.status !== 'connected') {
+      return {
+        tone: 'off',
+        label: state.status === 'connecting' ? 'Conectando ao cliente…' : 'Cliente do LoL fechado',
+        detail: null,
+        view: null,
+      };
+    }
+    switch (state.gameflowPhase) {
+      case 'Lobby':
+        return { tone: 'idle', label: 'Na sala', detail: null, view: 'play' };
+      case 'Matchmaking':
+        return {
+          tone: 'queue',
+          label: 'Na fila',
+          detail: state.search ? clock(state.search.timeInQueue) : null,
+          view: 'play',
+        };
+      case 'ReadyCheck':
+        return { tone: 'alert', label: 'Partida encontrada', detail: null, view: null };
+      case 'ChampSelect':
+        return { tone: 'active', label: 'Seleção de campeões', detail: null, view: 'champ-select' };
+      case 'GameStart':
+        return { tone: 'active', label: 'Carregando a partida', detail: null, view: 'live' };
+      case 'InProgress':
+      case 'Reconnect': {
+        const time = this.live.clock();
+        return {
+          tone: 'live',
+          label: 'Em partida',
+          detail: time > 0 ? clock(time) : null,
+          view: 'live',
+        };
+      }
+      case 'WaitingForStats':
+      case 'PreEndOfGame':
+      case 'EndOfGame':
+        return { tone: 'idle', label: 'Fim de jogo', detail: null, view: 'history' };
+      default:
+        return { tone: 'idle', label: 'No menu principal', detail: null, view: null };
+    }
+  });
 
   protected readonly inLobby = computed(() => {
     const phase = this.state().gameflowPhase;

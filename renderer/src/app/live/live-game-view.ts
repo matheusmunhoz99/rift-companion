@@ -16,7 +16,13 @@ import { LiveDataService } from './live-data.service';
 
 /** Summoner's Rift: o único mapa com as cinco rotas. */
 const SUMMONERS_RIFT = 11;
-const LANE_SHORT: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' };
+const LANE_SHORT: Record<string, string> = {
+  TOP: 'TOP',
+  JUNGLE: 'JG',
+  MIDDLE: 'MID',
+  BOTTOM: 'ADC',
+  UTILITY: 'SUP',
+};
 
 const RECENT_GAMES = 10;
 /** Quantas partidas suas são cruzadas com os jogadores da partida atual. */
@@ -65,7 +71,13 @@ export class LiveGameView {
   protected readonly liveData = inject(LiveDataService);
   /** Aba: jogadores (elo, histórico) ou dados ao vivo do jogo (timers, objetivos). */
   // A aba inicial pelo hash (#...&tab=live) é usada na revisão visual.
-  protected readonly tab = signal<'players' | 'live'>(location.hash.includes('tab=live') ? 'live' : 'players');
+  protected readonly tab = signal<'players' | 'live' | 'build'>(
+    location.hash.includes('tab=live')
+      ? 'live'
+      : location.hash.includes('tab=build')
+        ? 'build'
+        : 'players',
+  );
 
   protected readonly game = signal<LiveGame | null>(null);
   protected readonly loading = signal(false);
@@ -107,7 +119,10 @@ export class LiveGameView {
         team.map((p) => ({
           championId: p.championId,
           summonerSpellIds: p.summonerSpellIds,
-          known: known.get(`id:${p.riotId.toLowerCase()}`) ?? known.get(`${p.teamId}:${p.championId}`) ?? null,
+          known:
+            known.get(`id:${p.riotId.toLowerCase()}`) ??
+            known.get(`${p.teamId}:${p.championId}`) ??
+            null,
         })),
         this.tierList(),
       );
@@ -119,7 +134,9 @@ export class LiveGameView {
   /** Ordem Topo, Selva, Meio, Atirador, Suporte quando as rotas são conhecidas ou estimadas. */
   private byPosition(team: LiveParticipant[]): LiveParticipant[] {
     const positions = this.positions();
-    return [...team].sort((a, b) => positionOrder(positions.get(a)) - positionOrder(positions.get(b)));
+    return [...team].sort(
+      (a, b) => positionOrder(positions.get(a)) - positionOrder(positions.get(b)),
+    );
   }
 
   /** Sigla da rota para a etiqueta à esquerda do campeão (só em Summoner's Rift). */
@@ -138,11 +155,15 @@ export class LiveGameView {
   }
 
   protected readonly allies = computed(() =>
-    this.byPosition((this.game()?.participants ?? []).filter((p) => p.teamId === this.allyTeamId())),
+    this.byPosition(
+      (this.game()?.participants ?? []).filter((p) => p.teamId === this.allyTeamId()),
+    ),
   );
 
   protected readonly enemies = computed(() =>
-    this.byPosition((this.game()?.participants ?? []).filter((p) => p.teamId !== this.allyTeamId())),
+    this.byPosition(
+      (this.game()?.participants ?? []).filter((p) => p.teamId !== this.allyTeamId()),
+    ),
   );
 
   /** Campeões inimigos, comparados por conteúdo para não recarregar a build a cada atualização. */
@@ -165,9 +186,13 @@ export class LiveGameView {
   private readonly partyGroups = computed(() => {
     const game = this.game();
     if (!game) return [];
-    const byPuuid = new Map(game.participants.filter((p) => p.puuid).map((p) => [p.puuid, p.riotId.toLowerCase()]));
+    const byPuuid = new Map(
+      game.participants.filter((p) => p.puuid).map((p) => [p.puuid, p.riotId.toLowerCase()]),
+    );
     const inGame = new Set(game.participants.map((p) => p.riotId.toLowerCase()));
-    const groups: string[][] = this.premades().map((g) => g.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id));
+    const groups: string[][] = this.premades().map((g) =>
+      g.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id),
+    );
     const party = this.lcu.party().filter((id) => inGame.has(id));
     if (party.length > 1) groups.push(party);
 
@@ -185,7 +210,10 @@ export class LiveGameView {
   protected readonly parties = computed(() => {
     const result = new Map<string, { color: string; label: string }>();
     this.partyGroups().forEach((group, index) => {
-      const info = { color: PARTY_COLORS[index % PARTY_COLORS.length], label: PARTY_NAMES[group.size] ?? `Grupo de ${group.size}` };
+      const info = {
+        color: PARTY_COLORS[index % PARTY_COLORS.length],
+        label: PARTY_NAMES[group.size] ?? `Grupo de ${group.size}`,
+      };
       for (const id of group) result.set(id, info);
     });
     return result;
@@ -256,13 +284,19 @@ export class LiveGameView {
   protected readonly openRecent = signal<{ puuid: string; matchId: string } | null>(null);
 
   protected toggleRecent(puuid: string, matchId: string): void {
-    this.openRecent.update((current) => (current?.puuid === puuid && current.matchId === matchId ? null : { puuid, matchId }));
+    this.openRecent.update((current) =>
+      current?.puuid === puuid && current.matchId === matchId ? null : { puuid, matchId },
+    );
   }
 
   protected recentMatch(participant: LiveParticipant): MatchSummary | null {
     const open = this.openRecent();
     if (!open || open.puuid !== participant.puuid) return null;
-    return this.asSummary(this.recentFor(participant))?.recentGames.find((g) => g.match.matchId === open.matchId)?.match ?? null;
+    return (
+      this.asSummary(this.recentFor(participant))?.recentGames.find(
+        (g) => g.match.matchId === open.matchId,
+      )?.match ?? null
+    );
   }
 
   protected readonly winChance = computed(() => {
@@ -300,7 +334,11 @@ export class LiveGameView {
       const game = this.game();
       const groups = this.partyGroups();
       const platformId = untracked(() => this.lcu.state().platformId) ?? 'BR1';
-      if (game && game.gameId > 0 && groups.length) rememberParties(`${platformId}_${game.gameId}`, groups.map((g) => [...g]));
+      if (game && game.gameId > 0 && groups.length)
+        rememberParties(
+          `${platformId}_${game.gameId}`,
+          groups.map((g) => [...g]),
+        );
     });
   }
 
@@ -318,7 +356,10 @@ export class LiveGameView {
       this.game.set(game);
       this.waitingRiot.set(false);
       // A Riot API não informa rotas; o jogo local às vezes sim.
-      void window.riot.getLocalGame().then((local) => local && this.rememberPositions(local), () => undefined);
+      void window.riot.getLocalGame().then(
+        (local) => local && this.rememberPositions(local),
+        () => undefined,
+      );
       void this.loadEncounters(game, platformId);
       void this.loadPremades(game, summoner.gameName, summoner.tagLine, platformId);
     } catch (error) {
@@ -415,18 +456,27 @@ export class LiveGameView {
     this.encounters.set('loading');
     try {
       // Nos dados locais não há puuid: o seu vem pelo Riot ID.
-      const myPuuid = me.puuid || (await window.riot.findPlayer(summoner.gameName, summoner.tagLine, platformId)).puuid;
+      const myPuuid =
+        me.puuid ||
+        (await window.riot.findPlayer(summoner.gameName, summoner.tagLine, platformId)).puuid;
       const matches = await window.riot.getMatches(myPuuid, platformId, 0, ENCOUNTER_GAMES);
       this.myMatches.set(matches);
       this.myPuuid.set(myPuuid);
-      this.encounters.set(findEncounters(myPuuid, me.riotId, me.teamId, game.participants, matches));
+      this.encounters.set(
+        findEncounters(myPuuid, me.riotId, me.teamId, game.participants, matches),
+      );
     } catch {
       this.encounters.set(null);
     }
   }
 
   /** Grupos pelo histórico (uma vez por partida; o servidor guarda o resultado). */
-  private async loadPremades(game: LiveGame, gameName: string, tagLine: string, platformId: string): Promise<void> {
+  private async loadPremades(
+    game: LiveGame,
+    gameName: string,
+    tagLine: string,
+    platformId: string,
+  ): Promise<void> {
     if (!window.riot || this.premadesFor === game.gameId) return;
     this.premadesFor = game.gameId;
     try {
@@ -449,7 +499,9 @@ export class LiveGameView {
         championId: this.ddragon.championKeyOf(p.championKey),
         teamId: p.team === 'CHAOS' ? 200 : 100,
         // O Golpear evoluído tem nomes próprios no jogo; todos contam como Golpear (11).
-        summonerSpellIds: p.spellKeys.map((key) => this.ddragon.spellIdOf(key) || (/smite/i.test(key) ? 11 : 0)),
+        summonerSpellIds: p.spellKeys.map(
+          (key) => this.ddragon.spellIdOf(key) || (/smite/i.test(key) ? 11 : 0),
+        ),
         keystoneId: p.keystoneId,
         subStyleId: p.subStyleId,
         ranked: [],
@@ -461,9 +513,11 @@ export class LiveGameView {
   /** Guarda as rotas que o jogo (todos os jogadores) e a seleção (às vezes parcial) informaram. */
   private rememberPositions(local: LocalGame): void {
     const known = new Map<string, string>();
-    for (const { teamId, championId, position } of local.championPositions ?? []) known.set(`${teamId}:${championId}`, position);
+    for (const { teamId, championId, position } of local.championPositions ?? [])
+      known.set(`${teamId}:${championId}`, position);
     for (const player of local.players) {
-      if (player.riotId && player.position) known.set(`id:${player.riotId.toLowerCase()}`, player.position);
+      if (player.riotId && player.position)
+        known.set(`id:${player.riotId.toLowerCase()}`, player.position);
     }
     if (known.size) this.knownPositions.set(known);
   }
@@ -510,7 +564,12 @@ function summarize(matches: MatchSummary[], participant: LiveParticipant): Recen
     const p = match.participants.find((x) => x.puuid === participant.puuid);
     if (!p) continue;
     results.push(p.win);
-    recentGames.push({ match, championId: p.championId, win: p.win, kda: `${p.kills}/${p.deaths}/${p.assists}` });
+    recentGames.push({
+      match,
+      championId: p.championId,
+      win: p.win,
+      kda: `${p.kills}/${p.deaths}/${p.assists}`,
+    });
     if (p.win) wins++;
     kills += p.kills;
     deaths += p.deaths;

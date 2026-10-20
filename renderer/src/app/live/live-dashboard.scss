@@ -1,6 +1,8 @@
+// Painel ao vivo: cabe numa janela de 1320×840 sem rolar.
+// Placar compacto em cima; rota a rota com os timers ao lado; gráfico, você e lances embaixo.
 :host {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 
   // Cores dos lados (o vermelho do gráfico foi validado contra o fundo escuro).
   --ally-strong: #4a7fd6;
@@ -15,11 +17,10 @@ p {
 }
 
 h4 {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .muted {
@@ -42,24 +43,32 @@ h4 {
   color: var(--enemy-text);
 }
 
-// Placar.
+/* ------------------------------------------------------------------ Placar */
+
 .scoreboard {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px 20px;
-  padding: 16px 20px;
+  gap: 10px 18px;
+  padding: 10px 16px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--ally-strong) 16%, transparent), transparent 40%, transparent 60%, color-mix(in srgb, var(--enemy-strong) 14%, transparent)),
-    var(--bg);
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ally-strong) 15%, transparent),
+      transparent 30%,
+      transparent 70%,
+      color-mix(in srgb, var(--enemy-strong) 13%, transparent)
+    ),
+    var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
 }
 
 .side {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 10px;
 
   &.enemy {
     justify-content: flex-end;
@@ -67,85 +76,51 @@ h4 {
 }
 
 .side-name {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .kills {
+  min-width: 2ch;
   color: var(--text);
-  font-size: 38px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
-.clock {
-  display: grid;
-  justify-items: center;
-}
-
-.clock-time {
-  font-size: 22px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.clock-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--danger);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-
-  &::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    animation: pulse 1.6s ease-in-out infinite;
-  }
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.3;
-  }
-}
-
 .objectives {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
 }
 
 .objective {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto auto auto;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  min-width: 112px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
 
   .label {
     color: var(--muted);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
   }
 
   .value {
+    font-family: var(--font-display);
     font-size: 16px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    opacity: 0.75;
+    opacity: 0.7;
 
     &.enemy {
       text-align: right;
@@ -159,7 +134,7 @@ h4 {
 
 .drakes {
   display: flex;
-  gap: 4px;
+  gap: 3px;
 
   &.enemy {
     justify-content: flex-end;
@@ -167,14 +142,15 @@ h4 {
 
   .none {
     color: var(--faint);
+    font-family: var(--font-display);
     font-weight: 700;
   }
 }
 
 .drake {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--bg);
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--surface);
   border-radius: 50%;
   background: var(--drake);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--drake) 60%, transparent);
@@ -183,19 +159,19 @@ h4 {
 .value-bar {
   display: grid;
   grid-column: 1 / -1;
-  gap: 6px;
+  gap: 4px;
 
   .bar {
-    height: 8px;
+    height: 6px;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 3px;
     background: var(--enemy-strong);
 
     span {
       display: block;
       height: 100%;
       background: var(--ally-strong);
-      box-shadow: 2px 0 0 var(--bg);
+      box-shadow: 2px 0 0 var(--surface);
       transition: width 0.6s ease;
     }
   }
@@ -205,109 +181,56 @@ h4 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-size: 13px;
+  font-family: var(--font-display);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .value-title {
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-
-  strong {
-    margin-left: 6px;
-    font-size: 13px;
-    letter-spacing: 0;
-  }
-}
-
-// Timers.
-.timers {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
-}
-
-.timer {
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg);
-
-  &.ready {
-    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
-    background: linear-gradient(180deg, color-mix(in srgb, var(--warning) 10%, transparent), transparent), var(--bg);
-
-    .timer-value {
-      color: var(--warning);
-    }
-  }
-}
-
-.timer-title {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.timer-value {
-  font-size: 24px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-
-.timer-note {
-  color: var(--faint);
-  font-size: 11px;
-}
-
-.timer-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
 
-  img {
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
-  }
-
   strong {
-    margin-left: auto;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
+    margin-left: 6px;
+    font-family: var(--font-display);
+    font-size: 14px;
   }
 }
 
-// Rota a rota.
+/* ------------------------------------------------------------------ Meio */
+
+.middle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: start;
+  gap: 12px;
+
+  @media (max-width: 1080px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Rota a rota. */
 .lanes {
   display: grid;
-  gap: 6px;
-  padding: 12px 14px;
+  gap: 5px;
+  padding: 10px 12px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
 }
 
 .lanes-head {
   display: grid;
-  grid-template-columns: 1fr 96px 1fr;
+  grid-template-columns: 1fr 76px 1fr;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
   text-align: center;
-  text-transform: uppercase;
 
   .ally {
     text-align: left;
@@ -320,25 +243,26 @@ h4 {
 
 .matchup {
   display: grid;
-  grid-template-columns: 1fr 96px 1fr;
+  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
+// Duas linhas: nome em cima, KDA e CS embaixo; itens ao lado.
 .lane-player {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 6px 10px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--ally-strong);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--well);
 
   &.mirror {
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     border-right: 3px solid var(--enemy-strong);
     border-left-width: 1px;
     direction: rtl;
@@ -347,21 +271,21 @@ h4 {
       direction: ltr;
     }
 
-    .who,
-    .numbers {
+    .who {
+      justify-items: end;
       text-align: right;
     }
   }
 
   &.me {
     border-color: var(--accent);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%), var(--surface);
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+      var(--well);
   }
 
-  &.dead {
-    .champ img {
-      filter: grayscale(1) brightness(0.55);
-    }
+  &.dead .champ img {
+    filter: grayscale(1) brightness(0.55);
   }
 
   &.empty-slot {
@@ -375,23 +299,24 @@ h4 {
 
   img {
     display: block;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
   }
 
   .level {
     position: absolute;
     right: -4px;
     bottom: -4px;
-    min-width: 17px;
+    min-width: 16px;
     padding: 0 3px;
     border: 1px solid var(--border-strong);
-    border-radius: 8px;
+    border-radius: 7px;
     background: var(--surface-3);
+    font-family: var(--font-display);
     font-size: 10px;
     font-weight: 700;
-    line-height: 15px;
+    line-height: 14px;
     text-align: center;
   }
 
@@ -401,8 +326,9 @@ h4 {
     display: grid;
     place-items: center;
     color: #fff;
+    font-family: var(--font-display);
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 700;
     text-shadow: 0 1px 3px #000;
   }
 }
@@ -420,18 +346,25 @@ h4 {
   }
 
   .champ-name {
+    overflow: hidden;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
 .numbers {
-  display: grid;
-  font-size: 11px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 11.5px;
   white-space: nowrap;
 
   .kda {
-    font-size: 13px;
+    font-family: var(--font-display);
+    font-size: 14px;
     font-weight: 700;
   }
 
@@ -446,8 +379,8 @@ h4 {
 
   img,
   .empty {
-    width: 22px;
-    height: 22px;
+    width: 19px;
+    height: 19px;
     border-radius: 4px;
   }
 
@@ -464,23 +397,24 @@ h4 {
 .lane-center {
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .lane-tag {
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: 4px;
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .lane-diff {
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -490,13 +424,97 @@ h4 {
   font-weight: 600;
 }
 
-// Gráfico, você e lances.
+/* Timers empilhados ao lado do rota a rota. */
+.timers {
+  display: grid;
+  gap: 8px;
+
+  @media (max-width: 1080px) {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+}
+
+.timer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
+
+  &.ready {
+    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--warning) 12%, transparent), transparent),
+      var(--surface);
+
+    .timer-value {
+      color: var(--warning);
+    }
+  }
+}
+
+.timer-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.timer-value {
+  grid-row: span 2;
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
+}
+
+.timer-note {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+// Inibidores e mortos: lista, uma linha por item.
+.timer-line {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+
+  img {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+
+  strong {
+    margin-left: auto;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.timer:has(.timer-line) .timer-title {
+  grid-column: 1 / -1;
+}
+
+/* ------------------------------------------------------------------ Embaixo */
+
 .bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr) minmax(220px, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 12px;
 
-  @media (max-width: 1250px) {
+  @media (max-width: 1180px) {
     grid-template-columns: 1fr 1fr;
 
     .chart-card {
@@ -512,11 +530,12 @@ h4 {
 .card {
   display: grid;
   align-content: start;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 10px 12px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
 }
 
 .card-head {
@@ -529,14 +548,14 @@ h4 {
 .legend {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: var(--muted);
   font-size: 11px;
 
   .key {
-    width: 10px;
-    height: 10px;
-    margin-left: 8px;
+    width: 9px;
+    height: 9px;
+    margin-left: 6px;
     border-radius: 2px;
 
     &.ally {
@@ -555,7 +574,7 @@ h4 {
   svg {
     display: block;
     width: 100%;
-    height: 150px;
+    height: 112px;
     overflow: visible;
     cursor: crosshair;
   }
@@ -600,7 +619,7 @@ h4 {
 
   .marker {
     fill: var(--ally-strong);
-    stroke: var(--bg);
+    stroke: var(--surface);
     stroke-width: 2;
     vector-effect: non-scaling-stroke;
 
@@ -620,17 +639,17 @@ h4 {
   border-radius: 6px;
   background: var(--surface-3);
   font-size: 12px;
+  white-space: nowrap;
   pointer-events: none;
   transform: translate(-50%, -100%);
-  white-space: nowrap;
 }
 
 .axis {
   display: flex;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .empty {
@@ -639,11 +658,13 @@ h4 {
 
 .gold {
   color: var(--warning);
+  font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 
   .muted {
+    font-family: var(--font-ui);
     font-size: 11px;
     font-weight: 600;
   }
@@ -651,7 +672,7 @@ h4 {
 
 .hp {
   position: relative;
-  height: 18px;
+  height: 16px;
   overflow: hidden;
   border-radius: 5px;
   background: var(--surface-3);
@@ -669,6 +690,7 @@ h4 {
   inset: 0;
   display: grid;
   place-items: center;
+  font-family: var(--font-display);
   font-size: 11px;
   font-weight: 700;
   text-shadow: 0 1px 2px #000;
@@ -677,22 +699,30 @@ h4 {
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 12px;
+  gap: 4px 12px;
   color: var(--muted);
   font-size: 11px;
 
+  // Número e nome na mesma linha: o cartão fica baixo.
+  span {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
   strong {
-    display: block;
+    min-width: 3.2ch;
     color: var(--text);
-    font-size: 15px;
+    font-family: var(--font-display);
+    font-size: 14px;
     font-variant-numeric: tabular-nums;
   }
 }
 
 .feed {
   display: grid;
-  gap: 2px;
-  max-height: 230px;
+  gap: 1px;
+  max-height: 150px;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -701,10 +731,10 @@ h4 {
 
 .event {
   display: grid;
-  grid-template-columns: 38px 10px 1fr;
+  grid-template-columns: 36px 8px 1fr;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: 6px;
   font-size: 12px;
 
@@ -725,6 +755,7 @@ h4 {
 
 .event-time {
   color: var(--faint);
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
 }
 
@@ -757,4 +788,121 @@ h4 {
   padding: 24px;
   font-size: 13px;
   text-align: center;
+}
+
+.small {
+  font-size: 11px;
+}
+
+/* Ouro de cada jogador (valor dos itens), ao lado do nome. */
+.name-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+
+  .name {
+    min-width: 0;
+  }
+
+  .mirror & {
+    flex-direction: row-reverse;
+  }
+}
+
+.player-gold {
+  flex: none;
+  color: var(--warning);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Objetivos com surgimento fixo: uma linha por objetivo, na ordem em que nascem. */
+.objectives-card {
+  gap: 6px;
+
+  .timer-title {
+    grid-column: 1 / -1;
+  }
+}
+
+.objective-row {
+  --objective: var(--muted);
+
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+
+  strong {
+    margin-left: auto;
+    color: var(--text);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &[data-key='dragon'] {
+    --objective: #ff7a45;
+  }
+
+  &[data-key='grubs'] {
+    --objective: #b38cff;
+  }
+
+  &[data-key='herald'] {
+    --objective: #8e7cff;
+  }
+
+  &[data-key='atakhan'] {
+    --objective: #e5435a;
+  }
+
+  &[data-key='baron'] {
+    --objective: #b673f2;
+  }
+
+  // No mapa: destaque em âmbar para chamar a atenção.
+  &.alive {
+    .objective-name {
+      color: var(--text);
+    }
+
+    strong {
+      color: var(--warning);
+    }
+  }
+}
+
+.objective-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--objective);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--objective) 60%, transparent);
+
+  .alive & {
+    animation: objective-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+.objective-name {
+  color: var(--muted);
+}
+
+.alive-tag {
+  font-family: var(--font-ui);
+  font-size: 12px !important;
+  text-transform: none;
+}
+
+@keyframes objective-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }

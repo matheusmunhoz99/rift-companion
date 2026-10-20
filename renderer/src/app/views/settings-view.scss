@@ -69,7 +69,7 @@ p {
 
     &.active {
       background: var(--accent);
-      color: #fff;
+      color: var(--accent-ink);
     }
   }
 }
@@ -195,7 +195,9 @@ p {
   color: var(--text);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 
   &:hover {
     border-color: var(--border-strong);

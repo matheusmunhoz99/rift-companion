@@ -35,15 +35,20 @@
       <div class="ranks">
         @if (profile(); as player) {
           @for (entry of player.ranked; track entry.queueType) {
-            <div class="rank">
+            <div class="rank" [attr.data-tier]="entry.tier">
               <span class="rank-queue">{{ rankLabel(entry.queueType) }}</span>
-              <strong>{{ rankText(entry) }}</strong>
+              <strong class="rank-tier">{{ rankText(entry) }}</strong>
               <span class="muted">
                 {{ entry.wins }}V {{ entry.losses }}D
                 @if (winRate(entry.wins, entry.losses); as rate) {
                   · {{ rate }}%
                 }
               </span>
+              @if (entry.wins + entry.losses > 0) {
+                <span class="rank-bar" [title]="'Vitórias na temporada'">
+                  <span [style.width.%]="(entry.wins / (entry.wins + entry.losses)) * 100"></span>
+                </span>
+              }
             </div>
           } @empty {
             <div class="rank">

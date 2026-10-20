@@ -38,6 +38,8 @@ run('ssh', ['-o', 'BatchMode=yes', HOST, `mkdir -p ${REMOTE_DIR}`]);
 run('scp', ['-o', 'BatchMode=yes', exe, `${HOST}:${REMOTE_DIR}/${file}.part`]);
 run('ssh', ['-o', 'BatchMode=yes', HOST, `mv ${REMOTE_DIR}/${file}.part ${REMOTE_DIR}/${file}`]);
 run('scp', ['-o', 'BatchMode=yes', manifestPath, `${HOST}:${REMOTE_DIR}/latest.json.part`]);
+// Tempos de surgimento dos objetivos lidos pela partida ao vivo (editáveis sem nova versão).
+run('scp', ['-o', 'BatchMode=yes', path.join(__dirname, 'timers.json'), `${HOST}:${REMOTE_DIR}/timers.json`]);
 // Publica o manifesto, aponta o link fixo de download (RiftCompanion.exe) para a
 // versão nova e mantém só as últimas versões.
 run('ssh', ['-o', 'BatchMode=yes', HOST,

@@ -5,15 +5,6 @@
       <span class="side-name">Seu time</span>
       <span class="kills">{{ game.teams.ally.kills }}</span>
     </div>
-    <div class="clock">
-      <span class="clock-time">{{ time(clock()) }}</span>
-      <span class="clock-label">ao vivo</span>
-    </div>
-    <div class="side enemy">
-      <span class="kills">{{ game.teams.enemy.kills }}</span>
-      <span class="side-name">Inimigos</span>
-    </div>
-
     <div class="objectives">
       @for (row of [
         { label: 'Torres', ally: game.teams.ally.towers, enemy: game.teams.enemy.towers },
@@ -46,6 +37,11 @@
       </div>
     </div>
 
+    <div class="side enemy">
+      <span class="kills">{{ game.teams.enemy.kills }}</span>
+      <span class="side-name">Inimigos</span>
+    </div>
+
     <div class="value-bar" [title]="'Valor dos itens comprados (ouro gasto) por time'">
       <div class="value-labels">
         <span class="ally">{{ thousands(live.teamValue().ally) }}</span>
@@ -61,124 +57,118 @@
     </div>
   </section>
 
-  <!-- Timers: objetivos, inibidores e quem está morto. -->
-  <section class="timers">
-    @if (game.timers; as timers) {
-      <div class="timer" [class.ready]="timers.dragon && !countdown(timers.dragon.at)">
-        <span class="timer-title">{{ timers.dragon?.elder ? 'Dragão Ancião' : 'Dragão' }}</span>
-        @if (timers.dragon; as d) {
-          @if (countdown(d.at); as left) {
-            <span class="timer-value">{{ left }}</span>
-            <span class="timer-note">volta aos {{ time(d.at) }}</span>
-          } @else {
-            <span class="timer-value">Vivo</span>
-            <span class="timer-note">desde {{ time(d.at) }}</span>
+  <!-- Meio: rota a rota (o que mais muda) e, ao lado, os timers empilhados. -->
+  <div class="middle">
+    <!-- Rota a rota. -->
+    <section class="lanes">
+      <header class="lanes-head">
+        <span class="ally">Seu time</span>
+        <span title="Diferença de ouro em itens e de CS entre os jogadores de cada rota">Rota a rota</span>
+        <span class="enemy">Inimigos</span>
+      </header>
+      @for (m of matchups(); track $index) {
+        <div class="matchup">
+          @for (p of [m.ally, m.enemy]; track $index) {
+            @if (p; as player) {
+              <div class="lane-player" [class.mirror]="$index === 1" [class.me]="player.isMe" [class.dead]="player.isDead">
+                <div class="champ" [title]="player.championName">
+                  @if (championIcon(player); as icon) {<img [src]="icon" [alt]="player.championName" />}
+                  <span class="level">{{ player.level }}</span>
+                  @if (player.isDead) {<span class="respawn">{{ player.respawnTimer }}</span>}
+                </div>
+                <div class="who">
+                  <span class="name-line">
+                    <span class="name" [title]="player.riotId">{{ player.riotId.split('#')[0] }}</span>
+                    <span class="player-gold" title="Ouro em itens (valor do que já comprou)">{{ thousands(value(player)) }}</span>
+                  </span>
+                  <span class="numbers">
+                    <span class="kda">{{ player.kills }}/<span class="deaths">{{ player.deaths }}</span>/{{ player.assists }}</span>
+                    <span class="muted">{{ player.cs }} CS · {{ csPerMinute(player) }}/min</span>
+                  </span>
+                </div>
+                <div class="items">
+                  @for (item of player.items; track $index) {
+                    @if (item.id > 0) {
+                      <img [class.trinket]="$index === 6" [src]="ddragon.itemIconUrl(item.id)" [alt]="ddragon.itemName(item.id)" [title]="ddragon.itemName(item.id)" />
+                    } @else {
+                      <span class="empty" [class.trinket]="$index === 6"></span>
+                    }
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="lane-player empty-slot"></div>
+            }
+            @if ($index === 0) {
+              <div class="lane-center">
+                <span class="lane-tag">{{ m.lane || '—' }}</span>
+                @if (m.ally && m.enemy) {
+                  @let diff = value(m.ally) - value(m.enemy);
+                  <span class="lane-diff" [class.ahead]="diff > 0" [class.behind]="diff < 0" title="Diferença no valor dos itens">{{ signed(diff) }}</span>
+                  @let csDiff = m.ally.cs - m.enemy.cs;
+                  <span class="lane-cs" [class.ahead]="csDiff > 0" [class.behind]="csDiff < 0" title="Diferença de CS">{{ csDiff > 0 ? '+' : '' }}{{ csDiff }} CS</span>
+                }
+              </div>
+            }
           }
-        } @else {
-          <span class="timer-value muted">—</span>
-          <span class="timer-note">conta a partir do 1º abate</span>
-        }
-      </div>
-      <div class="timer" [class.ready]="timers.baron !== null && !countdown(timers.baron)">
-        <span class="timer-title">Barão</span>
-        @if (timers.baron !== null) {
-          @if (countdown(timers.baron); as left) {
-            <span class="timer-value">{{ left }}</span>
-            <span class="timer-note">volta aos {{ time(timers.baron) }}</span>
-          } @else {
-            <span class="timer-value">Vivo</span>
-            <span class="timer-note">desde {{ time(timers.baron) }}</span>
+        </div>
+      }
+    </section>
+
+    <!-- Timers: objetivos, inibidores e quem está morto. -->
+    <section class="timers">
+      @if (game.objectives.length) {
+        <!-- Surgimentos fixos da temporada: conta até o primeiro e, depois de cada abate, até o próximo. -->
+        <div class="timer objectives-card">
+          <span class="timer-title">Objetivos</span>
+          @for (o of game.objectives; track o.key) {
+            @if (o.state !== 'done') {
+              <span class="objective-row" [attr.data-key]="o.key" [class.alive]="o.state === 'alive' || !countdown(o.at)">
+                <span class="objective-dot"></span>
+                <span class="objective-name">{{ o.name }}</span>
+                @if (countdown(o.at); as left) {
+                  <strong class="num" [title]="'Nasce aos ' + time(o.at)">{{ left }}</strong>
+                } @else {
+                  <strong class="alive-tag">no mapa</strong>
+                }
+              </span>
+            }
           }
-        } @else {
-          <span class="timer-value muted">—</span>
-          <span class="timer-note">conta a partir do 1º abate</span>
-        }
-      </div>
-      <div class="timer">
-        <span class="timer-title">Inibidores</span>
-        @for (inhib of timers.inhibitors; track inhib.lane + inhib.ally) {
-          <span class="timer-line" [class.ally]="inhib.ally" [class.enemy]="!inhib.ally">
-            {{ inhib.ally ? 'Seu' : 'Inimigo' }} · {{ inhib.lane || '?' }} <strong>{{ countdown(inhib.respawnAt) }}</strong>
+        </div>
+      }
+      @if (game.timers; as timers) {
+        <div class="timer">
+          <span class="timer-title">Inibidores</span>
+          @for (inhib of timers.inhibitors; track inhib.lane + inhib.ally) {
+            <span class="timer-line" [class.ally]="inhib.ally" [class.enemy]="!inhib.ally">
+              {{ inhib.ally ? 'Seu' : 'Inimigo' }} · {{ inhib.lane || '?' }} <strong>{{ countdown(inhib.respawnAt) }}</strong>
+            </span>
+          } @empty {
+            <span class="timer-value muted">—</span>
+            <span class="timer-note">todos de pé</span>
+          }
+        </div>
+      }
+      <div class="timer deaths">
+        <span class="timer-title">Mortos agora</span>
+        @for (d of dead(); track d.player.riotId) {
+          <span class="timer-line" [class.ally]="d.player.ally" [class.enemy]="!d.player.ally">
+            @if (championIcon(d.player); as icon) {<img [src]="icon" alt="" />}
+            {{ d.player.championName }} <strong>{{ d.seconds }}s</strong>
           </span>
         } @empty {
           <span class="timer-value muted">—</span>
-          <span class="timer-note">todos de pé</span>
+          <span class="timer-note">todos vivos</span>
         }
       </div>
-    }
-    <div class="timer deaths">
-      <span class="timer-title">Mortos agora</span>
-      @for (d of dead(); track d.player.riotId) {
-        <span class="timer-line" [class.ally]="d.player.ally" [class.enemy]="!d.player.ally">
-          @if (championIcon(d.player); as icon) {<img [src]="icon" alt="" />}
-          {{ d.player.championName }} <strong>{{ d.seconds }}s</strong>
-        </span>
-      } @empty {
-        <span class="timer-value muted">—</span>
-        <span class="timer-note">todos vivos</span>
-      }
-    </div>
-  </section>
-
-  <!-- Rota a rota. -->
-  <section class="lanes">
-    <header class="lanes-head">
-      <span class="ally">Seu time</span>
-      <span>Rota a rota</span>
-      <span class="enemy">Inimigos</span>
-    </header>
-    @for (m of matchups(); track $index) {
-      <div class="matchup">
-        @for (p of [m.ally, m.enemy]; track $index) {
-          @if (p; as player) {
-            <div class="lane-player" [class.mirror]="$index === 1" [class.me]="player.isMe" [class.dead]="player.isDead">
-              <div class="champ">
-                @if (championIcon(player); as icon) {<img [src]="icon" [alt]="player.championName" />}
-                <span class="level">{{ player.level }}</span>
-                @if (player.isDead) {<span class="respawn">{{ player.respawnTimer }}</span>}
-              </div>
-              <div class="who">
-                <span class="name">{{ player.riotId.split('#')[0] }}</span>
-                <span class="champ-name">{{ player.championName }}</span>
-              </div>
-              <div class="numbers">
-                <span class="kda">{{ player.kills }}/<span class="deaths">{{ player.deaths }}</span>/{{ player.assists }}</span>
-                <span class="muted">{{ player.cs }} CS · {{ csPerMinute(player) }}</span>
-              </div>
-              <div class="items">
-                @for (item of player.items; track $index) {
-                  @if (item.id > 0) {
-                    <img [class.trinket]="$index === 6" [src]="ddragon.itemIconUrl(item.id)" [alt]="ddragon.itemName(item.id)" [title]="ddragon.itemName(item.id)" />
-                  } @else {
-                    <span class="empty" [class.trinket]="$index === 6"></span>
-                  }
-                }
-              </div>
-            </div>
-          } @else {
-            <div class="lane-player empty-slot"></div>
-          }
-          @if ($index === 0) {
-            <div class="lane-center">
-              <span class="lane-tag">{{ m.lane || '—' }}</span>
-              @if (m.ally && m.enemy) {
-                @let diff = value(m.ally) - value(m.enemy);
-                <span class="lane-diff" [class.ahead]="diff > 0" [class.behind]="diff < 0" title="Diferença no valor dos itens">{{ signed(diff) }}</span>
-                @let csDiff = m.ally.cs - m.enemy.cs;
-                <span class="lane-cs" [class.ahead]="csDiff > 0" [class.behind]="csDiff < 0" title="Diferença de CS">{{ csDiff > 0 ? '+' : '' }}{{ csDiff }} CS</span>
-              }
-            </div>
-          }
-        }
-      </div>
-    }
-  </section>
+    </section>
+  </div>
 
   <div class="bottom">
     <!-- Vantagem em itens ao longo da partida. -->
     <section class="card chart-card">
       <header class="card-head">
-        <h4>Vantagem em itens</h4>
+        <h4 title="Valor dos itens já comprados por cada time (ouro gasto). A Riot não informa o ouro no bolso dos outros jogadores.">Vantagem em itens</h4>
         <span class="legend">
           <span class="key ally"></span> seu time à frente
           <span class="key enemy"></span> inimigos à frente
@@ -246,7 +236,10 @@
 
     <!-- Últimos acontecimentos. -->
     <section class="card feed-card">
-      <header class="card-head"><h4>Lances</h4></header>
+      <header class="card-head">
+        <h4>Lances</h4>
+        <span class="muted small" title="Dados do próprio jogo. A Riot não informa dano causado durante a partida: ele aparece no placar ao fim, no histórico.">do jogo, a cada 2 s</span>
+      </header>
       <ol class="feed">
         @for (event of game.events; track $index) {
           <li class="event" [class.ally]="event.ally === true" [class.enemy]="event.ally === false" [attr.data-kind]="event.kind">
@@ -261,10 +254,6 @@
     </section>
   </div>
 
-  <p class="note">
-    Dados do próprio jogo, atualizados a cada 2 s. A Riot não informa dano causado durante a partida (ele aparece no
-    placar ao fim) nem o ouro no bolso dos outros jogadores: "ouro em itens" é o valor do que cada um já comprou.
-  </p>
 } @else {
   <p class="muted waiting">Esperando o jogo carregar. Os dados ao vivo aparecem assim que a partida começar no seu PC.</p>
 }

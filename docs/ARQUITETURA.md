@@ -11,6 +11,18 @@ Documentação técnica (em português) dos módulos do app.
   - `lcu/connector.ts`: reconexão automática e estado (conta, fase, seleção de campeões).
 - `renderer/`: interface Angular, que recebe o estado via `window.lcu` (preload).
 
+## Interface (design system)
+
+Direção "transmissão de partida": o app fica ao lado do jogo, então os números são protagonistas e o resto é calmo. Os tokens ficam em `renderer/src/styles.scss`; as telas usam só as variáveis.
+
+- **Superfícies:** `--bg` (fundo azul-ardósia) → `--surface` (painel) → `--surface-2`/`--surface-3` (elevado, trilho de controles) e `--well` (poço rebaixado para listas). A hierarquia vem do tom; a borda é fina e o painel tem um fio de luz no topo (`--highlight`).
+- **Cores com significado fixo:** `--accent` (brasa, do logo) só para destaque e ação principal, com texto `--accent-ink` (escuro, 6,7:1). Azul (`--ally`/`--win`) = aliado/vitória; vermelho (`--enemy`/`--loss`/`--danger`) = inimigo/derrota/erro. Textos `--text`, `--muted` e `--faint` passam de 4,5:1 sobre o painel.
+- **Tipografia:** Barlow para texto e Barlow Semi Condensed (`--font-display`, classe `.num`) para títulos e números de placar, embutidas em `renderer/src/fonts/` (a CSP não permite fontes externas; licença OFL em `public/fonts/OFL.txt`). Algarismos tabulares no app inteiro. Rótulos em frase normal, sem caixa alta.
+- **Forma:** raio cresce com a hierarquia (`--radius` 14px painel, `--radius-sm` 8px controle, chips redondos).
+- **Componentes globais:** `.card`, `.well`, `.section-title`, `.btn` (`ghost`, `danger`, `small`, `big`), `.input`, `.chip`, `.empty-state`, `.skeleton`.
+- **Movimento:** `--dur-fast`/`--dur`/`--dur-slow` com `--ease-out` e `--ease-spring`, só em resposta ao usuário ou para mostrar o que mudou (troca de tela, modal, toasts, interruptores). Com "reduzir movimento" do Windows, tudo fica instantâneo.
+- **Estrutura:** barra lateral em dois grupos (fluxo da partida e consultas) com entalhe de brasa no item ativo; a barra de título mostra a fase do jogo ao vivo (fila com tempo, seleção, partida com o relógio) e leva à tela certa.
+
 ## Jogar (sala e fila)
 
 Aba Jogar: lista as filas disponíveis (`/lol-game-queues/v1/queues`, sem TFT, tutoriais e Clash),
@@ -85,6 +97,19 @@ Ao entrar em partida, a aba Cliente mostra os dois times com Riot ID, campeão, 
 A chance de vitória é uma estimativa simples pela diferença do elo médio dos times (curva logística,
 limitada a 10–90%); não é um modelo treinado e não considera campeões nem modo de jogo.
 - Em cada partida dá para abrir os 10 jogadores e importar runas, feitiços e itens de qualquer um deles.
+
+A tela cabe numa janela de 1320×840 sem rolar: uma barra única (partida, abas Jogadores / Ao vivo / Sua build, chance de vitória) e, em cada aba, o conteúdo em grade.
+
+### Aba Ao vivo (`electron/overlay/live-dashboard.ts`)
+
+Lê a Live Client Data API (`allgamedata`) a cada 2 s: placar, objetivos por time, rota a rota, mortos, seus atributos e lances. A API não informa dano nem o ouro dos outros: o "ouro" de cada jogador é o valor dos itens comprados (preço total no Data Dragon).
+
+Os timers de objetivos contam até o primeiro surgimento e, depois de cada abate, até o próximo. A API só avisa abates, então os tempos de surgimento são fixos por temporada e por fila:
+
+- **Summoner's Rift (temporada 2026):** Dragão 5:00 (+5:00 por abate; Ancião 6:00 depois da alma de 4), Larvas 8:00 até 14:45, Arauto 15:00 até 19:45, Barão 20:00 (+6:00). Sem Atakhan desde o patch 26.1.
+- **Partida Rápida (fila 480):** só 2 dragões (alma com 2), Ancião aos 15:00 e a cada 6:00, Barão 12:00; sem Larvas, Arauto e Atakhan.
+
+Os mesmos valores ficam em `scripts/timers.json` (`default` + `queues` por id da fila; surgimento 0 tira o objetivo do modo), publicado em `downloads/timers.json` pelo `npm run release`. O app relê o arquivo a cada hora e usa os embutidos se ele não carregar, então uma mudança de temporada se corrige sem nova versão. A fila vem da sessão do cliente (`/lol-gameflow/v1/session`).
 
 ## Servidor
 

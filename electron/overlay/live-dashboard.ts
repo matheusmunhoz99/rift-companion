@@ -139,13 +139,121 @@ export interface LiveDashboard {
     /** Inibidores derrubados que ainda vão voltar; `ally` = inibidor do seu time. */
     inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
   } | null;
+  /**
+   * Todos os objetivos do Summoner's Rift, inclusive o primeiro surgimento,
+   * pelos tempos fixos da temporada (`ObjectiveTimings`). Vazio fora do modo clássico.
+   */
+  objectives: ObjectiveTimer[];
   /** Mais recentes primeiro. */
   events: LiveEvent[];
 }
 
-const DRAGON_RESPAWN_S = 5 * 60;
-const ELDER_RESPAWN_S = 6 * 60;
-const BARON_RESPAWN_S = 6 * 60;
+export type ObjectiveKey = 'dragon' | 'grubs' | 'herald' | 'atakhan' | 'baron';
+
+export interface ObjectiveTimer {
+  key: ObjectiveKey;
+  name: string;
+  /** upcoming = ainda vai nascer (em `at`); alive = no mapa desde `at`; done = não volta mais. */
+  state: 'upcoming' | 'alive' | 'done';
+  at: number;
+}
+
+/**
+ * Tempos de surgimento (segundos de jogo). A API do jogo só avisa abates, nunca
+ * surgimentos: estes valores são da temporada e mudam entre modos. O servidor
+ * publica `downloads/timers.json` ({ default, queues }) para corrigir sem lançar
+ * versão. Um surgimento 0 tira o objetivo daquele modo.
+ */
+export interface ObjectiveTimings {
+  dragonFirst: number;
+  dragonRespawn: number;
+  /** Dragões elementais na partida inteira; 0 = sem limite (Partida Rápida: 2). */
+  dragonMax: number;
+  /** Dragões de um time para a alma (normal: 4; Partida Rápida: 2). */
+  soulStacks: number;
+  /** Ancião com hora marcada (Partida Rápida: 15:00); 0 = só depois da alma. */
+  elderFirst: number;
+  elderRespawn: number;
+  grubsSpawn: number;
+  grubsCount: number;
+  grubsDespawn: number;
+  heraldSpawn: number;
+  heraldDespawn: number;
+  atakhanSpawn: number;
+  baronFirst: number;
+  baronRespawn: number;
+}
+
+/** Summoner's Rift, temporada 2026 (patch 26.1): sem Atakhan, Barão aos 20:00. */
+export const DEFAULT_TIMINGS: ObjectiveTimings = {
+  dragonFirst: 5 * 60,
+  dragonRespawn: 5 * 60,
+  dragonMax: 0,
+  soulStacks: 4,
+  elderFirst: 0,
+  elderRespawn: 6 * 60,
+  grubsSpawn: 8 * 60,
+  grubsCount: 3,
+  grubsDespawn: 14 * 60 + 45,
+  heraldSpawn: 15 * 60,
+  heraldDespawn: 19 * 60 + 45,
+  atakhanSpawn: 0,
+  baronFirst: 20 * 60,
+  baronRespawn: 6 * 60,
+};
+
+/** Partida Rápida (Swiftplay, fila 480): 2 dragões, Ancião aos 15:00, Barão aos 12:00. */
+export const SWIFTPLAY_TIMINGS: ObjectiveTimings = {
+  ...DEFAULT_TIMINGS,
+  dragonMax: 2,
+  soulStacks: 2,
+  elderFirst: 15 * 60,
+  grubsSpawn: 0,
+  heraldSpawn: 0,
+  atakhanSpawn: 0,
+  baronFirst: 12 * 60,
+};
+
+export interface TimingsConfig {
+  default: ObjectiveTimings;
+  /** Por id da fila; campos ausentes vêm do padrão. */
+  queues: Record<string, ObjectiveTimings>;
+}
+
+export const DEFAULT_TIMINGS_CONFIG: TimingsConfig = {
+  default: DEFAULT_TIMINGS,
+  queues: { 480: SWIFTPLAY_TIMINGS },
+};
+
+/** Aceita só números conhecidos entre 0 e 2 h; o resto fica com `base`. */
+export function parseTimings(raw: unknown, base: ObjectiveTimings = DEFAULT_TIMINGS): ObjectiveTimings {
+  const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const result = { ...base };
+  for (const key of Object.keys(base) as Array<keyof ObjectiveTimings>) {
+    const n = value[key];
+    if (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n < 7200) result[key] = n;
+  }
+  return result;
+}
+
+/** `timers.json` do servidor: { default, queues: { "480": {...} } }; o formato antigo (só os tempos) vale como padrão. */
+export function parseTimingsConfig(raw: unknown): TimingsConfig {
+  const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const hasProfiles = 'default' in value || 'queues' in value;
+  const base = parseTimings(hasProfiles ? value.default : value);
+  const queues: Record<string, ObjectiveTimings> = {};
+  for (const [id, preset] of Object.entries(DEFAULT_TIMINGS_CONFIG.queues)) queues[id] = { ...preset };
+  const custom = hasProfiles && value.queues && typeof value.queues === 'object' ? (value.queues as Record<string, unknown>) : {};
+  for (const [id, profile] of Object.entries(custom)) {
+    if (/^\d+$/.test(id)) queues[id] = parseTimings(profile, queues[id] ?? base);
+  }
+  return { default: base, queues };
+}
+
+export function timingsForQueue(config: TimingsConfig, queueId: number | null): ObjectiveTimings {
+  return (queueId !== null && config.queues[String(queueId)]) || config.default;
+}
+
 const INHIBITOR_RESPAWN_S = 5 * 60;
 const MAX_EVENTS = 20;
 const LANES: Record<string, string> = { L: 'Topo', C: 'Meio', R: 'Base' };
@@ -164,7 +272,7 @@ function inhibitorLane(name: string | undefined): string {
   return LANES[/_T[12]_([LCR])/.exec(name ?? '')?.[1] ?? ''] ?? '';
 }
 
-export function toLiveDashboard(raw: RawDashboardData): LiveDashboard {
+export function toLiveDashboard(raw: RawDashboardData, timings: ObjectiveTimings = DEFAULT_TIMINGS): LiveDashboard {
   const nameOf = (p: RawPlayer) => p.riotId ?? p.summonerName ?? '';
   const myId = raw.activePlayer?.riotId ?? raw.activePlayer?.summonerName ?? '';
   const mine = raw.allPlayers.find((p) => nameOf(p) === myId) ?? null;
@@ -276,15 +384,60 @@ export function toLiveDashboard(raw: RawDashboardData): LiveDashboard {
   const gameTime = raw.gameData.gameTime;
   // Com a alma conquistada (4 dragões elementais de um time), o próximo é o Ancião.
   const elemental = (t: LiveTeam) => t.dragons.filter((d) => d !== 'Elder').length;
-  const soul = elemental(teams.ally) >= 4 || elemental(teams.enemy) >= 4;
-  const dragonAt: number | null = lastDragon === null ? null : lastDragon + (soul ? ELDER_RESPAWN_S : DRAGON_RESPAWN_S);
-  const timers = raw.gameData.gameMode === 'CLASSIC'
+  const soul = elemental(teams.ally) >= timings.soulStacks || elemental(teams.enemy) >= timings.soulStacks;
+  // Próximo dragão: elemental até acabarem (alma ou limite do modo) e depois o Ancião.
+  const dragonKills = events.filter((e) => e.kind === 'dragon');
+  const elderKills = dragonKills.filter((e) => e.detail.startsWith('Elder'));
+  const elementalKills = dragonKills.length - elderKills.length;
+  const lastElder = elderKills.reduce<number | null>((t, e) => Math.max(t ?? 0, e.time), null);
+  const lastElemental = dragonKills
+    .filter((e) => !e.detail.startsWith('Elder'))
+    .reduce<number | null>((t, e) => Math.max(t ?? 0, e.time), null);
+  const elementalsLeft = !soul && (timings.dragonMax === 0 || elementalKills < timings.dragonMax);
+  const elementalNext = elementalsLeft
+    ? lastElemental === null ? timings.dragonFirst : lastElemental + timings.dragonRespawn
+    : null;
+  const elderNext = lastElder !== null
+    ? lastElder + timings.elderRespawn
+    : timings.elderFirst > 0
+      ? timings.elderFirst
+      : !elementalsLeft && lastDragon !== null ? lastDragon + timings.elderRespawn : null;
+  // O Ancião com hora marcada toma o lugar do elemental que nasceria depois dele.
+  const elderComes = elementalNext === null || (elderNext !== null && elderNext <= elementalNext);
+  const dragonNext = elderComes ? elderNext : elementalNext;
+  const dragonAt: number | null = lastDragon === null ? null : dragonNext;
+  const classic = raw.gameData.gameMode === 'CLASSIC';
+  const timers = classic
     ? {
         dragon: dragonAt === null ? null : { at: dragonAt, elder: soul },
-        baron: lastBaron === null ? null : lastBaron + BARON_RESPAWN_S,
+        baron: lastBaron === null ? null : lastBaron + timings.baronRespawn,
         inhibitors: [...inhibitors.values()].filter((i) => i.respawnAt > gameTime).sort((a, b) => a.respawnAt - b.respawnAt),
       }
     : null;
+
+  // Objetivos com surgimento fixo: antes do primeiro abate conta até o primeiro surgimento.
+  const killed = (kind: LiveEventKind) => events.filter((e) => e.kind === kind).length;
+  const status = (at: number): ObjectiveTimer['state'] => (gameTime < at ? 'upcoming' : 'alive');
+  const objectives: ObjectiveTimer[] = [];
+  if (classic) {
+    if (dragonNext !== null) {
+      objectives.push({ key: 'dragon', name: elderComes ? 'Dragão Ancião' : 'Dragão', state: status(dragonNext), at: dragonNext });
+    }
+    // Surgimento 0 = o objetivo não existe neste modo. Larvas e Arauto saem do mapa na hora marcada.
+    if (timings.grubsSpawn > 0) {
+      const gone = killed('grubs') >= timings.grubsCount || (timings.grubsDespawn > 0 && gameTime >= timings.grubsDespawn);
+      objectives.push({ key: 'grubs', name: 'Larvas do Vazio', state: gone ? 'done' : status(timings.grubsSpawn), at: timings.grubsSpawn });
+    }
+    if (timings.heraldSpawn > 0) {
+      const gone = killed('herald') > 0 || (timings.heraldDespawn > 0 && gameTime >= timings.heraldDespawn);
+      objectives.push({ key: 'herald', name: 'Arauto do Vale', state: gone ? 'done' : status(timings.heraldSpawn), at: timings.heraldSpawn });
+    }
+    if (timings.atakhanSpawn > 0) {
+      objectives.push({ key: 'atakhan', name: 'Atakhan', state: killed('atakhan') ? 'done' : status(timings.atakhanSpawn), at: timings.atakhanSpawn });
+    }
+    const baronNext = lastBaron === null ? timings.baronFirst : lastBaron + timings.baronRespawn;
+    objectives.push({ key: 'baron', name: "Barão Na'shor", state: status(baronNext), at: baronNext });
+  }
 
   const stats = raw.activePlayer?.championStats;
   const stat = (key: string) => Math.round((stats?.[key] ?? 0) * 100) / 100;
@@ -343,6 +496,7 @@ export function toLiveDashboard(raw: RawDashboardData): LiveDashboard {
       : null,
     teams,
     timers,
+    objectives,
     events: events.sort((a, b) => b.time - a.time).slice(0, MAX_EVENTS),
   };
 }

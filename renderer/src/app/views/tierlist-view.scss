@@ -52,15 +52,18 @@ table {
   font-size: 13px;
 }
 
+// Cabeçalho fixo ao rolar a lista.
 th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: 8px;
   border-bottom: 1px solid var(--border);
+  background: var(--surface);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-align: right;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 
   button {
     padding: 0;
@@ -80,9 +83,15 @@ th {
 
 td {
   padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   text-align: right;
-  font-variant-numeric: tabular-nums;
+}
+
+// Números em fonte de placar; o nome do campeão segue na fonte de texto.
+td:not(.champ):not(.empty) {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
 }
 
 th.champ,
@@ -106,9 +115,14 @@ td.champ {
 
 tbody tr {
   cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--surface-2);
+
+    td.champ {
+      color: var(--accent-strong);
+    }
   }
 }
 
@@ -118,17 +132,22 @@ tbody tr {
   min-width: 32px;
   padding: 2px 6px;
   border-radius: 6px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   background: var(--surface-3);
+  color: var(--muted);
 
+  // Escala de calor: quanto mais forte, mais perto da brasa do destaque.
   &[data-tier='S+'] {
-    background: #ff4f64;
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: 0 0 12px -2px rgba(255, 106, 61, 0.55);
   }
 
   &[data-tier='S'] {
-    background: #f5884a;
-    color: #fff;
+    background: #ff9a52;
+    color: #1f0e03;
   }
 
   &[data-tier='A'] {
@@ -137,8 +156,8 @@ tbody tr {
   }
 
   &[data-tier='B'] {
-    background: #3d8bff;
-    color: #fff;
+    background: #3a4660;
+    color: #dfe5f1;
   }
 }
 

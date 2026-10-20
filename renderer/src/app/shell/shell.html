@@ -20,21 +20,27 @@
       <span class="brand-name">Rift <strong>Companion</strong></span>
     </div>
 
-    <nav class="nav">
-      @for (item of items; track item.view) {
-        <button
-          type="button"
-          class="nav-item"
-          [class.active]="nav.view() === item.view"
-          [attr.title]="item.label"
-          (click)="nav.go(item.view)"
-        >
-          <app-icon [name]="item.icon" />
-          <span class="label">{{ item.label }}</span>
-          @if (badge(item.view)) {
-            <span class="live-dot" aria-label="Agora"></span>
+    <!-- Duas partes: o fluxo da partida (da sala à partida) e as consultas. -->
+    <nav class="nav" aria-label="Telas">
+      @for (group of groups; track $index) {
+        <div class="nav-group">
+          @for (item of group; track item.view) {
+            <button
+              type="button"
+              class="nav-item"
+              [class.active]="nav.view() === item.view"
+              [attr.aria-current]="nav.view() === item.view ? 'page' : null"
+              [attr.title]="item.label"
+              (click)="nav.go(item.view)"
+            >
+              <app-icon [name]="item.icon" />
+              <span class="label">{{ item.label }}</span>
+              @if (badge(item.view)) {
+                <span class="live-dot" aria-label="Agora"></span>
+              }
+            </button>
           }
-        </button>
+        </div>
       }
     </nav>
 
@@ -43,16 +49,13 @@
         type="button"
         class="nav-item"
         [class.active]="nav.view() === 'settings'"
+        [attr.aria-current]="nav.view() === 'settings' ? 'page' : null"
         title="Configurações"
         (click)="nav.go('settings')"
       >
         <app-icon name="settings" />
         <span class="label">Configurações</span>
       </button>
-      <div class="client-status" [attr.data-status]="state().status" [attr.title]="statusLabel()">
-        <span class="dot"></span>
-        <span class="label">{{ statusLabel() }}</span>
-      </div>
       <span class="version">Beta {{ prefs.info()?.version ?? '' }}</span>
     </div>
   </aside>
@@ -60,15 +63,34 @@
   <div class="main">
     <header class="titlebar drag">
       <h1>{{ title() }}</h1>
+
+      <!-- Fase do jogo agora: o que mais importa num app que fica ao lado do LoL. -->
+      @if (phase(); as p) {
+        <button
+          type="button"
+          class="phase no-drag"
+          [attr.data-tone]="p.tone"
+          [disabled]="!p.view"
+          [title]="p.view ? 'Abrir ' + viewTitle(p.view) : p.label"
+          (click)="p.view && nav.go(p.view)"
+        >
+          <span class="phase-dot"></span>
+          <span class="phase-label">{{ p.label }}</span>
+          @if (p.detail) {
+            <span class="phase-detail num">{{ p.detail }}</span>
+          }
+        </button>
+      }
     </header>
 
     @switch (prefs.update().state) {
       @case ('available') {
         <div class="update-banner">
-          <span>
-            <strong>Nova versão {{ $any(prefs.update()).release.version }} disponível.</strong>
-            @for (note of $any(prefs.update()).release.notes; track $index) {
-              <span class="muted"> · {{ note }}</span>
+          <app-icon name="refresh" [size]="16" />
+          <span class="update-text">
+            <strong>Versão {{ $any(prefs.update()).release.version }} disponível</strong>
+            @if ($any(prefs.update()).release.notes.length) {
+              <span class="muted">{{ $any(prefs.update()).release.notes[0] }}</span>
             }
           </span>
           <button type="button" class="btn small" (click)="prefs.installUpdate()">Atualizar agora</button>
@@ -76,7 +98,8 @@
       }
       @case ('downloading') {
         <div class="update-banner">
-          <span>Baixando a versão {{ $any(prefs.update()).release.version }}…</span>
+          <app-icon name="refresh" [size]="16" />
+          <span class="update-text">Baixando a versão {{ $any(prefs.update()).release.version }}…</span>
           <div class="update-progress"><span [style.width.%]="$any(prefs.update()).progress * 100"></span></div>
         </div>
       }
@@ -115,15 +138,24 @@
 
 @if (state().readyCheck; as check) {
   <div class="modal-backdrop">
-    <div class="modal" role="dialog" aria-labelledby="ready-title">
-      <span class="eyebrow">Fila</span>
-      <h2 id="ready-title">Partida encontrada!</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ready-title">
       @if (check.playerResponse === 'Accepted') {
-        <p class="accepted">Você aceitou. Aguardando os outros jogadores…</p>
+        <span class="ready-icon accepted"><app-icon name="check" [size]="30" /></span>
+        <h2 id="ready-title">Partida aceita</h2>
+        <p class="muted">Aguardando os outros jogadores…</p>
       } @else if (check.playerResponse === 'Declined') {
-        <p class="muted">Você recusou a partida.</p>
+        <h2 id="ready-title">Partida recusada</h2>
+        <p class="muted">Você volta para a sala.</p>
       } @else {
-        <p class="countdown">{{ remaining(check.timer) }}s</p>
+        <!-- Anel que esvazia nos 12 segundos que o cliente dá para responder. -->
+        <div class="ring" [style.--left]="remaining(check.timer) / 12">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-track" cx="60" cy="60" r="54" />
+            <circle class="ring-fill" cx="60" cy="60" r="54" pathLength="100" />
+          </svg>
+          <span class="countdown num">{{ remaining(check.timer) }}</span>
+        </div>
+        <h2 id="ready-title">Partida encontrada</h2>
         <div class="modal-actions">
           <button type="button" class="btn ghost" (click)="readyCheck(false)">Recusar</button>
           <button type="button" class="btn big" (click)="readyCheck(true)">Aceitar</button>
@@ -135,8 +167,9 @@
 
 <div class="toasts" aria-live="polite">
   @for (item of toast.toasts(); track item.id) {
-    <button type="button" class="toast" [attr.data-kind]="item.kind" (click)="toast.dismiss(item.id)">
-      {{ item.text }}
+    <button type="button" class="toast" [attr.data-kind]="item.kind" title="Fechar" (click)="toast.dismiss(item.id)">
+      <span class="toast-mark" aria-hidden="true"></span>
+      <span class="toast-text">{{ item.text }}</span>
     </button>
   }
 </div>

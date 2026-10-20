@@ -48,8 +48,6 @@ p {
   h4 {
     margin: 0;
     font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
     color: var(--muted);
   }
 
@@ -113,7 +111,7 @@ button.champ {
 
   &:hover:not(:disabled) {
     border-color: var(--accent);
-    background: rgba(200, 170, 110, 0.08);
+    background: var(--accent-soft);
     color: var(--text);
   }
 

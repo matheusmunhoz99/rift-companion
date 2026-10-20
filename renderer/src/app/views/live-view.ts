@@ -9,17 +9,16 @@ import { Icon } from '../ui/icon';
   imports: [LiveGameView, Icon],
   template: `
     @if (inGame()) {
-      <section class="card">
-        <app-live-game-view />
-      </section>
+      <!-- Sem cartão em volta: a partida usa a janela inteira. -->
+      <app-live-game-view />
     } @else {
       <section class="card">
         <div class="empty-state">
           <app-icon name="live" [size]="36" />
           <h2>Nenhuma partida em andamento</h2>
           <p>
-            Quando a partida começar, esta tela mostra os dois times com elo, maestria,
-            histórico recente de cada jogador e a chance de vitória.
+            Quando a partida começar, esta tela mostra os dois times com elo, maestria, histórico
+            recente de cada jogador e a chance de vitória.
           </p>
           @if (prefs.preferences().overlayEnabled) {
             <p class="hint">

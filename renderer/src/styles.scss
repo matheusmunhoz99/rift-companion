@@ -1,26 +1,80 @@
+/*
+ * Design system do Rift Companion: "transmissão de partida".
+ * Fundo noturno azul-ardósia, hierarquia por tom (não por borda), números em
+ * Barlow Semi Condensed como num placar e um único destaque quente (brasa,
+ * do logo). Vermelho e azul ficam reservados para inimigo/derrota e aliado/vitória.
+ */
+
+/* Fontes embutidas (a CSP do app não permite fontes externas). SIL OFL 1.1, ver src/fonts/OFL.txt (também enviado em public/fonts). */
+@each $weight in 400, 500, 600, 700 {
+  @font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: $weight;
+    font-display: swap;
+    src: url('./fonts/barlow-#{$weight}.woff2') format('woff2');
+  }
+}
+
+@each $weight in 500, 600, 700 {
+  @font-face {
+    font-family: 'Barlow Semi Condensed';
+    font-style: normal;
+    font-weight: $weight;
+    font-display: swap;
+    src: url('./fonts/barlow-semi-condensed-#{$weight}.woff2') format('woff2');
+  }
+}
+
 :root {
-  --bg: #0b0d13;
-  --sidebar: #07080c;
-  --surface: #12151e;
-  --surface-2: #181c27;
-  --surface-3: #202534;
-  --border: #232938;
-  --border-strong: #2f3648;
-  --text: #eef1f7;
-  --muted: #8a92a6;
-  --faint: #5d6478;
-  --accent: #ff4f64;
-  --accent-soft: rgba(255, 79, 100, 0.12);
-  --ally: #3d8bff;
-  --ally-soft: rgba(61, 139, 255, 0.12);
-  --enemy: #ff4f64;
-  --success: #2fd48a;
+  /* Superfícies: fundo → painel → elevado → trilho de controles. */
+  --bg: #0f1219;
+  --sidebar: #0b0e14;
+  --surface: #151922;
+  --surface-2: #1c212c;
+  --surface-3: #262c39;
+  --well: #0c0f15;
+  --border: #242a36;
+  --border-strong: #353c4b;
+  --highlight: rgba(255, 255, 255, 0.04);
+
+  /* Texto. */
+  --text: #e8ebf1;
+  --muted: #8f96a6;
+  --faint: #7e8597; /* 4,8:1 sobre o painel */
+
+  /* Destaque (brasa do logo). Texto sobre ele é escuro: contraste ~8:1. */
+  --accent: #ff6a3d;
+  --accent-strong: #ff8a5f;
+  --accent-soft: rgba(255, 106, 61, 0.14);
+  --accent-ink: #1b0b05;
+
+  /* Significado fixo: azul = aliado/vitória, vermelho = inimigo/derrota/erro. */
+  --ally: #4d8dff;
+  --ally-soft: rgba(77, 141, 255, 0.14);
+  --enemy: #f2475b;
+  --win: #4d8dff;
+  --loss: #f2475b;
+  --success: #34d399;
   --warning: #f5b84a;
-  --danger: #ff4f64;
-  --win: #3d8bff;
-  --loss: #ff4f64;
-  --radius: 12px;
+  --danger: #f2475b;
+
+  /* Forma: o raio cresce com o nível da hierarquia. */
+  --radius: 14px;
   --radius-sm: 8px;
+  --radius-xs: 6px;
+
+  /* Tipografia. */
+  --font-ui: 'Barlow', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Barlow Semi Condensed', 'Barlow', 'Segoe UI', system-ui, sans-serif;
+
+  /* Movimento: curto e com propósito. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+
   color-scheme: dark;
 }
 
@@ -34,9 +88,13 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Algarismos de largura fixa: placares e tabelas não "dançam" ao atualizar. */
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
 }
 
@@ -44,6 +102,14 @@ body {
 body.overlay-mode,
 body.overlay-mode app-root {
   background: transparent;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.005em;
 }
 
 ::selection {
@@ -57,7 +123,7 @@ body.overlay-mode app-root {
 
 ::-webkit-scrollbar-thumb {
   background: var(--surface-3);
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   border-radius: 6px;
   background-clip: padding-box;
 
@@ -72,52 +138,92 @@ body.overlay-mode app-root {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
-/* Componentes compartilhados entre as telas. */
+img {
+  -webkit-user-drag: none;
+}
+
+/* Números de placar: largura fixa por dígito, para não "pularem" ao atualizar. */
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ Painéis */
+
+/* Painel: tom acima do fundo, sem borda forte; um fio de luz no topo dá a borda. */
 .card {
-  background: var(--surface);
+  padding: 18px 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+/* Poço: área rebaixada para listas e tabelas dentro de um painel. */
+.well {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--well);
 }
 
 .section-title {
   margin: 0 0 12px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .muted {
   color: var(--muted);
 }
 
+/* ------------------------------------------------------------------ Botões */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 16px;
+  min-height: 36px;
+  padding: 8px 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: filter 0.15s, background 0.15s;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 
   &:hover:not(:disabled) {
-    filter: brightness(1.1);
+    background: var(--accent-strong);
+    box-shadow: 0 6px 18px -8px rgba(255, 106, 61, 0.55);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
   }
 
   &:disabled {
@@ -126,55 +232,143 @@ select {
   }
 
   &.ghost {
+    border-color: var(--border-strong);
     background: var(--surface-2);
-    border-color: var(--border);
     color: var(--text);
 
     &:hover:not(:disabled) {
+      border-color: #454d5e;
       background: var(--surface-3);
-      filter: none;
+      box-shadow: none;
+    }
+  }
+
+  &.danger {
+    background: var(--danger);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #ff5c6f;
+      box-shadow: 0 6px 18px -8px rgba(242, 71, 91, 0.6);
     }
   }
 
   &.small {
-    padding: 5px 11px;
+    min-height: 30px;
+    padding: 5px 12px;
     font-size: 12px;
+  }
+
+  &.big {
+    min-height: 44px;
+    padding: 10px 26px;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
   }
 }
 
+/* ------------------------------------------------------------------ Campos */
+
 .input {
-  padding: 9px 12px;
+  min-height: 36px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg);
+  background: var(--well);
   color: var(--text);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 
   &::placeholder {
     color: var(--faint);
   }
 
-  &:focus {
+  &:hover {
     border-color: var(--border-strong);
+  }
+
+  &:focus {
+    border-color: var(--accent);
     outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
 }
+
+select.input,
+select {
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ Chips */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ Estados */
 
 .empty-state {
   display: grid;
   justify-items: center;
-  gap: 8px;
-  padding: 64px 24px;
+  gap: 10px;
+  padding: 72px 24px;
   text-align: center;
 
   h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 24px;
   }
 
   p {
+    max-width: 460px;
     margin: 0;
-    max-width: 440px;
     color: var(--muted);
+    line-height: 1.55;
+  }
+
+  app-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+    color: var(--accent);
+  }
+}
+
+/* Carregando: brilho que atravessa o bloco no lugar do conteúdo. */
+.skeleton {
+  border-radius: var(--radius-xs);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--surface-3) 40%,
+    var(--surface-2) 80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
   }
 }
 
@@ -182,5 +376,18 @@ code {
   padding: 1px 6px;
   border-radius: 4px;
   background: var(--surface-3);
+  font-family: 'Cascadia Code', Consolas, monospace;
   font-size: 12px;
+}
+
+/* Quem pede menos movimento no Windows não vê animações nem transições longas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

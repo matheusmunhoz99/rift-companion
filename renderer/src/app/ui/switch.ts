@@ -25,19 +25,21 @@ import { Component, input, output } from '@angular/core';
       display: flex;
       align-items: center;
       gap: 16px;
+      padding: 2px 0;
       cursor: pointer;
     }
     .text {
       display: grid;
-      gap: 2px;
       flex: 1;
+      gap: 2px;
     }
     .label {
       font-weight: 600;
     }
     .description {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 12.5px;
+      line-height: 1.45;
     }
     input {
       position: absolute;
@@ -47,11 +49,17 @@ import { Component, input, output } from '@angular/core';
     .track {
       position: relative;
       flex-shrink: 0;
-      width: 40px;
-      height: 22px;
-      border-radius: 11px;
+      width: 42px;
+      height: 24px;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
       background: var(--surface-3);
-      transition: background 0.15s;
+      transition:
+        background var(--dur) var(--ease-out),
+        border-color var(--dur) var(--ease-out);
+    }
+    .switch:hover .track {
+      border-color: #475064;
     }
     .thumb {
       position: absolute;
@@ -61,14 +69,18 @@ import { Component, input, output } from '@angular/core';
       height: 16px;
       border-radius: 50%;
       background: var(--muted);
-      transition: transform 0.15s, background 0.15s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      transition:
+        transform var(--dur) var(--ease-spring),
+        background var(--dur) var(--ease-out);
     }
     input:checked + .track {
+      border-color: transparent;
       background: var(--accent);
     }
     input:checked + .track .thumb {
       transform: translateX(18px);
-      background: #fff;
+      background: var(--accent-ink);
     }
     input:focus-visible + .track {
       outline: 2px solid var(--accent);

@@ -169,6 +169,12 @@ export interface LiveDashboard {
     baron: number | null;
     inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
   } | null;
+  objectives: Array<{
+    key: 'dragon' | 'grubs' | 'herald' | 'atakhan' | 'baron';
+    name: string;
+    state: 'upcoming' | 'alive' | 'done';
+    at: number;
+  }>;
   events: LiveEvent[];
 }
 

@@ -11,16 +11,24 @@ import {
   type ChampionStats,
   type StatsOption,
 } from './stats.types';
-import { allPositionsTierList, damageProfile, guessLaneOpponent, guessOwnPosition } from './match-context';
+import {
+  allPositionsTierList,
+  damageProfile,
+  guessLaneOpponent,
+  guessOwnPosition,
+} from './match-context';
 
 /** Estatísticas agregadas (Mestre+ BR, EUW e KR) de um campeão, com importação das opções. */
 @Component({
   selector: 'app-champion-stats',
   templateUrl: './champion-stats.html',
   styleUrl: './champion-stats.scss',
+  host: { '[class.wide]': 'wide()' },
 })
 export class ChampionStatsPanel {
   readonly championId = input.required<number>();
+  /** Em duas colunas (aba da partida ao vivo), para caber sem rolar. */
+  readonly wide = input(false);
   /** Rota pedida (ex.: a da seleção); sem ela, usa a rota mais jogada do campeão. */
   readonly position = input<string | null>(null);
   /** Campeões do time inimigo na partida (seleção ou partida ao vivo): ativa a build da partida. */
@@ -52,11 +60,16 @@ export class ChampionStatsPanel {
   protected readonly percent = percent;
   protected readonly positionLabel = statsPositionLabel;
   protected readonly connected = computed(() => this.lcu.state().status === 'connected');
-  protected readonly inChampSelect = computed(() => this.lcu.state().gameflowPhase === 'ChampSelect');
+  protected readonly inChampSelect = computed(
+    () => this.lcu.state().gameflowPhase === 'ChampSelect',
+  );
 
   protected readonly positions = computed(() => {
     const available = new Map((this.stats()?.positions ?? []).map((p) => [p.position, p]));
-    return STATS_POSITIONS.filter((p) => available.has(p.value)).map((p) => ({ ...p, ...available.get(p.value)! }));
+    return STATS_POSITIONS.filter((p) => available.has(p.value)).map((p) => ({
+      ...p,
+      ...available.get(p.value)!,
+    }));
   });
 
   constructor() {
@@ -78,12 +91,20 @@ export class ChampionStatsPanel {
 
   protected selectPosition(position: string): void {
     this.selectedPosition.set(position);
-    void this.loadForMatch(this.championId(), position, this.enemyIds().filter((id) => id > 0));
+    void this.loadForMatch(
+      this.championId(),
+      position,
+      this.enemyIds().filter((id) => id > 0),
+    );
   }
 
   protected selectOpponent(opponentId: number | null): void {
     this.opponentId.set(opponentId);
-    void this.load(this.championId(), this.stats()?.position ?? this.selectedPosition(), opponentId);
+    void this.load(
+      this.championId(),
+      this.stats()?.position ?? this.selectedPosition(),
+      opponentId,
+    );
   }
 
   /**
@@ -93,7 +114,9 @@ export class ChampionStatsPanel {
   protected readonly situationalPicks = computed(() => {
     const s = this.stats();
     const core = new Set((s?.core?.[0]?.key ?? '').split(',').map(Number));
-    return (s?.situational?.items ?? []).filter((i) => !core.has(i.itemId) && i.lift >= 1.1).slice(0, 6);
+    return (s?.situational?.items ?? [])
+      .filter((i) => !core.has(i.itemId) && i.lift >= 1.1)
+      .slice(0, 6);
   });
 
   /** Melhores e piores confrontos (já filtrados por amostra mínima no servidor). */
@@ -113,13 +136,22 @@ export class ChampionStatsPanel {
     const list = this.ddragon.abilities().get(this.championId());
     return key.split(',').map((slot) => {
       const index = Number(slot) - 1;
-      return { key: ['Q', 'W', 'E', 'R'][index], icon: list?.[index]?.icon ?? null, name: list?.[index]?.name ?? '' };
+      return {
+        key: ['Q', 'W', 'E', 'R'][index],
+        icon: list?.[index]?.icon ?? null,
+        name: list?.[index]?.name ?? '',
+      };
     });
   }
 
   protected rune(option: StatsOption) {
     const page = parseRuneKey(option.key);
-    return { ...page, keystone: page.perks[0], minor: page.perks.slice(1, 6), shards: page.perks.slice(6) };
+    return {
+      ...page,
+      keystone: page.perks[0],
+      minor: page.perks.slice(1, 6),
+      shards: page.perks.slice(6),
+    };
   }
 
   protected spells(option: StatsOption): number[] {
@@ -142,8 +174,15 @@ export class ChampionStatsPanel {
       summonerSpellIds: this.stats()?.spells?.[0] ? this.spells(this.stats()!.spells![0]) : [],
     };
     await this.run(`runes:${option.key}`, async () => {
-      const result = await window.builds!.applyRunes(page, `${champion} ${this.ddragon.runeName(perks[0])}`, this.inChampSelect());
-      this.toast.show(`Runas em "${result.pageName}"${result.spellsApplied ? ' + feitiços' : ''}.`, 'success');
+      const result = await window.builds!.applyRunes(
+        page,
+        `${champion} ${this.ddragon.runeName(perks[0])}`,
+        this.inChampSelect(),
+      );
+      this.toast.show(
+        `Runas em "${result.pageName}"${result.spellsApplied ? ' + feitiços' : ''}.`,
+        'success',
+      );
     });
   }
 
@@ -158,11 +197,18 @@ export class ChampionStatsPanel {
       title: `${champion} · Mestre+ ${percent(core.winRate, 0)}`,
       maps: [11],
       blocks: [
-        ...(stats?.start?.[0] ? [{ name: 'Itens iniciais', items: this.items(stats.start[0]) }] : []),
+        ...(stats?.start?.[0]
+          ? [{ name: 'Itens iniciais', items: this.items(stats.start[0]) }]
+          : []),
         { name: `Núcleo (${percent(core.winRate, 0)} de vitórias)`, items: this.items(core) },
         ...(boots.length ? [{ name: 'Botas', items: boots }] : []),
         ...(this.situationalPicks().length
-          ? [{ name: `Contra este time (${this.damageLabel(stats!.situational!.damage)})`, items: this.situationalPicks().map((i) => i.itemId) }]
+          ? [
+              {
+                name: `Contra este time (${this.damageLabel(stats!.situational!.damage)})`,
+                items: this.situationalPicks().map((i) => i.itemId),
+              },
+            ]
           : []),
       ],
     };
@@ -185,7 +231,9 @@ export class ChampionStatsPanel {
       // Sem rota informada: deduz pelo seu time; sem time, usa a mais jogada do campeão.
       position ??=
         (allies.length > 0 ? guessOwnPosition(championId, allies, tierList) : null) ??
-        [...tierList].filter((t) => t.championId === championId).sort((a, b) => b.games - a.games)[0]?.position ??
+        [...tierList]
+          .filter((t) => t.championId === championId)
+          .sort((a, b) => b.games - a.games)[0]?.position ??
         null;
       if (position) this.selectedPosition.set(position);
       opponent = guessLaneOpponent(position, enemies, tierList);
@@ -195,11 +243,22 @@ export class ChampionStatsPanel {
     await this.load(championId, position, opponent);
   }
 
-  private async load(championId: number, position: string | null, opponentId: number | null): Promise<void> {
+  private async load(
+    championId: number,
+    position: string | null,
+    opponentId: number | null,
+  ): Promise<void> {
     if (!window.stats) return;
     this.loading.set(true);
     try {
-      this.stats.set(await window.stats.champion(championId, position, opponentId, this.enemyProfile()?.damage ?? null));
+      this.stats.set(
+        await window.stats.champion(
+          championId,
+          position,
+          opponentId,
+          this.enemyProfile()?.damage ?? null,
+        ),
+      );
     } catch {
       this.stats.set(null);
     } finally {
