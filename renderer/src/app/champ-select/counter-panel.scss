@@ -41,6 +41,14 @@
     color: var(--text);
   }
 
+  .lane-mark {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--accent);
+    font-size: 10px;
+  }
+
   &.active {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 15%, transparent);
@@ -48,8 +56,20 @@
   }
 }
 
+.context {
+  margin: 0;
+  font-size: 12px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
 .section {
   display: grid;
+  align-content: start;
   gap: 4px;
 }
 
@@ -57,8 +77,6 @@
   margin: 0;
   font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 
   &.good {
     color: var(--ally, #4a7fd6);

@@ -7,6 +7,9 @@ export interface ChampionInfo {
   /** Notas oficiais de 0 a 10 do Data Dragon para dano físico e mágico. */
   attack: number;
   magic: number;
+  /** Nota de resistência (0 a 10) e classes oficiais (Tank, Fighter, Mage, Assassin, Marksman, Support). */
+  defense: number;
+  tags: string[];
 }
 
 interface RuneStyle {
@@ -146,7 +149,7 @@ export class DataDragonService {
       const data = `${BASE_URL}/cdn/${version}/data/pt_BR`;
 
       const [champions, runes, spells, items] = await Promise.all([
-        getJson<{ data: Record<string, { key: string; id: string; name: string; info?: { attack: number; magic: number } }> }>(
+        getJson<{ data: Record<string, { key: string; id: string; name: string; info?: { attack: number; magic: number; defense?: number }; tags?: string[] }> }>(
           `${data}/champion.json`,
         ),
         getJson<RuneStyle[]>(`${data}/runesReforged.json`),
@@ -160,7 +163,7 @@ export class DataDragonService {
         new Map(
           Object.values(champions.data).map((c) => [
             Number(c.key),
-            { key: Number(c.key), id: c.id, name: c.name, attack: c.info?.attack ?? 5, magic: c.info?.magic ?? 5 },
+            { key: Number(c.key), id: c.id, name: c.name, attack: c.info?.attack ?? 5, magic: c.info?.magic ?? 5, defense: c.info?.defense ?? 5, tags: c.tags ?? [] },
           ]),
         ),
       );

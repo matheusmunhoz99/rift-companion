@@ -2,19 +2,29 @@ import { Component, computed, inject } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
 import { ChampSelectPanel } from '../champ-select/champ-select-panel';
 import { CounterPanel } from '../champ-select/counter-panel';
+import { TeamCompPanel } from '../champ-select/team-comp';
 import { ChampionStatsPanel } from '../stats/champion-stats';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
 
 @Component({
   selector: 'app-champ-select-view',
-  imports: [ChampSelectPanel, CounterPanel, BuildPanel, ChampionStatsPanel, Icon],
+  imports: [ChampSelectPanel, CounterPanel, TeamCompPanel, BuildPanel, ChampionStatsPanel, Icon],
   template: `
     @if (state().champSelect; as session) {
       <div class="layout">
         <section class="card left-col">
           <h3 class="section-title">Seu campeão</h3>
           <app-champ-select-panel [session]="session" />
+
+          <div class="counter-block">
+            <h3 class="section-title">Composição</h3>
+            <app-team-comp
+              [allyChampionIds]="allyIds()"
+              [enemyChampionIds]="enemyIds()"
+              [canPick]="!session.championId"
+            />
+          </div>
 
           <div class="counter-block">
             <h3 class="section-title">Counters</h3>
@@ -87,6 +97,16 @@ export class ChampSelectView {
   protected readonly enemyIds = computed(() => this.state().champSelect?.enemyChampionIds ?? [], {
     equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
   });
+
+  /** Seu time com a sua intenção de escolha, enquanto você não confirma. */
+  protected readonly allyIds = computed(
+    () => {
+      const session = this.state().champSelect;
+      if (!session) return [];
+      return session.team.map((m) => (m.isMe ? m.championId || session.championId || session.pickIntentChampionId : m.championId));
+    },
+    { equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]) },
+  );
 
   protected readonly championId = computed(() => {
     const session = this.state().champSelect;

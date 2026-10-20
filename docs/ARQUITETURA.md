@@ -79,6 +79,11 @@ O proxy não envia conversas ao backend do Rift Companion. O diagnóstico vai pa
 
 `position`: `top`, `jungle`, `middle`, `bottom` ou `utility`. IDs de itens e campeões estão no Data Dragon.
 
+## Seleção de campeões: composição e counters
+
+- **Composição** (`champ-select/team-comp.ts`): divisão de dano físico/mágico de cada time pelas notas `info.attack`/`info.magic` do Data Dragon, e quantos jogam na frente (classe Tank, ou Fighter com `info.defense` 6+). Com 3 campeões ou mais de um time aparecem avisos: time quase só físico (até 25% mágico) ou só mágico (70%+), sem linha de frente, inimigo com muita linha de frente. Enquanto você não confirma, o aviso sugere o que falta.
+- **Counters** (`champ-select/counter-panel.ts`): para cada inimigo revelado, quem vence e quem perde para ele na rota provável dele (`GET /v1/stats/counters/:id?position=`, confrontos Mestre+ com 20 partidas ou mais). A rota de cada inimigo é deduzida pela distribuição de rotas na coleta, como no painel de build; a aba começa e segue o provável oponente da sua rota até você escolher outra.
+
 ## Histórico (Riot API)
 
 O app não tem chave da Riot. Ele chama o servidor (rift-api) em `https://rift-api.workscanner.com.br`,
@@ -99,6 +104,12 @@ limitada a 10–90%); não é um modelo treinado e não considera campeões nem 
 - Em cada partida dá para abrir os 10 jogadores e importar runas, feitiços e itens de qualquer um deles.
 
 A tela cabe numa janela de 1320×840 sem rolar: uma barra única (partida, abas Jogadores / Ao vivo / Sua build, chance de vitória) e, em cada aba, o conteúdo em grade.
+
+### Overlay sobre o jogo
+
+Duas linhas: você (KDA, CS por minuto, ouro), a diferença para o inimigo da sua rota (CS, nível e valor dos itens) e a habilidade a evoluir; embaixo, abates, objetivos por time e os próximos objetivos com contagem regressiva. Os timers são os mesmos do painel (`toLiveDashboard` com os tempos da fila), e o relógio anda entre as leituras de 2 s.
+
+A dica de habilidade usa o início e a ordem de maximizar mais jogados do campeão na rota (`skillStart`/`skillOrder` das estatísticas): R nos níveis 6/11/16, as três primeiras pelo início e o resto pela ordem, sem passar de metade do nível numa básica. Só aparece "Evolua" quando sobra ponto (níveis de Q/W/E/R vêm de `activePlayer.abilities`); sem ponto, mostra a ordem. Jayce, Elise, Nidalee, Udyr, Karma e Aphelios ficam de fora (habilidades fora da regra comum).
 
 ### Aba Ao vivo (`electron/overlay/live-dashboard.ts`)
 
