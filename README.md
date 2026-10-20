@@ -73,7 +73,10 @@ Uma build "geral" ignora o que importa: **contra quem** você joga. Na seleção
 - descobre o seu **oponente de rota**, testando a rota mais provável de cada inimigo pelos dados de alto elo;
 - lê o **perfil de dano do time inimigo**: maioria mágico, maioria físico ou misto;
 - mostra a **build do confronto** e os **itens que jogadores Mestre+ do seu campeão compram a mais** contra aquele tipo de time;
-- deduz a **sua rota** pelo seu time quando o jogo não informa.
+- deduz a **sua rota** pelo seu time quando o jogo não informa;
+- mostra os **counters de cada inimigo**: quem vence e quem perde para ele na rota dele, começando pelo seu oponente;
+- avisa quando a **composição** está desequilibrada: time quase só físico ou só mágico, sem linha de frente;
+- traz o **ritmo Mestre+** do seu campeão: CS, ouro e nível médios aos 5, 10, 15 e 20 minutos.
 
 <p align="center">
   <img src="docs/screenshots/builds.png" alt="Build da partida na seleção de campeões" width="860" />
@@ -125,7 +128,8 @@ Tier list por rota, com taxa de vitória, escolha e banimento, e a página de bu
 - **Aceite automático** da fila.
 - **Fila pelo app:** criar sala, escolher rotas (incluindo os campeões do Jogo Dinâmico, com as rotas prioritárias), convidar amigos.
 - **Histórico de qualquer jogador** pelo Riot ID: elo, maestria, partidas com campeões, KDA e itens.
-- **Overlay durante o jogo** (modo sem bordas): KDA, CS por minuto, ouro e timers de dragão e barão.
+- **Overlay durante o jogo** (modo sem bordas): KDA, CS e ouro, **diferença para o seu oponente de rota** (CS, nível e itens), **CS e ouro contra a média Mestre+** do seu campeão no mesmo minuto, **qual habilidade evoluir** e os timers de todos os objetivos.
+- **Fim de partida:** nota de 0 a 10 para cada jogador, pódio, gráficos de dano, dano recebido, ouro, CS e visão, e os destaques da partida.
 - Interface **responsiva** para qualquer monitor, ícones próprios, bandeja do sistema, iniciar com o Windows e **atualização automática**.
 
 ## Como instalar

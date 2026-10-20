@@ -75,7 +75,10 @@ A generic build ignores what matters most: **who you're playing against**. Durin
 - works out your **lane opponent** by finding each enemy's most likely role from high-elo data;
 - reads the **enemy team's damage profile**: mostly magic, mostly physical or mixed;
 - shows the **matchup build** and the **items Master+ players of your champion buy more often** against that kind of team;
-- infers **your own role** from your team when the game doesn't provide it.
+- infers **your own role** from your team when the game doesn't provide it;
+- shows **counters for each enemy**: who beats them and who loses to them in their role, starting with your lane opponent;
+- warns when a **team composition** is lopsided: almost all physical or all magic damage, or no frontline;
+- shows your champion's **Master+ pace**: average CS, gold and level at 5, 10, 15 and 20 minutes.
 
 <p align="center">
   <img src="docs/screenshots/builds.png" alt="Match-aware build in champion select" width="860" />
@@ -126,7 +129,8 @@ A tier list by role with win, pick and ban rates, and a build page for any champ
 - **Auto-accept** for ready checks.
 - **Queue from the app:** create lobbies, pick roles (including Swiftplay champions and priority roles), invite friends.
 - **Player lookup** by Riot ID: rank, mastery, matches with champions, KDA and items.
-- **In-game overlay** (borderless mode): KDA, CS per minute, gold and dragon and baron timers.
+- **In-game overlay** (borderless mode): KDA, CS and gold, **difference to your lane opponent** (CS, level and items), **CS and gold against the Master+ average** for your champion at the same minute, **which ability to level next** and timers for every objective.
+- **End of game:** a 0 to 10 score for each player, podium, charts for damage, damage taken, gold, CS and vision, and the game's highlights.
 - A **responsive** interface for any monitor, custom icons, system tray, start with Windows and **automatic updates**.
 
 ## Install
