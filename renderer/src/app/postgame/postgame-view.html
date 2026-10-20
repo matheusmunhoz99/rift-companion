@@ -1,0 +1,135 @@
+@if (game(); as g) {
+  <!-- Resultado: o que mais importa primeiro. -->
+  <header class="result" [class.win]="g.myTeamWon === true" [class.loss]="g.myTeamWon === false">
+    <div class="result-main">
+      <span class="result-word">{{ g.myTeamWon === null ? 'Fim de partida' : g.myTeamWon ? 'Vitória' : 'Derrota' }}</span>
+      <span class="result-meta">{{ title() }} · {{ duration(g.durationSeconds) }} · {{ ago(g.endedAt) }}</span>
+    </div>
+    @if (me(); as m) {
+      <div class="my-place">
+        @if (icon(m.championId); as src) {<img [src]="src" [alt]="championName(m.championId)" />}
+        <span class="my-rank num">{{ m.rank }}º</span>
+        <span class="my-detail">
+          <span>de 10 · nota <strong class="num" [attr.data-tone]="scoreTone(m.score)">{{ m.score.toFixed(1) }}</strong></span>
+          <span class="muted num">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }} · {{ thousands(m.damageToChampions) }} de dano</span>
+        </span>
+      </div>
+    }
+  </header>
+
+  <div class="top">
+    <!-- Pódio dos 3 melhores da partida (os dois times). -->
+    <section class="panel podium-panel">
+      <h3>Melhores da partida</h3>
+      <div class="podium">
+        @for (p of podium(); track p.puuid || p.riotId) {
+          <div class="step" [attr.data-place]="p.rank" [class.ally]="ally(p)" [class.me]="p.isMe">
+            <button type="button" class="step-player" [title]="'Ver histórico de ' + p.riotId" (click)="openPlayer(p)">
+              <span class="avatar">
+                @if (icon(p.championId); as src) {<img [src]="src" [alt]="championName(p.championId)" />}
+                <span class="medal num">{{ p.rank }}</span>
+              </span>
+              <span class="step-name">{{ name(p.riotId) }}</span>
+              <span class="step-champ muted">{{ championName(p.championId) }}</span>
+              <span class="step-score num">{{ p.score.toFixed(1) }}</span>
+              <span class="step-kda num muted">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+            </button>
+            <div class="pedestal"><span class="num">{{ p.rank }}º</span></div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Ranking de 1 a 10 pela nota. -->
+    <section class="panel ranking-panel">
+      <header class="panel-head">
+        <h3>Ranking</h3>
+        <span class="muted small" title="Nota relativa à partida: participação, KDA, dano, dano recebido, ouro, visão, CS e estruturas. Morrer desconta. O melhor tem 10.">
+          como a nota é calculada
+        </span>
+      </header>
+      <ol class="ranking">
+        @for (p of ranking(); track p.puuid || p.riotId) {
+          <li class="rank-row" [class.ally]="ally(p)" [class.me]="p.isMe">
+            <span class="pos num">{{ p.rank }}</span>
+            @if (icon(p.championId); as src) {<img [src]="src" [alt]="championName(p.championId)" />}
+            <button type="button" class="rank-name" [title]="'Ver histórico de ' + p.riotId" (click)="openPlayer(p)">{{ name(p.riotId) }}</button>
+            <span class="rank-kda num muted">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+            <span class="score-bar"><span [style.width.%]="p.score * 10" [attr.data-tone]="scoreTone(p.score)"></span></span>
+            <strong class="rank-score num" [attr.data-tone]="scoreTone(p.score)">{{ p.score.toFixed(1) }}</strong>
+          </li>
+        }
+      </ol>
+    </section>
+  </div>
+
+  <div class="bottom">
+    <!-- Gráfico por estatística, os 10 jogadores lado a lado. -->
+    <section class="panel chart-panel">
+      <header class="panel-head">
+        <div class="metric-chips" role="tablist" aria-label="Estatística">
+          @for (m of metrics; track m.key) {
+            <button type="button" role="tab" class="metric" [class.active]="metric() === m.key" [attr.aria-selected]="metric() === m.key" (click)="metric.set(m.key)">
+              {{ m.label }}
+            </button>
+          }
+        </div>
+        <span class="legend">
+          <span class="key ally"></span> seu time
+          <span class="key enemy"></span> inimigos
+        </span>
+      </header>
+      <div class="bars">
+        @for (b of bars(); track b.player.puuid || b.player.riotId) {
+          <div class="bar-row" [class.ally]="ally(b.player)" [class.me]="b.player.isMe" [title]="b.player.riotId + ': ' + b.value.toLocaleString('pt-BR')">
+            @if (icon(b.player.championId); as src) {<img [src]="src" alt="" />}
+            <span class="bar-name">{{ name(b.player.riotId) }}</span>
+            <span class="bar-track"><span class="bar-fill" [style.width.%]="b.width"></span></span>
+            <span class="bar-value num">{{ b.value.toLocaleString('pt-BR') }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Quem carregou o dano de cada time. -->
+      <div class="split">
+        @for (team of damageSplit(); track team.ally) {
+          <div class="split-row" [class.ally]="team.ally">
+            <span class="split-label">{{ team.ally ? 'Seu time' : 'Inimigos' }}</span>
+            <span class="split-bar">
+              @for (p of team.players; track p.puuid || p.riotId; let i = $index) {
+                <span
+                  class="split-seg"
+                  [style.flex-grow]="p.damageShare"
+                  [style.--shade]="1 - i * 0.16"
+                  [title]="name(p.riotId) + ' (' + championName(p.championId) + '): ' + (p.damageShare * 100).toFixed(0) + '% do dano do time'"
+                >
+                  @if (p.damageShare >= 0.12) {
+                    @if (icon(p.championId); as src) {<img [src]="src" alt="" />}
+                    <span class="num">{{ (p.damageShare * 100).toFixed(0) }}%</span>
+                  }
+                </span>
+              }
+            </span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Destaques: o melhor (e o pior) de cada quesito. -->
+    <section class="panel highlights-panel">
+      <h3>Destaques</h3>
+      <div class="highlights">
+        @for (h of highlights(); track h.title) {
+          <button type="button" class="highlight" [attr.data-tone]="h.tone" [class.ally]="ally(h.player)" [title]="'Ver histórico de ' + h.player.riotId" (click)="openPlayer(h.player)">
+            @if (icon(h.player.championId); as src) {<img [src]="src" [alt]="championName(h.player.championId)" />}
+            <span class="hl-text">
+              <span class="hl-title">{{ h.title }}</span>
+              <span class="hl-name">{{ name(h.player.riotId) }}</span>
+            </span>
+            <span class="hl-value num">{{ h.value }}</span>
+          </button>
+        }
+      </div>
+    </section>
+  </div>
+}

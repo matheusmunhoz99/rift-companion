@@ -178,10 +178,54 @@ export interface LiveDashboard {
   events: LiveEvent[];
 }
 
+// Espelha electron/lcu/postgame.ts.
+export interface PostGamePlayer {
+  puuid: string;
+  riotId: string;
+  championId: number;
+  teamId: number;
+  win: boolean;
+  isMe: boolean;
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  damageToChampions: number;
+  damageTaken: number;
+  damageMitigated: number;
+  healing: number;
+  gold: number;
+  cs: number;
+  vision: number;
+  wardsPlaced: number;
+  wardsKilled: number;
+  largestMultiKill: number;
+  structureDamage: number;
+  items: number[];
+  spellIds: number[];
+  killShare: number;
+  damageShare: number;
+  score: number;
+  rank: number;
+}
+
+export interface PostGame {
+  gameId: number;
+  queueId: number | null;
+  queueType: string;
+  gameMode: string;
+  durationSeconds: number;
+  endedAt: number;
+  myTeamWon: boolean | null;
+  players: PostGamePlayer[];
+}
+
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getLocalGame(): Promise<LocalGame | null>;
   getLiveDashboard(): Promise<LiveDashboard | null>;
+  getPostGame(): Promise<PostGame | null>;
+  onPostGame(callback: (game: PostGame) => void): () => void;
   /** Grupos (duo, trio...) da partida em andamento, em puuids. */
   getPremades(gameName: string, tagLine: string, platformId: string): Promise<{ groups: string[][] }>;
   getSettings(): Promise<RiotSettings>;

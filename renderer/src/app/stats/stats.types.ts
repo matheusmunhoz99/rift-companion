@@ -59,6 +59,19 @@ export interface Situational {
   items: Array<{ itemId: number; games: number; share: number; winRate: number; lift: number }>;
 }
 
+export interface CounterEntry {
+  championId: number;
+  games: number;
+  winRate: number;
+}
+
+export interface CounterData {
+  championId: number;
+  position: string | null;
+  good: CounterEntry[];
+  bad: CounterEntry[];
+}
+
 export interface StatsBridge {
   meta(): Promise<StatsMeta>;
   tierList(position: string | null): Promise<TierEntry[]>;
@@ -68,6 +81,7 @@ export interface StatsBridge {
     opponentId?: number | null,
     damage?: EnemyDamage | null,
   ): Promise<ChampionStats | null>;
+  counters(championId: number, position: string | null): Promise<CounterData>;
 }
 
 declare global {

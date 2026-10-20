@@ -1,0 +1,59 @@
+@if (hasEnemies()) {
+  <div class="enemy-tabs">
+    @for (enemy of enemies(); track enemy.id) {
+      <button
+        type="button"
+        class="enemy-tab"
+        [class.active]="selectedEnemy() === enemy.id"
+        (click)="selectEnemy(enemy.id)"
+      >
+        <img [src]="ddragon.championIconUrl(enemy.champion)" [alt]="enemy.champion.name" />
+        <span>{{ enemy.champion.name }}</span>
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Carregando counters…</p>
+  } @else if (counters(); as data) {
+    @if (data.good.length > 0) {
+      <div class="section">
+        <h4 class="section-label good">Bom contra {{ name(selectedEnemy()) }}</h4>
+        <div class="counter-list">
+          @for (entry of data.good; track entry.championId) {
+            <div class="counter-row">
+              @if (icon(entry.championId); as src) {
+                <img [src]="src" [alt]="name(entry.championId)" />
+              }
+              <span class="counter-name">{{ name(entry.championId) }}</span>
+              <span class="counter-wr" [class]="wrClass(entry.winRate)">{{ wr(entry.winRate) }}</span>
+              <span class="counter-games muted">{{ entry.games }}p</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @if (data.bad.length > 0) {
+      <div class="section">
+        <h4 class="section-label bad">Fraco contra {{ name(selectedEnemy()) }}</h4>
+        <div class="counter-list">
+          @for (entry of data.bad; track entry.championId) {
+            <div class="counter-row">
+              @if (icon(entry.championId); as src) {
+                <img [src]="src" [alt]="name(entry.championId)" />
+              }
+              <span class="counter-name">{{ name(entry.championId) }}</span>
+              <span class="counter-wr" [class]="wrClass(entry.winRate)">{{ wr(entry.winRate) }}</span>
+              <span class="counter-games muted">{{ entry.games }}p</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @if (data.good.length === 0 && data.bad.length === 0) {
+      <p class="muted">Sem dados de confronto para esse campeão.</p>
+    }
+  }
+} @else {
+  <p class="muted">Quando o time inimigo escolher campeões, os counters aparecem aqui.</p>
+}

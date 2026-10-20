@@ -123,7 +123,7 @@ export class Shell {
       case 'WaitingForStats':
       case 'PreEndOfGame':
       case 'EndOfGame':
-        return { tone: 'idle', label: 'Fim de jogo', detail: null, view: 'history' };
+        return { tone: 'idle', label: 'Fim de jogo', detail: null, view: 'live' };
       default:
         return { tone: 'idle', label: 'No menu principal', detail: null, view: null };
     }
@@ -153,6 +153,8 @@ export class Shell {
         if (!this.prefs.preferences().autoNavigate || previous === null) return;
         if (phase === 'ChampSelect') this.nav.go('champ-select');
         if (phase === 'InProgress') this.nav.go('live');
+        // Fim de partida: o pódio e os gráficos ficam na mesma tela.
+        if (phase === 'EndOfGame') this.nav.go('live');
       });
     });
   }

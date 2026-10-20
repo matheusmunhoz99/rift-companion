@@ -62,6 +62,8 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-live-game', gameName, tagLine, platformId),
   getLocalGame: () => ipcRenderer.invoke('riot:get-local-game'),
   getLiveDashboard: () => ipcRenderer.invoke('riot:get-live-dashboard'),
+  getPostGame: () => ipcRenderer.invoke('postgame:get'),
+  onPostGame: (callback: (game: unknown) => void) => subscribe('postgame:ready', callback),
   getPremades: (gameName: string, tagLine: string, platformId: string) =>
     ipcRenderer.invoke('riot:get-premades', gameName, tagLine, platformId),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
@@ -81,6 +83,8 @@ contextBridge.exposeInMainWorld('stats', {
   tierList: (position: string | null) => ipcRenderer.invoke('stats:tierlist', position),
   champion: (championId: number, position: string | null, opponentId?: number | null, damage?: string | null) =>
     ipcRenderer.invoke('stats:champion', championId, position, opponentId ?? null, damage ?? null),
+  counters: (championId: number, position: string | null) =>
+    ipcRenderer.invoke('stats:counters', championId, position),
 });
 
 contextBridge.exposeInMainWorld('builds', {

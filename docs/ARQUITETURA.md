@@ -111,6 +111,14 @@ Os timers de objetivos contam até o primeiro surgimento e, depois de cada abate
 
 Os mesmos valores ficam em `scripts/timers.json` (`default` + `queues` por id da fila; surgimento 0 tira o objetivo do modo), publicado em `downloads/timers.json` pelo `npm run release`. O app relê o arquivo a cada hora e usa os embutidos se ele não carregar, então uma mudança de temporada se corrige sem nova versão. A fila vem da sessão do cliente (`/lol-gameflow/v1/session`).
 
+## Fim de partida (`electron/lcu/postgame.ts`, `renderer/src/app/postgame/`)
+
+Quando a fase vira `PreEndOfGame`/`EndOfGame`, o app lê o placar que o próprio cliente monta (`/lol-end-of-game/v1/eog-stats-block`), tentando de novo por até 30 s até ele vir preenchido. O placar traz o que o match-v5 não tem (dano recebido, mitigado, cura) e chega na hora. A última partida fica em `%APPDATA%\Rift Companion\postgame\last.json`; o original do cliente vai para `last-raw.json`, para ajustar o leitor se o formato mudar.
+
+A tela "Partida ao vivo", fora de partida, mostra o resultado, o pódio dos 3 melhores, o ranking de 1 a 10, um gráfico por estatística (dano, dano recebido, mitigado, ouro, CS, visão, cura, estruturas), a divisão do dano de cada time e os destaques. O app abre essa tela sozinho no fim da partida (com "abrir telas automaticamente").
+
+**Nota (0 a 10):** cada estatística vale pela fração do melhor valor entre os 10 jogadores, com pesos: participação em abates 20%, dano a campeões 20%, KDA 16%, ouro 10%, visão 10%, dano recebido + mitigado 9%, CS 6%, estruturas 5%, vitória 4%, e mortes descontam 12%. O total é escalado para o melhor da partida ficar com 10. Não depende da rota: quem segura dano ou dá visão também pontua.
+
 ## Servidor
 
 O servidor (rift-api) fica num repositório privado: proxy da Riot API com cache, bot do Telegram e

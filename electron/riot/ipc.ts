@@ -147,6 +147,11 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     },
   );
 
+  ipcMain.handle('stats:counters', (_event, championId: number, position: string | null) => {
+    const query = position ? `?position=${enc(position)}` : '';
+    return apiGet(`/v1/stats/counters/${Number(championId)}${query}`);
+  });
+
   ipcMain.handle(
     'riot:get-matches',
     (_event, puuid: string, platformId: string, start: number, count: number) =>

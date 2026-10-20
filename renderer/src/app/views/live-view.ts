@@ -2,15 +2,20 @@ import { Component, computed, inject } from '@angular/core';
 import { PreferencesService } from '../core/preferences.service';
 import { LcuService } from '../lcu/lcu.service';
 import { LiveGameView } from '../live/live-game-view';
+import { PostGameView } from '../postgame/postgame-view';
+import { PostGameService } from '../postgame/postgame.service';
 import { Icon } from '../ui/icon';
 
 @Component({
   selector: 'app-live-view',
-  imports: [LiveGameView, Icon],
+  imports: [LiveGameView, PostGameView, Icon],
   template: `
     @if (inGame()) {
       <!-- Sem cartão em volta: a partida usa a janela inteira. -->
       <app-live-game-view />
+    } @else if (postGame.game()) {
+      <!-- Partida terminada: pódio, ranking, gráficos e destaques. -->
+      <app-postgame-view />
     } @else {
       <section class="card">
         <div class="empty-state">
@@ -39,6 +44,7 @@ import { Icon } from '../ui/icon';
 export class LiveView {
   private readonly lcu = inject(LcuService);
   protected readonly prefs = inject(PreferencesService);
+  protected readonly postGame = inject(PostGameService);
   protected readonly inGame = computed(() => {
     const phase = this.lcu.state().gameflowPhase;
     return phase === 'InProgress' || phase === 'Reconnect';

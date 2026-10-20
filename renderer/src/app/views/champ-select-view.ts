@@ -1,19 +1,28 @@
 import { Component, computed, inject } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
 import { ChampSelectPanel } from '../champ-select/champ-select-panel';
+import { CounterPanel } from '../champ-select/counter-panel';
 import { ChampionStatsPanel } from '../stats/champion-stats';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
 
 @Component({
   selector: 'app-champ-select-view',
-  imports: [ChampSelectPanel, BuildPanel, ChampionStatsPanel, Icon],
+  imports: [ChampSelectPanel, CounterPanel, BuildPanel, ChampionStatsPanel, Icon],
   template: `
     @if (state().champSelect; as session) {
       <div class="layout">
-        <section class="card">
+        <section class="card left-col">
           <h3 class="section-title">Seu campeão</h3>
           <app-champ-select-panel [session]="session" />
+
+          <div class="counter-block">
+            <h3 class="section-title">Counters</h3>
+            <app-counter-panel
+              [enemyChampionIds]="enemyIds()"
+              [assignedPosition]="session.assignedPosition"
+            />
+          </div>
         </section>
         <section class="card">
           <h3 class="section-title">Build recomendada</h3>
@@ -50,6 +59,14 @@ import { Icon } from '../ui/icon';
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
       gap: 18px;
       align-items: start;
+    }
+    .left-col {
+      display: grid;
+      gap: 18px;
+    }
+    .counter-block {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
     .stats-block {
       margin-bottom: 18px;

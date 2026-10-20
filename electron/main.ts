@@ -18,6 +18,7 @@ import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
 import { isRiotClientRunning, launchLeague, type LeagueLaunchResult } from './lcu/riot-client';
+import { PostGameService } from './lcu/postgame';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
@@ -260,6 +261,11 @@ void acquireInstance().then((acquired) => {
       return configuredLaunch;
     };
     registerRiotHandlers(prefs, connector);
+
+    // Fim de partida: placar completo do cliente, guardado para a tela "Partida ao vivo".
+    const postGame = new PostGameService(connector, path.join(app.getPath('userData'), 'postgame'), devOnly('RIFT_DEMO_POSTGAME'));
+    postGame.on('ready', (game) => mainWindow?.webContents.send('postgame:ready', game));
+    ipcMain.handle('postgame:get', () => postGame.get());
     applyStartWithWindows(prefs.getPreferences().startWithWindows);
     if (!app.isPackaged) connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));
 
