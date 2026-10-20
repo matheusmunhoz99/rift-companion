@@ -1,4 +1,4 @@
-import { lanePosition } from './live-client';
+import { lanePosition } from './lanes';
 
 /**
  * Painel ao vivo da partida a partir da Live Client Data API (allgamedata).
@@ -54,6 +54,7 @@ export interface RawDashboardData {
     currentGold?: number;
     level?: number;
     championStats?: Record<string, number>;
+    abilities?: Partial<Record<'Q' | 'W' | 'E' | 'R', { abilityLevel?: number }>>;
   };
   allPlayers: RawPlayer[];
   events?: { Events: RawEvent[] };

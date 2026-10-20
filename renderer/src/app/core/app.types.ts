@@ -29,20 +29,28 @@ export interface AppInfo {
   buildsDirectory: string;
 }
 
+export interface OverlayPlayer {
+  championName: string;
+  championKey: string;
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  items: Array<{ id: number; count: number }>;
+}
+
 export interface OverlayData {
   gameTime: number;
   gameMode: string;
-  me: {
-    championName: string;
-    level: number;
-    kills: number;
-    deaths: number;
-    assists: number;
-    cs: number;
+  me: (OverlayPlayer & {
+    position: string;
     csPerMinute: number;
     gold: number;
     wardScore: number;
-  } | null;
+    skills: [number, number, number, number] | null;
+  }) | null;
+  opponent: OverlayPlayer | null;
   teamKills: { ally: number; enemy: number };
   objectives: {
     dragons: { ally: number; enemy: number };
@@ -50,7 +58,7 @@ export interface OverlayData {
     heralds: { ally: number; enemy: number };
     towers: { ally: number; enemy: number };
   };
-  timers: { dragon: number | null; baron: number | null } | null;
+  upcoming: Array<{ key: 'dragon' | 'grubs' | 'herald' | 'atakhan' | 'baron'; name: string; state: 'upcoming' | 'alive'; at: number }>;
 }
 
 export interface ReleaseInfo {

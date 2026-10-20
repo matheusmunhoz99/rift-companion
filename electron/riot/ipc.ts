@@ -2,39 +2,10 @@ import { app, ipcMain } from 'electron';
 import { readFileSync } from 'node:fs';
 import type { LcuConnector } from '../lcu/connector';
 import { lcuRequest } from '../lcu/http';
-import { fetchRawGameData, lanePosition, toLocalPlayers } from '../overlay/live-client';
-import {
-  DEFAULT_TIMINGS_CONFIG,
-  parseTimingsConfig,
-  timingsForQueue,
-  toLiveDashboard,
-  type RawDashboardData,
-  type TimingsConfig,
-} from '../overlay/live-dashboard';
-
-const TIMINGS_URL = `${process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br'}/downloads/timers.json`;
-const TIMINGS_TTL_MS = 60 * 60_000;
-const TIMINGS_RETRY_MS = 5 * 60_000;
-const QUEUE_TTL_MS = 20_000;
-let timingsCache: { at: number; ttl: number; value: TimingsConfig } | null = null;
-
-/**
- * Tempos de surgimento dos objetivos publicados no nosso servidor (mesma pasta da
- * atualização automática), por fila, para corrigir uma mudança de temporada sem
- * lançar versão. Sem o arquivo ou sem internet, usa os tempos embutidos.
- */
-async function timingsConfig(): Promise<TimingsConfig> {
-  if (timingsCache && Date.now() - timingsCache.at < timingsCache.ttl) return timingsCache.value;
-  try {
-    const response = await fetch(TIMINGS_URL, { cache: 'no-store', signal: AbortSignal.timeout(5_000) });
-    if (!response.ok) throw new Error(String(response.status));
-    timingsCache = { at: Date.now(), ttl: TIMINGS_TTL_MS, value: parseTimingsConfig(await response.json()) };
-  } catch {
-    timingsCache = { at: Date.now(), ttl: TIMINGS_RETRY_MS, value: timingsCache?.value ?? DEFAULT_TIMINGS_CONFIG };
-  }
-  return timingsCache.value;
-}
-
+import { lanePosition } from '../overlay/lanes';
+import { fetchRawGameData, toLocalPlayers } from '../overlay/live-client';
+import { toLiveDashboard, type RawDashboardData } from '../overlay/live-dashboard';
+import { createTimingsSource } from '../overlay/timings-source';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
 
@@ -42,19 +13,7 @@ import { PLATFORMS } from './routing';
 export const RIFT_API_URL = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
 
 export function registerRiotHandlers(settings: Settings, connector: LcuConnector): void {
-  // Fila da partida pela sessão do cliente; não muda durante a partida.
-  let queueCache: { at: number; id: number | null } | null = null;
-  const currentQueue = async (): Promise<number | null> => {
-    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_QUEUE;
-    if (demo) return Number(demo);
-    if (queueCache && Date.now() - queueCache.at < QUEUE_TTL_MS) return queueCache.id;
-    const credentials = connector.getCredentials();
-    const session = credentials
-      ? await lcuRequest<{ gameData?: { queue?: { id?: number } } }>(credentials, 'GET', '/lol-gameflow/v1/session').catch(() => null)
-      : null;
-    queueCache = { at: Date.now(), id: session?.gameData?.queue?.id ?? null };
-    return queueCache.id;
-  };
+  const timings = createTimingsSource(connector, app.isPackaged);
 
   ipcMain.handle('riot:get-settings', () => ({
     platformId: settings.getPlatformId() ?? connector.getState().platformId ?? 'BR1',
@@ -119,9 +78,7 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_LOCAL;
     const raw = demo ? JSON.parse(readFileSync(demo, 'utf8')) : await fetchRawGameData();
     if (!raw?.allPlayers?.length) return null;
-    // A fila escolhe os tempos (a Partida Rápida tem objetivos próprios).
-    const [config, queueId] = await Promise.all([timingsConfig(), currentQueue()]);
-    return toLiveDashboard(raw as RawDashboardData, timingsForQueue(config, queueId));
+    return toLiveDashboard(raw as RawDashboardData, await timings());
   });
 
   ipcMain.handle('riot:get-premades', (_event, gameName: string, tagLine: string, platformId: string) => {

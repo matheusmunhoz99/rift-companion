@@ -1,4 +1,14 @@
 import https from 'node:https';
+import { lanePosition } from './lanes';
+import {
+  DEFAULT_TIMINGS,
+  toLiveDashboard,
+  type LivePlayer,
+  type LiveTeam,
+  type ObjectiveKey,
+  type ObjectiveTimings,
+  type RawDashboardData,
+} from './live-dashboard';
 
 /**
  * Live Client Data API: exposta pelo próprio jogo em https://127.0.0.1:2999
@@ -10,20 +20,32 @@ const LIVE_CLIENT_URL = process.env.RIFT_LIVE_CLIENT_URL ?? 'https://127.0.0.1:2
 // Certificado autoassinado da Riot; só fala com localhost.
 const localAgent = new https.Agent({ rejectUnauthorized: false, keepAlive: true });
 
+export interface OverlayPlayer {
+  championName: string;
+  /** Nome interno no Data Dragon (ex.: "MonkeyKing"). */
+  championKey: string;
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  /** Itens por slot (0-6); o renderer soma o preço no Data Dragon. */
+  items: Array<{ id: number; count: number }>;
+}
+
 export interface OverlayData {
   gameTime: number;
   gameMode: string;
-  me: {
-    championName: string;
-    level: number;
-    kills: number;
-    deaths: number;
-    assists: number;
-    cs: number;
+  me: (OverlayPlayer & {
+    position: string;
     csPerMinute: number;
     gold: number;
     wardScore: number;
-  } | null;
+    /** Níveis de Q, W, E e R; null quando o jogo não informa. */
+    skills: [number, number, number, number] | null;
+  }) | null;
+  /** Inimigo da mesma rota; null sem rotas (ARAM, por exemplo). */
+  opponent: OverlayPlayer | null;
   /** Abates de campeões por time (aliado x inimigo). */
   teamKills: { ally: number; enemy: number };
   objectives: {
@@ -32,18 +54,9 @@ export interface OverlayData {
     heralds: { ally: number; enemy: number };
     towers: { ally: number; enemy: number };
   };
-  /**
-   * Reaparecimento após o último abate (modo clássico): segundos de jogo em que
-   * o objetivo volta, ou null se ainda não foi abatido. O primeiro surgimento
-   * muda entre temporadas e modos, por isso não é estimado.
-   */
-  timers: { dragon: number | null; baron: number | null } | null;
+  /** Objetivos do Summoner's Rift ainda em jogo, com o tempo de surgimento (mesmos timers do painel). */
+  upcoming: Array<{ key: ObjectiveKey; name: string; state: 'upcoming' | 'alive'; at: number }>;
 }
-
-/** Tempos de reaparecimento estáveis há várias temporadas. */
-const DRAGON_RESPAWN_S = 5 * 60;
-const ELDER_RESPAWN_S = 6 * 60;
-const BARON_RESPAWN_S = 6 * 60;
 
 interface RawPlayer {
   riotId?: string;
@@ -64,11 +77,6 @@ export interface RawGameData {
   allPlayers: RawPlayer[];
   events?: { Events: Array<{ EventName: string; KillerName?: string; EventTime: number; DragonType?: string }> };
   gameData: { gameTime: number; gameMode: string };
-}
-
-export async function fetchLiveClientData(): Promise<OverlayData | null> {
-  const raw = await fetchRawGameData();
-  return raw ? toOverlayData(raw) : null;
 }
 
 export function fetchRawGameData(): Promise<RawGameData | null> {
@@ -104,14 +112,6 @@ export interface LocalPlayer {
   position: string;
 }
 
-const LANES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
-
-/** Só aceita as cinco rotas; o jogo manda "", "NONE" ou "INVALID" quando não sabe. */
-export function lanePosition(value: unknown): string {
-  const lane = typeof value === 'string' ? value.toUpperCase() : '';
-  return LANES.includes(lane) ? lane : '';
-}
-
 /**
  * Os dois times direto do jogo, disponíveis assim que a partida carrega
  * (a Riot API só libera a partida no spectator alguns minutos depois).
@@ -130,74 +130,48 @@ export function toLocalPlayers(raw: RawGameData): LocalPlayer[] {
   }));
 }
 
-export function toOverlayData(raw: RawGameData): OverlayData {
-  const myId = raw.activePlayer?.riotId ?? raw.activePlayer?.summonerName ?? '';
-  const playerName = (p: RawPlayer) => p.riotId ?? p.summonerName ?? '';
-  const me = raw.allPlayers.find((p) => playerName(p) === myId) ?? null;
-  const allyTeam = me?.team ?? 'ORDER';
+/** Barra sobre o jogo: você, o inimigo da sua rota, o placar e os próximos objetivos. */
+export function toOverlayData(raw: RawGameData, timings: ObjectiveTimings = DEFAULT_TIMINGS): OverlayData {
+  const live = toLiveDashboard(raw as RawDashboardData, timings);
+  const mine = live.players.find((p) => p.isMe) ?? null;
+  const opponent = mine?.position ? (live.players.find((p) => !p.ally && p.position === mine.position) ?? null) : null;
+  const player = (p: LivePlayer): OverlayPlayer => ({
+    championName: p.championName,
+    championKey: p.championKey,
+    level: p.level,
+    kills: p.kills,
+    deaths: p.deaths,
+    assists: p.assists,
+    cs: p.cs,
+    items: p.items,
+  });
+  const abilities = (raw as RawDashboardData).activePlayer?.abilities;
+  const skills = abilities
+    ? ((['Q', 'W', 'E', 'R'] as const).map((key) => abilities[key]?.abilityLevel ?? 0) as [number, number, number, number])
+    : null;
+  const count = (pick: (t: LiveTeam) => number) => ({ ally: pick(live.teams.ally), enemy: pick(live.teams.enemy) });
+  const minutes = live.gameTime / 60;
 
-  // Eventos citam o abatedor pelo nome (jogador, ou minion/torre). Jogador desconhecido não conta.
-  const teamOf = new Map(raw.allPlayers.map((p) => [playerName(p), p.team]));
-  const shortName = new Map(raw.allPlayers.map((p) => [playerName(p).split('#')[0], p.team]));
-  const killerTeam = (killer?: string) =>
-    killer ? (teamOf.get(killer) ?? shortName.get(killer.split('#')[0]) ?? null) : null;
-
-  const objectives = {
-    dragons: { ally: 0, enemy: 0 },
-    barons: { ally: 0, enemy: 0 },
-    heralds: { ally: 0, enemy: 0 },
-    towers: { ally: 0, enemy: 0 },
-  };
-  const bucket: Record<string, keyof typeof objectives> = {
-    DragonKill: 'dragons',
-    BaronKill: 'barons',
-    HeraldKill: 'heralds',
-    TurretKilled: 'towers',
-  };
-  for (const event of raw.events?.Events ?? []) {
-    const key = bucket[event.EventName];
-    const team = killerTeam(event.KillerName);
-    if (!key || !team) continue;
-    objectives[key][team === allyTeam ? 'ally' : 'enemy']++;
-  }
-
-  const teamKills = { ally: 0, enemy: 0 };
-  for (const player of raw.allPlayers) {
-    teamKills[player.team === allyTeam ? 'ally' : 'enemy'] += player.scores.kills;
-  }
-
-  const events = raw.events?.Events ?? [];
-  const lastTime = (name: string) =>
-    events.filter((e) => e.EventName === name).reduce<number | null>((last, e) => Math.max(last ?? 0, e.EventTime), null);
-  const lastDragon = lastTime('DragonKill');
-  const lastBaron = lastTime('BaronKill');
-  // Com a alma conquistada (4 dragões de um time), o próximo é o Ancião.
-  const soul = objectives.dragons.ally >= 4 || objectives.dragons.enemy >= 4;
-  const timers =
-    raw.gameData.gameMode === 'CLASSIC'
-      ? {
-          dragon: lastDragon === null ? null : lastDragon + (soul ? ELDER_RESPAWN_S : DRAGON_RESPAWN_S),
-          baron: lastBaron === null ? null : lastBaron + BARON_RESPAWN_S,
-        }
-      : null;
-
-  const minutes = raw.gameData.gameTime / 60;
   return {
-    gameTime: raw.gameData.gameTime,
-    gameMode: raw.gameData.gameMode,
-    me: me && {
-      championName: me.championName,
-      level: me.level,
-      kills: me.scores.kills,
-      deaths: me.scores.deaths,
-      assists: me.scores.assists,
-      cs: me.scores.creepScore,
-      csPerMinute: minutes > 0 ? Math.round((me.scores.creepScore / minutes) * 10) / 10 : 0,
-      gold: Math.floor(raw.activePlayer?.currentGold ?? 0),
-      wardScore: Math.round(me.scores.wardScore),
+    gameTime: live.gameTime,
+    gameMode: live.gameMode,
+    me: mine && {
+      ...player(mine),
+      position: mine.position,
+      csPerMinute: minutes > 0 ? Math.round((mine.cs / minutes) * 10) / 10 : 0,
+      gold: live.me?.currentGold ?? 0,
+      wardScore: mine.wardScore,
+      skills,
     },
-    teamKills,
-    objectives,
-    timers,
+    opponent: opponent && player(opponent),
+    teamKills: count((t) => t.kills),
+    objectives: {
+      dragons: count((t) => t.dragons.length),
+      barons: count((t) => t.barons),
+      heralds: count((t) => t.heralds),
+      towers: count((t) => t.towers),
+    },
+    upcoming: live.objectives
+      .filter((o): o is typeof o & { state: 'upcoming' | 'alive' } => o.state !== 'done'),
   };
 }

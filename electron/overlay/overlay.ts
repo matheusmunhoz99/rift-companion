@@ -1,12 +1,14 @@
 import { BrowserWindow, globalShortcut, screen } from 'electron';
 import type { LcuConnector } from '../lcu/connector';
 import type { Preferences } from '../settings';
-import { fetchLiveClientData } from './live-client';
+import { fetchRawGameData, toOverlayData } from './live-client';
+import type { ObjectiveTimings } from './live-dashboard';
 
 const POLL_MS = 2_000;
-export const OVERLAY_WIDTH = 820;
+export const OVERLAY_WIDTH = 980;
+export const OVERLAY_HEIGHT = 84;
 const WIDTH = OVERLAY_WIDTH;
-const HEIGHT = 56;
+const HEIGHT = OVERLAY_HEIGHT;
 export const OVERLAY_SHORTCUT = 'CommandOrControl+Shift+O';
 
 /**
@@ -23,6 +25,7 @@ export class OverlayController {
     private readonly getPreferences: () => Preferences,
     private readonly loadPage: (window: BrowserWindow) => void,
     private readonly preloadPath: string,
+    private readonly timings: () => Promise<ObjectiveTimings>,
   ) {
     connector.on('state', () => this.sync());
     globalShortcut.register(OVERLAY_SHORTCUT, () => this.toggleByUser());
@@ -56,8 +59,10 @@ export class OverlayController {
   }
 
   private async poll(): Promise<void> {
-    const data = await fetchLiveClientData();
-    if (!data || !this.timer) return;
+    const raw = await fetchRawGameData();
+    if (!raw?.allPlayers?.length || !this.timer) return;
+    const data = toOverlayData(raw, await this.timings());
+    if (!this.timer) return;
     const window = this.ensureWindow();
     window.webContents.send('overlay:data', data);
     if (this.hiddenByUser) return;

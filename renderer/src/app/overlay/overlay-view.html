@@ -1,0 +1,69 @@
+@if (data(); as d) {
+  <div class="panel">
+    <div class="row">
+      <span class="time">{{ time(clock()) }}</span>
+      @if (d.me; as me) {
+        <span class="sep"></span>
+        <span class="stat"><b>{{ me.kills }}</b>/<b class="bad">{{ me.deaths }}</b>/<b>{{ me.assists }}</b></span>
+        <span class="stat"><b>{{ me.cs }}</b>&nbsp;CS <small>{{ me.csPerMinute.toFixed(1) }}/min</small></span>
+        <span class="stat gold"><b>{{ me.gold }}</b>&nbsp;ouro</span>
+      }
+      @if (lane(); as l) {
+        <span class="sep"></span>
+        <span class="stat lane">
+          <small>vs</small>
+          @if (l.icon) {
+            <img [src]="l.icon" [alt]="l.name" />
+          } @else {
+            <span class="name">{{ l.name }}</span>
+          }
+          <span class="diff" [class.up]="l.cs > 0" [class.down]="l.cs < 0"><b>{{ signed(l.cs) }}</b> CS</span>
+          <span class="diff" [class.up]="l.level > 0" [class.down]="l.level < 0"><b>{{ signed(l.level) }}</b> nv</span>
+          <span class="diff" [class.up]="l.gold > 0" [class.down]="l.gold < 0"><b>{{ gold(l.gold) }}</b> itens</span>
+        </span>
+      }
+      @if (skill(); as s) {
+        <span class="sep"></span>
+        @if (s.next; as next) {
+          <span class="stat skill-next">
+            @if (next.icon) {
+              <img [src]="next.icon" [alt]="next.key" />
+            }
+            <small>Evolua</small>
+            <b class="key">{{ next.key }}</b>
+          </span>
+        } @else {
+          <span class="stat skill-order">
+            <small>Maximize</small>
+            @for (key of s.order; track $index) {
+              @if (!$first) {
+                <small class="arrow">›</small>
+              }
+              <b>{{ key }}</b>
+            }
+          </span>
+        }
+      }
+    </div>
+
+    <div class="row">
+      <span class="stat">
+        <b class="good">{{ d.teamKills.ally }}</b> <small>abates</small> <b class="bad">{{ d.teamKills.enemy }}</b>
+      </span>
+      @if (hasObjectives(d)) {
+        <span class="sep"></span>
+        <span class="stat"><small>Dragões</small> <b class="good">{{ d.objectives.dragons.ally }}</b>:<b class="bad">{{ d.objectives.dragons.enemy }}</b></span>
+        <span class="stat"><small>Barões</small> <b class="good">{{ d.objectives.barons.ally }}</b>:<b class="bad">{{ d.objectives.barons.enemy }}</b></span>
+        <span class="stat"><small>Torres</small> <b class="good">{{ d.objectives.towers.ally }}</b>:<b class="bad">{{ d.objectives.towers.enemy }}</b></span>
+      }
+      @if (upcoming().length) {
+        <span class="sep"></span>
+        @for (o of upcoming(); track o.key) {
+          <span class="stat timer" [class.alive]="o.alive" [class.soon]="o.soon">
+            <small>{{ o.name }}</small> <b>{{ o.label }}</b>
+          </span>
+        }
+      }
+    </div>
+  </div>
+}

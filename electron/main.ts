@@ -8,7 +8,8 @@ import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
-import { OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
+import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
+import { createTimingsSource } from './overlay/timings-source';
 import { registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
@@ -140,7 +141,7 @@ function scheduleCapture(window: BrowserWindow): void {
 function captureDemoOverlay(dataFile: string): void {
   const window = new BrowserWindow({
     width: OVERLAY_WIDTH,
-    height: 56,
+    height: OVERLAY_HEIGHT,
     frame: false,
     transparent: true,
     show: true,
@@ -289,6 +290,7 @@ void acquireInstance().then((acquired) => {
       () => prefs.getPreferences(),
       (window) => loadRenderer(window, 'overlay'),
       path.join(__dirname, 'preload.js'),
+      createTimingsSource(connector, app.isPackaged),
     );
 
     ipcMain.handle('prefs:get', () => prefs.getPreferences());

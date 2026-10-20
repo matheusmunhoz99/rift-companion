@@ -35,26 +35,50 @@ test('objetivos contados por time; torre derrubada por tropa não conta', () => 
   assert.deepEqual(d.objectives.towers, { ally: 1, enemy: 0 });
 });
 
-test('timers: dragão volta 5 min após o último abate, barão 6 min', () => {
-  const d = toOverlayData(game({ events: [
-    { EventName: 'DragonKill', KillerName: 'Eu', EventTime: 400 },
-    { EventName: 'DragonKill', KillerName: 'Inimigo', EventTime: 1000 },
+const next = (d) => Object.fromEntries(d.upcoming.map((o) => [o.key, { state: o.state, at: o.at }]));
+
+test('próximos objetivos com o primeiro surgimento e o reaparecimento depois do abate', () => {
+  const early = next(toOverlayData(game({ time: 200 })));
+  assert.deepEqual(early.dragon, { state: 'upcoming', at: 300 });
+  assert.deepEqual(early.baron, { state: 'upcoming', at: 1200 });
+
+  const d = next(toOverlayData(game({ events: [
+    { EventName: 'DragonKill', KillerName: 'Eu', EventTime: 400, DragonType: 'Fire' },
+    { EventName: 'DragonKill', KillerName: 'Inimigo', EventTime: 1000, DragonType: 'Water' },
     { EventName: 'BaronKill', KillerName: 'Aliado', EventTime: 1300 },
-  ] }));
-  assert.deepEqual(d.timers, { dragon: 1300, baron: 1660 });
+  ] })));
+  assert.deepEqual(d.dragon, { state: 'alive', at: 1300 }, 'voltou às 21:40 e a partida está em 25:00');
+  assert.deepEqual(d.baron, { state: 'upcoming', at: 1660 });
+  assert.equal(d.herald, undefined, 'Arauto já saiu do mapa aos 19:45');
 });
 
-test('timers: sem abate ainda, não estima o primeiro surgimento', () => {
-  assert.deepEqual(toOverlayData(game()).timers, { dragon: null, baron: null });
+test('com a alma, o próximo dragão é o Ancião (6 min)', () => {
+  const kills = [300, 700, 1100, 1500].map((t) => ({ EventName: 'DragonKill', KillerName: 'Eu', EventTime: t, DragonType: 'Fire' }));
+  const d = toOverlayData(game({ time: 1600, events: kills }));
+  const dragon = d.upcoming.find((o) => o.key === 'dragon');
+  assert.equal(dragon.at, 1860);
+  assert.equal(dragon.name, 'Dragão Ancião');
 });
 
-test('timers: com a alma, o próximo é o Ancião (6 min)', () => {
-  const kills = [300, 700, 1100, 1500].map((t) => ({ EventName: 'DragonKill', KillerName: 'Eu', EventTime: t }));
-  assert.equal(toOverlayData(game({ time: 1600, events: kills })).timers.dragon, 1860);
+test('objetivos só no modo clássico', () => {
+  assert.deepEqual(toOverlayData(game({ mode: 'ARAM' })).upcoming, []);
 });
 
-test('timers só no modo clássico (Jogo Dinâmico e ARAM têm tempos próprios)', () => {
-  const events = [{ EventName: 'DragonKill', KillerName: 'Eu', EventTime: 400 }];
-  assert.equal(toOverlayData(game({ mode: 'SWIFTPLAY', events })).timers, null);
-  assert.equal(toOverlayData(game({ mode: 'ARAM', events })).timers, null);
+test('oponente é o inimigo da mesma rota; sem rotas, nenhum', () => {
+  const g = game();
+  g.allPlayers[0].position = 'MIDDLE';
+  g.allPlayers[2].position = 'TOP';
+  g.allPlayers.push({ ...player('Mid#br1', 'CHAOS', 1, 1, 1, 170), position: 'MIDDLE', items: [{ itemID: 1055, slot: 0 }] });
+  const d = toOverlayData(g);
+  assert.equal(d.opponent.cs, 170);
+  assert.deepEqual(d.opponent.items[0], { id: 1055, count: 1 });
+  assert.equal(d.me.position, 'MIDDLE');
+  assert.equal(toOverlayData(game()).opponent, null);
+});
+
+test('níveis das habilidades do jogador', () => {
+  const g = game();
+  g.activePlayer.abilities = { Q: { abilityLevel: 3 }, W: { abilityLevel: 1 }, E: { abilityLevel: 2 }, R: { abilityLevel: 1 } };
+  assert.deepEqual(toOverlayData(g).me.skills, [3, 1, 2, 1]);
+  assert.equal(toOverlayData(game()).me.skills, null);
 });
