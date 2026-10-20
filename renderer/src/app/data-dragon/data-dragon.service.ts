@@ -20,6 +20,9 @@ interface RuneStyle {
 }
 
 const BASE_URL = 'https://ddragon.leagueoflegends.com';
+/** O app pode ficar aberto por dias: confere se saiu patch novo (campeões, itens, preços). */
+const VERSION_CHECK_MS = 3 * 60 * 60_000;
+const RETRY_MS = 2 * 60_000;
 
 /** Dados estáticos públicos da Riot (campeões, runas, feitiços, itens) via Data Dragon. */
 @Injectable({ providedIn: 'root' })
@@ -43,7 +46,7 @@ export class DataDragonService {
   );
 
   constructor() {
-    void this.load();
+    void this.refresh();
   }
 
   champion(key: number): ChampionInfo | null {
@@ -142,10 +145,17 @@ export class DataDragonService {
     return items.has(base) ? base : id;
   }
 
-  private async load(): Promise<void> {
+  private async refresh(): Promise<void> {
+    const ok = await this.load();
+    setTimeout(() => void this.refresh(), ok ? VERSION_CHECK_MS : RETRY_MS);
+  }
+
+  /** Carrega tudo da versão mais nova do Data Dragon; não faz nada se já estiver nela. */
+  private async load(): Promise<boolean> {
     try {
       const versions: string[] = await getJson(`${BASE_URL}/api/versions.json`);
       const version = versions[0];
+      if (version === this.version()) return true;
       const data = `${BASE_URL}/cdn/${version}/data/pt_BR`;
 
       const [champions, runes, spells, items] = await Promise.all([
@@ -200,9 +210,13 @@ export class DataDragonService {
       this.itemGold.set(
         new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.gold?.total ?? 0])),
       );
+      // Habilidades mudam entre patches; voltam a ser buscadas na versão nova.
+      if (this.version()) this.abilities.set(new Map());
       this.version.set(version);
+      return true;
     } catch {
       // Sem internet: a tela continua funcionando, apenas sem nomes e ícones.
+      return false;
     }
   }
 }

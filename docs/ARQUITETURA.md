@@ -132,6 +132,13 @@ A tela "Partida ao vivo", fora de partida, mostra o resultado, o pódio dos 3 me
 
 **Nota (0 a 10):** cada estatística vale pela fração do melhor valor entre os 10 jogadores, com pesos: participação em abates 20%, dano a campeões 20%, KDA 16%, ouro 10%, visão 10%, dano recebido + mitigado 9%, CS 6%, estruturas 5%, vitória 4%, e mortes descontam 12%. O total é escalado para o melhor da partida ficar com 10. Não depende da rota: quem segura dano ou dá visão também pontua.
 
+## Sempre no patch atual
+
+- **Estatísticas** (builds, winrate, counters, tier list, ritmo Mestre+): o servidor consulta o banco a cada pedido, sem cache, só no patch mais novo coletado; enquanto ele tem menos de 2.000 partidas, soma o anterior. Partidas de patch mais antigo que o Data Dragon são descartadas, e as de um patch que ainda não chegou ao Data Dragon já entram.
+- **Data Dragon** (campeões, itens, preços, runas, habilidades): o app usa sempre a versão mais nova e confere a cada 3 h se saiu outra (2 min depois, se estava sem internet).
+- **Tier list para deduzir rotas**: renovada a cada 30 min. Painéis de build e counters buscam a cada abertura; o overlay, uma vez por partida.
+- **Runas recomendadas do cliente** e **timers de objetivos** (`timers.json`, relido a cada hora) não dependem de versão do app.
+
 ## Servidor
 
 O servidor (rift-api) fica num repositório privado: proxy da Riot API com cache, bot do Telegram e

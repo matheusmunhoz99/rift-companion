@@ -114,14 +114,19 @@ export function guessOwnPosition(championId: number, allyIds: number[], tierList
   return assignPositions([championId, ...allyIds.filter((id) => id !== championId)], tierList).get(championId) ?? null;
 }
 
-let tierListCache: Promise<TierEntry[]> | null = null;
+/** A coleta não para: a tier list é renovada para acompanhar o patch atual. */
+const TIER_LIST_TTL_MS = 30 * 60_000;
+let tierListCache: { at: number; value: Promise<TierEntry[]> } | null = null;
 
-/** Tier list de todas as rotas, buscada uma vez por sessão do app. */
+/** Tier list de todas as rotas, guardada por 30 min. */
 export function allPositionsTierList(): Promise<TierEntry[]> {
   if (!window.stats) return Promise.resolve([]);
-  tierListCache ??= window.stats.tierList(null).catch(() => {
-    tierListCache = null;
-    return [];
-  });
-  return tierListCache;
+  if (!tierListCache || Date.now() - tierListCache.at > TIER_LIST_TTL_MS) {
+    const value = window.stats.tierList(null).catch(() => {
+      tierListCache = null;
+      return [];
+    });
+    tierListCache = { at: Date.now(), value };
+  }
+  return tierListCache.value;
 }
