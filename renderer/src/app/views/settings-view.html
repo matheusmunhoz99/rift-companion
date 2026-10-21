@@ -8,7 +8,7 @@
     </div>
     <app-switch
       label="Ativar modo invisível"
-      description="O LoL aberto pelo Rift Companion passa por um proxy de chat no seu PC. Troque o status a qualquer momento, sem reiniciar."
+      description="O LoL aberto pelo Rift Companion passa por um proxy de chat no seu PC. Se o LoL já estiver aberto sem ele, o app reinicia o LoL invisível para você (nunca no meio da fila ou da partida). Depois, troque o status a qualquer momento, sem reiniciar."
       [checked]="prefs.preferences().appearOffline"
       (toggled)="prefs.set({ appearOffline: $event })"
     />

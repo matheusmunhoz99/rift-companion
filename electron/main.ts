@@ -19,7 +19,7 @@ import { removeOldVersions, Updater } from './updater';
 import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
-import { isRiotClientRunning, launchLeague, type LeagueLaunchResult } from './lcu/riot-client';
+import { closeLeagueAndRiotClient, isRiotClientRunning, launchLeague, riotChatRoute, type LeagueLaunchResult } from './lcu/riot-client';
 import { PostGameService } from './lcu/postgame';
 
 const rendererUrl = process.env.RENDERER_URL;
@@ -29,6 +29,10 @@ const ICON = path.join(__dirname, '..', 'assets', 'icon.png');
 /** Uma saudação do contato e um aviso na bandeja por sessão, não a cada reconexão do chat. */
 /** Fases em que reiniciar o app atrapalha o jogador (seleção e partida). */
 const BUSY_PHASES = new Set(['ChampSelect', 'GameStart', 'InProgress', 'Reconnect']);
+/** Reiniciar o LoL aqui tira o jogador da fila ou da partida: o modo invisível espera. */
+const INVISIBLE_WAIT_PHASES = new Set([...BUSY_PHASES, 'Matchmaking', 'ReadyCheck']);
+/** Logo depois de abrir (ou do app reabrir), o chat do Riot Client ainda está conectando. */
+const CHAT_ROUTE_PATIENCE_MS = 45_000;
 const GREETING_INTERVAL_MS = 30 * 60 * 1000;
 
 const connector = new LcuConnector();
@@ -209,9 +213,12 @@ void acquireInstance().then((acquired) => {
     invisibleMode = invisible;
     invisible.configure(invisibleState(prefs.getPreferences()));
 
+    let onInvisibleEnabled = (): void => undefined;
     /** Toda mudança de preferência passa por aqui: proxy, overlay, bandeja e janela ficam em sincronia. */
     const applyPreferences = (changes: Partial<Preferences>): Preferences => {
+      const wasInvisible = prefs.getPreferences().appearOffline;
       const preferences = prefs.updatePreferences(changes);
+      if (!wasInvisible && preferences.appearOffline) setImmediate(() => onInvisibleEnabled());
       invisible.configure(invisibleState(preferences));
       overlay?.sync();
       applyStartWithWindows(preferences.startWithWindows);
@@ -275,6 +282,115 @@ void acquireInstance().then((acquired) => {
       })().finally(() => { configuredLaunch = null; });
       return configuredLaunch;
     };
+
+    const balloon = (title: string, content: string) => appTray?.tray.displayBalloon({ iconType: 'info', title, content });
+    const showError = (title: string, error: unknown) => {
+      appLog(`${title}: ${error instanceof Error ? error.message : String(error)}`);
+      showMainWindow();
+      void dialog.showMessageBox({
+        type: 'error', title, message: error instanceof Error ? error.message : 'Tente novamente.',
+      });
+    };
+
+    /** Para onde vai o chat do Riot Client aberto; 'unknown' vira espera até o chat conectar. */
+    const chatRoute = async (configUrl: string) => {
+      const deadline = Date.now() + CHAT_ROUTE_PATIENCE_MS;
+      for (;;) {
+        if (invisible.hasActiveChat()) return 'proxied' as const;
+        const route = await riotChatRoute(configUrl, invisible.chatPort());
+        if (route !== 'unknown') return route;
+        if (Date.now() >= deadline) return 'direct' as const;
+        await new Promise((resolve) => setTimeout(resolve, 3_000));
+      }
+    };
+
+    // LoL aberto sem o modo invisível (pelo atalho da Riot, ou antes de ligar o modo):
+    // fecha o LoL e o Riot Client e abre de novo pelo proxy. Nunca no meio da fila ou da partida.
+    let invisibleRestartPending = false;
+    let invisibleRestartDeclined = false;
+    let invisibleRestart: Promise<'restarted' | 'waiting' | 'declined' | 'not-needed'> | null = null;
+    const restartLeagueInvisible = (ask: boolean) => {
+      invisibleRestart ??= (async () => {
+        if (capturing || !prefs.getPreferences().appearOffline) return 'not-needed' as const;
+        const configUrl = await invisible.start();
+        const route = await chatRoute(configUrl);
+        if (route !== 'direct' || !prefs.getPreferences().appearOffline) {
+          invisibleRestartPending = false;
+          return 'not-needed' as const;
+        }
+        const phase = connector.getState().gameflowPhase;
+        if (phase && INVISIBLE_WAIT_PHASES.has(phase)) {
+          if (!invisibleRestartPending) {
+            invisibleRestartPending = true;
+            appLog(`LoL aberto sem o modo invisível durante ${phase}: reinicia quando a partida acabar`);
+            balloon('Modo invisível depois desta partida',
+              'O LoL foi aberto sem o modo invisível. Quando a partida acabar, o Rift Companion reinicia o LoL invisível para você.');
+          }
+          return 'waiting' as const;
+        }
+        invisibleRestartPending = false;
+        if (ask) {
+          showMainWindow();
+          const options = {
+            type: 'question' as const,
+            title: 'Rift Companion',
+            message: 'Para ficar invisível, o LoL precisa reiniciar.',
+            detail: 'O LoL e o Riot Client foram abertos sem o modo invisível. O Rift Companion fecha os dois e abre ' +
+              'de novo já invisível; é só esperar uns segundos. Se você estiver numa sala, vai sair dela.',
+            buttons: ['Reiniciar o LoL agora', 'Agora não'],
+            defaultId: 0,
+            cancelId: 1,
+            noLink: true,
+          };
+          const { response } = mainWindow ? await dialog.showMessageBox(mainWindow, options) : await dialog.showMessageBox(options);
+          if (response !== 0) {
+            invisibleRestartDeclined = true;
+            appLog('reinício para o modo invisível recusado');
+            return 'declined' as const;
+          }
+        }
+        appLog('reiniciando o LoL e o Riot Client pelo proxy do modo invisível');
+        balloon('Reiniciando o LoL invisível', 'Fechando o LoL e o Riot Client e abrindo de novo pelo modo invisível…');
+        await closeLeagueAndRiotClient(connector.getCredentials());
+        const result = await launchConfiguredLeague();
+        if (result !== 'started') throw new Error('O Riot Client não abriu de novo. Abra o LoL pelo Rift Companion.');
+        appLog('LoL reaberto pelo proxy do modo invisível');
+        return 'restarted' as const;
+      })().finally(() => { invisibleRestart = null; });
+      return invisibleRestart;
+    };
+
+    /** "Abrir LoL" (tela inicial, bandeja, Telegram): se precisar, reinicia sozinho em vez de pedir para fechar. */
+    const openLeague = async (ask: boolean): Promise<LeagueLaunchResult> => {
+      const result = await launchConfiguredLeague();
+      if (result !== 'restart-required') return result;
+      invisibleRestartDeclined = false;
+      const restart = await restartLeagueInvisible(ask);
+      return restart === 'not-needed' ? 'already-open' : restart;
+    };
+
+    onInvisibleEnabled = () => {
+      invisibleRestartDeclined = false;
+      void restartLeagueInvisible(true).catch((error) => showError('Não foi possível reiniciar o LoL invisível', error));
+    };
+
+    // Cliente aberto por fora com o modo ligado, ou partida que acabou com o reinício pendente.
+    let lastLcuStatus = connector.getState().status;
+    connector.on('state', () => {
+      const { status, gameflowPhase } = connector.getState();
+      const opened = status === 'connected' && lastLcuStatus !== 'connected';
+      lastLcuStatus = status;
+      if (status !== 'connected') {
+        invisibleRestartPending = false;
+        return;
+      }
+      if (!prefs.getPreferences().appearOffline || invisibleRestartDeclined) return;
+      const free = !gameflowPhase || !INVISIBLE_WAIT_PHASES.has(gameflowPhase);
+      if (opened || (invisibleRestartPending && free)) {
+        void restartLeagueInvisible(true).catch((error) => showError('Não foi possível reiniciar o LoL invisível', error));
+      }
+    });
+
     registerRiotHandlers(prefs, connector);
 
     // Fim de partida: placar completo do cliente, guardado para a tela "Partida ao vivo".
@@ -291,7 +407,7 @@ void acquireInstance().then((acquired) => {
       () => mainWindow?.webContents.send('auto-accept:accepted', Date.now()),
     );
 
-    new TelegramNotifications(connector, prefs, launchConfiguredLeague);
+    new TelegramNotifications(connector, prefs, () => openLeague(false));
 
     new AutoRunes(
       connector,
@@ -342,7 +458,7 @@ void acquireInstance().then((acquired) => {
       await import('node:fs/promises').then((fs) => fs.mkdir(directory, { recursive: true }));
       await shell.openPath(directory);
     });
-    ipcMain.handle('app:launch-league', launchConfiguredLeague);
+    ipcMain.handle('app:launch-league', () => openLeague(true));
 
     const demoOverlay = devOnly('RIFT_DEMO_OVERLAY');
     if (demoOverlay) {
@@ -362,25 +478,17 @@ void acquireInstance().then((acquired) => {
       getPreferences: () => prefs.getPreferences(),
       updatePreferences: (changes) => void applyPreferences(changes),
       launchLeague: () => {
-        void launchConfiguredLeague().then(
+        void openLeague(true).then(
           (result) => {
-            if (result === 'restart-required' || result === null) {
+            if (result === null) {
               showMainWindow();
               void dialog.showMessageBox({
                 type: 'info', title: 'Rift Companion',
-                message: result === 'restart-required'
-                  ? 'Feche o Riot Client por completo e abra o LoL novamente pelo Rift Companion para entrar invisível.'
-                  : 'Não encontrei o Riot Client neste PC. Abra o LoL uma vez para registrar a instalação.',
+                message: 'Não encontrei o Riot Client neste PC. Abra o LoL uma vez para registrar a instalação.',
               });
             }
           },
-          (error) => {
-            showMainWindow();
-            void dialog.showMessageBox({
-              type: 'error', title: 'Não foi possível abrir o LoL',
-              message: error instanceof Error ? error.message : 'Tente novamente.',
-            });
-          },
+          (error) => showError('Não foi possível abrir o LoL', error),
         );
       },
     });

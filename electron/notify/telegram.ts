@@ -623,7 +623,11 @@ export class TelegramNotifications {
       if (name === 'open') {
         const how = await this.launchLeague();
         this.note =
-          how === 'restart-required'
+          how === 'restarted'
+            ? 'O LoL estava aberto sem o modo invisível: reiniciei e ele está abrindo invisível. Leva alguns segundos.'
+            : how === 'waiting'
+            ? 'O LoL está aberto sem o modo invisível. Quando a partida acabar, reinicio ele invisível.'
+            : how === 'restart-required' || how === 'declined'
             ? 'Para ficar invisível, feche o Riot Client por completo e toque em Abrir de novo.'
             : how === 'already-open'
             ? 'O LoL já está aberto (ou terminando de abrir).'

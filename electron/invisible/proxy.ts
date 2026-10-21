@@ -109,6 +109,11 @@ export class InvisibleModeProxy extends EventEmitter<InvisibleModeEvents> {
     await writeFile(this.sessionFile, JSON.stringify({ ...this.ports, target: this.target })).catch(() => undefined);
   }
 
+  /** Porta local do chat (para conferir para onde o Riot Client está ligado). */
+  chatPort(): number | null {
+    return this.ports?.chatPort ?? null;
+  }
+
   /** Há um Riot Client conectado ao chat por este proxy. */
   hasActiveChat(): boolean {
     return this.connections.size > 0;

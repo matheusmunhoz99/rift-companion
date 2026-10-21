@@ -118,8 +118,13 @@ export class HomeView {
     this.openingLeague.set(true);
     try {
       const result = await window.app.launchLeague();
+      if (result === 'declined') return;
       const message =
-        result === 'restart-required'
+        result === 'restarted'
+          ? 'Reiniciando o LoL em modo invisível…'
+          : result === 'waiting'
+            ? 'O LoL reinicia invisível quando a partida acabar.'
+          : result === 'restart-required'
           ? 'Feche o Riot Client por completo e tente novamente para entrar invisível.'
           : result === 'already-open'
             ? 'O LoL já está abrindo.'

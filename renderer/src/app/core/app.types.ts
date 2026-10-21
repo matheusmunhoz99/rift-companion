@@ -80,7 +80,9 @@ export interface AppBridge {
   getPreferences(): Promise<Preferences>;
   setPreferences(changes: Partial<Preferences>): Promise<Preferences>;
   openBuildsFolder(): Promise<void>;
-  launchLeague(): Promise<'riot-client' | 'already-open' | 'started' | 'restart-required' | null>;
+  launchLeague(): Promise<
+    'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
+  >;
   onAutoAccepted(callback: (timestamp: number) => void): () => void;
   onOverlayData(callback: (data: OverlayData) => void): () => void;
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;

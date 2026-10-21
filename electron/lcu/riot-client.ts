@@ -2,6 +2,7 @@ import { execFile, spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import type { LcuCredentials } from './credentials';
 import { LcuHttpError, lcuRequest } from './http';
 
 const LOCKFILE = path.join(process.env.LOCALAPPDATA ?? '', 'Riot Games', 'Riot Client', 'Config', 'lockfile');
@@ -13,7 +14,12 @@ let launching: Promise<LeagueLaunchResult> | null = null;
 /** Riot Client iniciado por este app com o proxy (o Windows nem sempre expõe a linha de comando). */
 let proxiedLaunch: { pid: number; url: string } | null = null;
 
-export type LeagueLaunchResult = 'riot-client' | 'already-open' | 'started' | 'restart-required' | null;
+/**
+ * restarted: o LoL estava aberto sem o modo invisível e foi reaberto pelo proxy;
+ * waiting: idem, mas numa partida (reabre quando ela acabar); declined: o usuário preferiu não reiniciar.
+ */
+export type LeagueLaunchResult =
+  | 'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null;
 
 /**
  * Abre o League of Legends. Com o Riot Client já aberto (ex.: depois de fechar só o
@@ -69,7 +75,100 @@ async function launch(clientConfigUrl: string | undefined, proxyInUse: boolean):
   return 'started';
 }
 
-interface RiotProcess { ProcessId: number; CommandLine: string | null }
+export interface RiotProcess { ProcessId: number; CommandLine: string | null }
+
+/** Como o Riot Client aberto chega ao chat: pelo nosso proxy, direto (ou por outro programa), ou ainda não dá para saber. */
+export type RiotChatRoute = 'closed' | 'proxied' | 'direct' | 'unknown';
+
+/**
+ * Sem administrador o Windows costuma esconder a linha de comando do Riot Client;
+ * a conexão de chat dele resolve: ligada ao proxy local = invisível; ligada à
+ * porta 5223 da Riot = sem o modo invisível.
+ */
+export async function riotChatRoute(clientConfigUrl: string, chatPort: number | null): Promise<RiotChatRoute> {
+  const { processes, connections } = await readRiotNetwork();
+  return classifyChatRoute(processes, connections, clientConfigUrl, chatPort, proxiedLaunch);
+}
+
+/** Decisão separada da leitura do sistema para poder ser testada. */
+export function classifyChatRoute(
+  processes: RiotProcess[],
+  connections: Array<{ RemoteAddress: string; RemotePort: number }>,
+  clientConfigUrl: string,
+  chatPort: number | null,
+  launched: { pid: number; url: string } | null,
+): RiotChatRoute {
+  if (processes.length === 0) return 'closed';
+  const known = processes.filter((p) => p.CommandLine);
+  if (known.some((p) => !usesConfig(p, clientConfigUrl, false))) return 'direct';
+  if (known.length) return 'proxied';
+  if (chatPort && connections.some((c) => isLoopback(c.RemoteAddress) && c.RemotePort === chatPort)) return 'proxied';
+  if (connections.some((c) => c.RemotePort === RIOT_CHAT_PORT && !isLoopback(c.RemoteAddress))) return 'direct';
+  if (launched?.url === clientConfigUrl && processes.some((p) => p.ProcessId === launched.pid)) return 'proxied';
+  return 'unknown';
+}
+
+const RIOT_CHAT_PORT = 5223;
+const isLoopback = (address: string) => address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+
+async function readRiotNetwork(): Promise<{
+  processes: RiotProcess[];
+  connections: Array<{ RemoteAddress: string; RemotePort: number }>;
+}> {
+  if (process.platform !== 'win32') return { processes: [], connections: [] };
+  const { stdout } = await execFileAsync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-Command',
+    "$ErrorActionPreference = 'Stop'; " +
+    "$p = @(Get-CimInstance Win32_Process -Filter \"Name='RiotClientServices.exe'\" | Select-Object ProcessId,CommandLine); " +
+    '$ids = @($p | ForEach-Object { $_.ProcessId }); ' +
+    '$c = @(if ($ids.Count) { Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue | ' +
+    'Where-Object { $ids -contains $_.OwningProcess } | Select-Object RemoteAddress,RemotePort }); ' +
+    '@{ processes = $p; connections = $c } | ConvertTo-Json -Compress -Depth 3',
+  ], { windowsHide: true, timeout: 15_000, maxBuffer: 4 * 1024 * 1024 });
+  const value = JSON.parse(stdout) as { processes?: unknown; connections?: unknown };
+  const list = <T>(v: unknown): T[] => (Array.isArray(v) ? v : v ? [v] : []) as T[];
+  return {
+    processes: list<RiotProcess>(value.processes).filter((p) => Number.isInteger(p?.ProcessId)),
+    connections: list<{ RemoteAddress: string; RemotePort: number }>(value.connections)
+      .filter((c) => typeof c?.RemoteAddress === 'string' && Number.isInteger(c?.RemotePort)),
+  };
+}
+
+/** Processos do cliente do LoL e do Riot Client (o jogo em si fica de fora). */
+const CLIENT_PROCESSES = [
+  'LeagueClient.exe', 'LeagueClientUx.exe', 'LeagueClientUxRender.exe',
+  'RiotClientServices.exe', 'Riot Client.exe', 'RiotClientUx.exe', 'RiotClientUxRender.exe', 'RiotClientCrashHandler.exe',
+];
+
+/**
+ * Fecha o cliente do LoL e o Riot Client para reabrir pelo proxy. Pede ao cliente
+ * para sair (salva o que precisa), espera e só então encerra o que sobrou.
+ */
+export async function closeLeagueAndRiotClient(lcu: LcuCredentials | null): Promise<void> {
+  if (lcu) await lcuRequest(lcu, 'POST', '/process-control/v1/process/quit').catch(() => undefined);
+  await waitFor(async () => !(await anyRunning(['LeagueClient.exe', 'LeagueClientUx.exe'])), 8_000);
+  for (const name of CLIENT_PROCESSES) {
+    await execFileAsync('taskkill.exe', ['/F', '/T', '/IM', name], { windowsHide: true, timeout: 10_000 }).catch(() => undefined);
+  }
+  const closed = await waitFor(async () => !(await anyRunning(CLIENT_PROCESSES)), 15_000);
+  if (!closed) throw new Error('Não consegui fechar o Riot Client. Feche pelo ícone perto do relógio e abra o LoL pelo Rift Companion.');
+  proxiedLaunch = null;
+}
+
+async function anyRunning(names: string[]): Promise<boolean> {
+  const { stdout } = await execFileAsync('tasklist.exe', ['/FO', 'CSV', '/NH'], { windowsHide: true, timeout: 10_000, maxBuffer: 4 * 1024 * 1024 });
+  const running = new Set(stdout.split(/\r?\n/).map((line) => line.split('","')[0].replace(/^"/, '').toLowerCase()));
+  return names.some((name) => running.has(name.toLowerCase()));
+}
+
+async function waitFor(check: () => Promise<boolean>, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await check().catch(() => false)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return check().catch(() => false);
+}
 
 /** Riot Client aberto agora (falha na consulta conta como fechado). */
 export async function isRiotClientRunning(): Promise<boolean> {
