@@ -165,3 +165,13 @@ test('timers.json do servidor: perfis por fila; 0 desliga; valores inválidos fi
   assert.equal(parseTimingsConfig({ dragonFirst: 280 }).default.dragonFirst, 280);
   assert.deepEqual(parseTimingsConfig(null).default, DEFAULT_TIMINGS);
 });
+
+test('Partida Rápida (SWIFTPLAY) é Summoner\'s Rift: mostra objetivos com os tempos dela', () => {
+  const { SWIFTPLAY_TIMINGS } = require('../dist-electron/overlay/live-dashboard.js');
+  const swift = structuredClone(raw);
+  swift.gameData.gameMode = 'SWIFTPLAY';
+  const live = toLiveDashboard(swift, SWIFTPLAY_TIMINGS);
+  assert.ok(live.timers, 'timers de dragão, barão e inibidores');
+  assert.ok(live.objectives.some((o) => o.key === 'baron'), 'Barão na lista de objetivos');
+  assert.ok(!live.objectives.some((o) => o.key === 'grubs' || o.key === 'herald'), 'sem Larvas e Arauto nesse modo');
+});
