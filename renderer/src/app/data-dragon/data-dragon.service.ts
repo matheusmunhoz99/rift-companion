@@ -31,10 +31,13 @@ export class DataDragonService {
   private readonly champions = signal<Map<number, ChampionInfo>>(new Map());
   private readonly runeIcons = signal<Map<number, string>>(new Map());
   private readonly runeNames = signal<Map<number, string>>(new Map());
-  private readonly spells = signal<Map<number, { name: string; image: string }>>(new Map());
+  /** Feitiços de invocador; cooldown em segundos no patch atual (sem aceleração). */
+  private readonly spells = signal<Map<number, { name: string; image: string; cooldown: number }>>(new Map());
   private readonly itemNames = signal<Map<number, string>>(new Map());
   /** Preço total de cada item (com receita), para estimar o ouro gasto ao vivo. */
   private readonly itemGold = signal<Map<number, number>>(new Map());
+  /** Aceleração de Feitiços de Invocador dada pelo item (botas ionianas e evoluções). */
+  private readonly itemSummonerHaste = signal<Map<number, number>>(new Map());
   /** Nome interno do feitiço ("SummonerFlash") -> id numérico. */
   private readonly spellIds = signal<Map<string, number>>(new Map());
   private readonly championKeysById = computed(
@@ -116,6 +119,17 @@ export class DataDragonService {
     return version && spell ? `${BASE_URL}/cdn/${version}/img/spell/${spell.image}` : null;
   }
 
+  /** Aceleração de Feitiços de Invocador somada dos itens (cada item conta uma vez). */
+  summonerHaste(itemIds: number[]): number {
+    const map = this.itemSummonerHaste();
+    return [...new Set(itemIds.map((id) => this.baseItemId(id)))].reduce((total, id) => total + (map.get(id) ?? 0), 0);
+  }
+
+  /** Cooldown base do feitiço em segundos; 0 quando desconhecido. */
+  spellCooldown(id: number): number {
+    return this.spells().get(id)?.cooldown ?? 0;
+  }
+
   spellName(id: number): string {
     return this.spells().get(id)?.name ?? String(id);
   }
@@ -163,10 +177,10 @@ export class DataDragonService {
           `${data}/champion.json`,
         ),
         getJson<RuneStyle[]>(`${data}/runesReforged.json`),
-        getJson<{ data: Record<string, { key: string; name: string; image: { full: string } }> }>(
+        getJson<{ data: Record<string, { key: string; name: string; image: { full: string }; cooldown?: number[] }> }>(
           `${data}/summoner.json`,
         ),
-        getJson<{ data: Record<string, { name: string; gold?: { total?: number } }> }>(`${data}/item.json`),
+        getJson<{ data: Record<string, { name: string; description?: string; gold?: { total?: number } }> }>(`${data}/item.json`),
       ]);
 
       this.champions.set(
@@ -197,7 +211,7 @@ export class DataDragonService {
         new Map(
           Object.values(spells.data).map((s) => [
             Number(s.key),
-            { name: s.name, image: s.image.full },
+            { name: s.name, image: s.image.full, cooldown: s.cooldown?.[0] ?? 0 },
           ]),
         ),
       );
@@ -207,6 +221,13 @@ export class DataDragonService {
       this.itemNames.set(
         new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.name])),
       );
+      const summonerHaste = new Map<number, number>();
+      for (const [id, item] of Object.entries(items.data)) {
+        const text = (item.description ?? '').replace(/<[^>]+>/g, ' ');
+        const match = /(\d+) de Acelera\S* de Feiti\S* de Invocador/i.exec(text);
+        if (match) summonerHaste.set(Number(id), Number(match[1]));
+      }
+      this.itemSummonerHaste.set(summonerHaste);
       this.itemGold.set(
         new Map(Object.entries(items.data).map(([id, item]) => [Number(id), item.gold?.total ?? 0])),
       );

@@ -5,6 +5,7 @@ import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { mainRank, queueName, rankText, winRate } from '../riot/labels';
 import { findEncounters, type PlayerEncounters } from './encounters';
+import type { PlayerTag } from './live-dashboard';
 import { estimateWinChance } from './win-chance';
 import { ChampionStatsPanel } from '../stats/champion-stats';
 import { allPositionsTierList, assignTeamPositions, positionOrder } from '../stats/match-context';
@@ -217,6 +218,18 @@ export class LiveGameView {
       for (const id of group) result.set(id, info);
     });
     return result;
+  });
+
+  /** Grupo e encontros de cada jogador, para a aba Ao vivo (por Riot ID em minúsculas). */
+  protected readonly playerTags = computed(() => {
+    const tags = new Map<string, PlayerTag>();
+    for (const [riotId, party] of this.parties()) tags.set(riotId, { party, met: null });
+    for (const player of this.encounterList()) {
+      const riotId = player.riotId.toLowerCase();
+      const together = player.encounters.filter((e) => e.sameTeam).length;
+      tags.set(riotId, { party: tags.get(riotId)?.party ?? null, met: { together, against: player.encounters.length - together } });
+    }
+    return tags;
   });
 
   protected partyOf(participant: LiveParticipant) {

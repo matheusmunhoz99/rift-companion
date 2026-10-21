@@ -70,15 +70,41 @@
         <div class="matchup">
           @for (p of [m.ally, m.enemy]; track $index) {
             @if (p; as player) {
+              @let tag = tagOf(player);
               <div class="lane-player" [class.mirror]="$index === 1" [class.me]="player.isMe" [class.dead]="player.isDead">
-                <div class="champ" [title]="player.championName">
+                <div
+                  class="champ"
+                  [class.party]="!!tag?.party"
+                  [style.--party]="tag?.party?.color ?? null"
+                  [title]="player.championName + (tag?.party ? ' · ' + tag!.party!.label + ' (jogando juntos)' : '')"
+                >
                   @if (championIcon(player); as icon) {<img [src]="icon" [alt]="player.championName" />}
                   <span class="level">{{ player.level }}</span>
+                  @if (tag?.party; as party) {<span class="party-badge">{{ party.label }}</span>}
                   @if (player.isDead) {<span class="respawn">{{ player.respawnTimer }}</span>}
+                </div>
+                <div class="spells">
+                  @for (spell of spells(player); track spell.slot) {
+                    <button
+                      type="button"
+                      class="spell"
+                      [class.cooling]="spell.left > 0"
+                      [disabled]="!spell.timed"
+                      [title]="spell.title"
+                      [attr.aria-label]="spell.title"
+                      (click)="toggleSpell(player, spell.slot, spell.cooldown)"
+                    >
+                      @if (spell.icon) {<img [src]="spell.icon" alt="" />}
+                      @if (spell.left > 0) {<span class="spell-left">{{ spell.left >= 60 ? time(spell.left) : spell.left }}</span>}
+                    </button>
+                  }
                 </div>
                 <div class="who">
                   <span class="name-line">
                     <span class="name" [title]="player.riotId">{{ player.riotId.split('#')[0] }}</span>
+                    @if (tag?.met; as met) {
+                      <span class="chip-tag met" [title]="metText(met)">↺{{ met.together + met.against }}</span>
+                    }
                     <span class="player-gold" title="Ouro em itens (valor do que já comprou)">{{ thousands(value(player)) }}</span>
                   </span>
                   <span class="numbers">

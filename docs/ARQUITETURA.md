@@ -119,6 +119,8 @@ A dica de habilidade usa o início e a ordem de maximizar mais jogados do campe�
 
 Lê a Live Client Data API (`allgamedata`) a cada 2 s: placar, objetivos por time, rota a rota, mortos, seus atributos e lances. A API não informa dano nem o ouro dos outros: o "ouro" de cada jogador é o valor dos itens comprados (preço total no Data Dragon).
 
+Rota a rota, cada jogador mostra os dois feitiços. Clicar num feitiço marca o uso e conta a recarga: o tempo base vem do Data Dragon (`summoner.json`) e desconta a Aceleração de Feitiços de Invocador dos itens dele, lida do texto do item (Botas Ionianas, Lucidez Escarlate). Runas como Percepção Cósmica não aparecem na API do jogo e não entram na conta. Golpear fica de fora, porque funciona por cargas. Clicar de novo desfaz. Os timers ficam no `LiveDataService`, então sobrevivem à troca de aba, e zeram no fim da partida. A aba também mostra quem joga em grupo (anel e selo na cor do grupo, os mesmos da aba Jogadores) e quem estava nas suas últimas 10 partidas (↺ com o número de vezes, a favor e contra no título).
+
 Os timers de objetivos contam até o primeiro surgimento e, depois de cada abate, até o próximo. A API só avisa abates, então os tempos de surgimento são fixos por temporada e por fila:
 
 - **Summoner's Rift (temporada 2026):** Dragão 5:00 (+5:00 por abate; Ancião 6:00 depois da alma de 4), Larvas 8:00 até 14:45, Arauto 15:00 até 19:45, Barão 20:00 (+6:00). Sem Atakhan desde o patch 26.1.

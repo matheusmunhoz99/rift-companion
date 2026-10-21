@@ -27,6 +27,19 @@ export class LiveDataService {
   private readonly fetchedAt = signal(0);
   private readonly now = signal(Date.now());
   readonly history = signal<GoldSample[]>([]);
+  /** Feitiços marcados como usados: "riotId|slot" -> tempo de jogo em que voltam. */
+  readonly spellTimers = signal<ReadonlyMap<string, number>>(new Map());
+
+  /** Marca o feitiço como usado agora; marcar de novo desfaz (clique errado ou já voltou). */
+  toggleSpell(key: string, cooldown: number): void {
+    this.spellTimers.update((current) => {
+      const next = new Map(current);
+      const readyAt = next.get(key);
+      if (readyAt !== undefined && readyAt > this.clock()) next.delete(key);
+      else next.set(key, this.clock() + cooldown);
+      return next;
+    });
+  }
 
   /** Tempo de jogo corrente: o último lido mais o tempo desde a leitura (o jogo não pausa). */
   readonly clock = computed(() => {
@@ -73,6 +86,7 @@ export class LiveDataService {
     this.timer = null;
     this.data.set(null);
     this.history.set([]);
+    this.spellTimers.set(new Map());
   }
 
   private async poll(): Promise<void> {

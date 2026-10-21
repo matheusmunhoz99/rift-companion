@@ -41,7 +41,7 @@
   </header>
 
   @if (tab() === 'live') {
-    <app-live-dashboard />
+    <app-live-dashboard [tags]="playerTags()" />
   } @else if (tab() === 'build') {
     @if (me(); as mine) {
       <section class="match-build">

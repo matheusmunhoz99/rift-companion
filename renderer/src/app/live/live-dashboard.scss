@@ -225,7 +225,7 @@ h4 {
 
 .lanes-head {
   display: grid;
-  grid-template-columns: 1fr 76px 1fr;
+  grid-template-columns: 1fr 68px 1fr;
   color: var(--muted);
   font-family: var(--font-display);
   font-size: 13px;
@@ -243,7 +243,7 @@ h4 {
 
 .matchup {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
 }
@@ -251,9 +251,9 @@ h4 {
 // Duas linhas: nome em cima, KDA e CS embaixo; itens ao lado.
 .lane-player {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: 44px;
   padding: 4px 8px;
   border: 1px solid var(--border);
@@ -262,7 +262,7 @@ h4 {
   background: var(--well);
 
   &.mirror {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     border-right: 3px solid var(--enemy-strong);
     border-left-width: 1px;
     direction: rtl;
@@ -271,9 +271,13 @@ h4 {
       direction: ltr;
     }
 
+    // Alinha à direita sem encolher a coluna ao conteúdo: nome longo é cortado, não invade os itens.
     .who {
-      justify-items: end;
       text-align: right;
+    }
+
+    .numbers {
+      justify-content: flex-end;
     }
   }
 
@@ -296,6 +300,27 @@ h4 {
 
 .champ {
   position: relative;
+
+  // Jogando em grupo: anel e selo na cor do grupo (a mesma da aba Jogadores).
+  &.party img {
+    box-shadow: 0 0 0 2px var(--party);
+  }
+
+  .party-badge {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    padding: 0 3px;
+    border-radius: 4px;
+    background: var(--party);
+    color: #0d0f14;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 12px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
 
   img {
     display: block;
@@ -379,8 +404,8 @@ h4 {
 
   img,
   .empty {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
     border-radius: 4px;
   }
 
@@ -798,10 +823,13 @@ h4 {
 .name-line {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
+  overflow: hidden;
 
+  // O nome cede espaço: o ouro e as marcas ficam sempre visíveis.
   .name {
+    flex: 1 1 auto;
     min-width: 0;
   }
 
@@ -904,5 +932,76 @@ h4 {
 @keyframes objective-pulse {
   50% {
     opacity: 0.35;
+  }
+}
+
+/* Feitiços: clique quando o inimigo usar e a recarga conta sozinha. */
+.spells {
+  display: grid;
+  gap: 2px;
+}
+
+.spell {
+  position: relative;
+  display: block;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  cursor: pointer;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:not(:disabled):hover {
+    outline: 1px solid var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  &.cooling img {
+    filter: grayscale(1) brightness(0.4);
+  }
+}
+
+.spell-left {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Duo/trio e quem já jogou com você, ao lado do nome. */
+.chip-tag {
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+
+  &.met {
+    border-color: var(--border-strong);
+    color: var(--muted);
   }
 }

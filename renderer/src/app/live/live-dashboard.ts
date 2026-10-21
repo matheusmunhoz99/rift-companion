@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveEvent, LivePlayer } from '../history/riot.types';
 import { positionOrder } from '../stats/match-context';
@@ -18,6 +18,15 @@ const LANE_SHORT: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: '
 /** Dimensões do gráfico de vantagem (SVG em unidades do viewBox). */
 const CHART = { width: 640, height: 150, pad: 6 };
 
+/** Feitiço com recarga por cargas: o timer de um uso não diz nada. */
+const UNTIMED_SPELLS = new Set(['SummonerSmite']);
+
+/** O que a aba Jogadores sabe de cada um (por Riot ID em minúsculas): grupo e partidas com você. */
+export interface PlayerTag {
+  party: { color: string; label: string } | null;
+  met: { together: number; against: number } | null;
+}
+
 interface Matchup {
   lane: string;
   ally: LivePlayer | null;
@@ -32,6 +41,8 @@ interface Matchup {
 export class LiveDashboardPanel {
   protected readonly live = inject(LiveDataService);
   protected readonly ddragon = inject(DataDragonService);
+
+  readonly tags = input<ReadonlyMap<string, PlayerTag>>(new Map());
 
   protected readonly data = this.live.data;
   protected readonly clock = this.live.clock;
@@ -69,6 +80,51 @@ export class LiveDashboardPanel {
     const minutes = this.clock() / 60;
     return minutes > 0.5 ? (player.cs / minutes).toFixed(1) : '0.0';
   };
+
+  protected tagOf(player: LivePlayer): PlayerTag | null {
+    return this.tags().get(player.riotId.toLowerCase()) ?? null;
+  }
+
+  protected metText(met: NonNullable<PlayerTag['met']>): string {
+    const parts = [
+      met.together ? `${met.together}x com você` : '',
+      met.against ? `${met.against}x contra você` : '',
+    ].filter(Boolean);
+    return `Nas suas últimas 10 partidas: ${parts.join(' e ')}`;
+  }
+
+  /** Os dois feitiços do jogador, com o tempo que falta se alguém marcou o uso. */
+  protected spells(player: LivePlayer) {
+    const haste = this.ddragon.summonerHaste(player.items.map((item) => item.id));
+    const timers = this.live.spellTimers();
+    const clock = this.clock();
+    return player.spellKeys.map((key, slot) => {
+      const id = this.ddragon.spellIdOf(key);
+      const base = this.ddragon.spellCooldown(id);
+      const timed = base > 0 && !UNTIMED_SPELLS.has(key);
+      const readyAt = timers.get(`${player.riotId}|${slot}`);
+      const left = readyAt === undefined ? 0 : Math.ceil(readyAt - clock);
+      const name = id ? this.ddragon.spellName(id) : key.replace(/^Summoner/, '');
+      const cooldown = Math.round((base * 100) / (100 + haste));
+      return {
+        slot,
+        icon: id ? this.ddragon.spellIconUrl(id) : null,
+        name,
+        timed,
+        cooldown,
+        left: left > 0 ? left : 0,
+        title: !timed
+          ? name
+          : left > 0
+            ? `${name}: volta em ${this.time(left)}. Clique para desfazer.`
+            : `${name} (${this.time(cooldown)}${haste ? `, com ${haste} de aceleração dos itens` : ''}). Clique quando ele usar.`,
+      };
+    });
+  }
+
+  protected toggleSpell(player: LivePlayer, slot: number, cooldown: number): void {
+    this.live.toggleSpell(`${player.riotId}|${slot}`, cooldown);
+  }
 
   /** Contagem regressiva até um tempo de jogo; null quando já passou. */
   protected countdown(at: number): string | null {
