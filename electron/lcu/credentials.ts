@@ -17,12 +17,24 @@ const DEFAULT_INSTALL_DIRECTORIES = [
   'D:\\Riot Games\\League of Legends',
 ];
 
+/** Procurar o processo do cliente abre um PowerShell; com o LoL fechado, no máximo a cada 10 s. */
+const COMMAND_LINE_INTERVAL_MS = 10_000;
+let lastCommandLineLookup = 0;
+
 /**
  * Localiza as credenciais da API local do cliente (LCU).
- * 1) Linha de comando do LeagueClientUx.exe (--app-port / --remoting-auth-token).
- * 2) Arquivo "lockfile" na pasta de instalação (nome:pid:porta:senha:protocolo).
+ * 1) "lockfile" na pasta padrão de instalação, se o processo dono dele ainda existe (só lê um arquivo).
+ * 2) Linha de comando do LeagueClientUx.exe (--app-port / --remoting-auth-token), que acha outras pastas.
+ * 3) "lockfile" da pasta informada nessa linha de comando.
  */
 export async function findLcuCredentials(): Promise<LcuCredentials | null> {
+  for (const directory of DEFAULT_INSTALL_DIRECTORIES) {
+    const fromLockfile = await readLockfile(directory);
+    if (fromLockfile && isAlive(fromLockfile.pid)) return fromLockfile;
+  }
+
+  if (Date.now() - lastCommandLineLookup < COMMAND_LINE_INTERVAL_MS) return null;
+  lastCommandLineLookup = Date.now();
   const commandLine = await readClientCommandLine();
   if (commandLine) {
     const fromArgs = parseCommandLine(commandLine);
@@ -34,13 +46,19 @@ export async function findLcuCredentials(): Promise<LcuCredentials | null> {
       if (fromLockfile) return fromLockfile;
     }
   }
-
-  for (const directory of DEFAULT_INSTALL_DIRECTORIES) {
-    const fromLockfile = await readLockfile(directory);
-    if (fromLockfile) return fromLockfile;
-  }
-
   return null;
+}
+
+/** Lockfile esquecido por um cliente que fechou sem apagá-lo aponta para um processo que não existe mais. */
+function isAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM: o processo existe, só não é nosso.
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
 }
 
 async function readClientCommandLine(): Promise<string | null> {

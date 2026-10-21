@@ -55,7 +55,7 @@ Trocar o status reenvia a última presença global já reescrita, sem reiniciar 
 
 No sentido Riot → cliente (`electron/invisible/roster.ts`), o primeiro resultado do roster recebe o contato local **Rift Companion**. A presença dele mostra o seu status atual. As mensagens dele (boas-vindas na primeira vez, saudação por sessão e aviso de cada troca) só entram entre stanzas completas. Tudo que o cliente envia para esse JID fica retido no proxy; o texto vira comando (`offline`, `celular`, `online`, `ativar`, `desativar`, `sala`, `status`, `ajuda`). Se o XML do servidor fugir do formato esperado, o fluxo passa a ser repassado sem filtro e o contato fica inativo naquela conexão.
 
-O proxy não envia conversas ao backend do Rift Companion. O diagnóstico vai para `%APPDATA%\Rift Companion\invisible\debug.log`, recriado a cada inicialização do proxy, sem autenticação nem mensagens. Um Riot Client que já estava aberto precisa ser fechado, pois `client-config-url` só é lido na inicialização.
+O proxy não envia conversas ao backend do Rift Companion. O diagnóstico vai para `%APPDATA%\Rift Companion\invisible\debug.log`, sem autenticação nem mensagens; a cada inicialização do proxy o anterior vira `debug.anterior.log`. Um Riot Client que já estava aberto precisa ser fechado, pois `client-config-url` só é lido na inicialização.
 
 ## Builds
 
@@ -145,11 +145,17 @@ O servidor (rift-api) fica num repositório privado: proxy da Riot API com cache
 coletor de estatísticas Mestre+. O app só conhece as rotas públicas dele em
 `https://rift-api.workscanner.com.br`; a chave da Riot e o token do bot nunca saem do servidor.
 
+## Registro do app
+
+`%APPDATA%\Rift Companion\logs\app.log` (até 1 MB, depois vira `app.anterior.log`): abertura com a versão, conexão com o cliente e cada fase do jogo, chat conectado pelo proxy, atualização pedida, erros não tratados e fechamento. Nada de senhas, tokens ou conversas.
+
+Durante a partida, as leituras da API do jogo (overlay, painel ao vivo, avisos do Telegram) são divididas: pedidos com menos de 1 s de diferença recebem a mesma resposta. Com o LoL fechado, o app procura o cliente pelo `lockfile` (só lê um arquivo) e abre o PowerShell para achar o processo no máximo a cada 10 s.
+
 ## Atualização automática
 
 O app confere `/downloads/latest.json` ao abrir e a cada 6 h. Ao atualizar, baixa o .exe novo para a
 pasta do .exe atual, confere tamanho e SHA-256, abre a versão nova e fecha (a nova assume pela troca
-de versão da instância única). Para publicar:
+de versão da instância única). Na seleção de campeões e na partida, "Atualizar agora" fica bloqueado, porque reiniciar o app derrubaria o chat do modo invisível. Para publicar:
 
 ```bash
 RELEASE_NOTES="Nota 1; Nota 2" npm run release

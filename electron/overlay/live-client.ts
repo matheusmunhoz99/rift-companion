@@ -79,22 +79,50 @@ export interface RawGameData {
   gameData: { gameTime: number; gameMode: string };
 }
 
+/** Leituras feitas há menos disso são reaproveitadas: overlay, painel e avisos dividem a mesma. */
+const SHARE_MS = 1_000;
+let lastRead: { at: number; data: RawGameData | null } | null = null;
+let reading: Promise<RawGameData | null> | null = null;
+
+/**
+ * Dados da partida pelo próprio jogo. Pedidos simultâneos ou seguidos (menos de 1 s)
+ * recebem a mesma leitura, para o jogo responder uma vez só a cada ciclo.
+ */
 export function fetchRawGameData(): Promise<RawGameData | null> {
+  if (lastRead && Date.now() - lastRead.at < SHARE_MS) return Promise.resolve(lastRead.data);
+  reading ??= requestGameData().then((data) => {
+    lastRead = { at: Date.now(), data };
+    reading = null;
+    return data;
+  });
+  return reading;
+}
+
+function requestGameData(): Promise<RawGameData | null> {
   return new Promise((resolve) => {
+    let settled = false;
+    const done = (value: RawGameData | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
     const request = https.get(LIVE_CLIENT_URL, { agent: localAgent, timeout: 1500 }, (response) => {
       const chunks: Buffer[] = [];
       response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      response.on('error', () => done(null));
+      // Resposta cortada no meio (jogo fechando): sem 'end', mas sempre com 'close'.
+      response.on('close', () => done(null));
       response.on('end', () => {
-        if (response.statusCode !== 200) return resolve(null);
+        if (response.statusCode !== 200) return done(null);
         try {
-          resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')) as RawGameData);
+          done(JSON.parse(Buffer.concat(chunks).toString('utf8')) as RawGameData);
         } catch {
-          resolve(null);
+          done(null);
         }
       });
     });
     request.on('timeout', () => request.destroy());
-    request.on('error', () => resolve(null));
+    request.on('error', () => done(null));
   });
 }
 

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { appLog, startAppLog } from './app-log';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { registerBuildHandlers } from './builds/ipc';
@@ -26,6 +27,8 @@ const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer'
 const BACKGROUND = '#0b0d13';
 const ICON = path.join(__dirname, '..', 'assets', 'icon.png');
 /** Uma saudação do contato e um aviso na bandeja por sessão, não a cada reconexão do chat. */
+/** Fases em que reiniciar o app atrapalha o jogador (seleção e partida). */
+const BUSY_PHASES = new Set(['ChampSelect', 'GameStart', 'InProgress', 'Reconnect']);
 const GREETING_INTERVAL_MS = 30 * 60 * 1000;
 
 const connector = new LcuConnector();
@@ -184,11 +187,21 @@ void acquireInstance().then((acquired) => {
   registerChampSelectHandlers(connector);
   registerLobbyHandlers(connector);
 
+  // Registro: só quando muda a conexão com o cliente ou a fase do jogo.
+  let logged = { status: '', phase: '' as string | null };
   connector.on('state', () => {
     if (!devOnly('RIFT_DEMO_STATE')) mainWindow?.webContents.send('lcu:state', currentState());
+    const { status, gameflowPhase } = connector.getState();
+    if (status !== logged.status || gameflowPhase !== logged.phase) {
+      appLog(`cliente: ${status}, fase: ${gameflowPhase ?? '-'}`);
+      logged = { status, phase: gameflowPhase };
+    }
   });
+  process.on('uncaughtExceptionMonitor', (error) => appLog(`erro não tratado: ${error.stack ?? error.message}`));
 
   app.whenReady().then(() => {
+    startAppLog(app.getPath('userData'));
+    appLog(`app aberto: versão ${app.getVersion()}${app.isPackaged ? '' : ' (desenvolvimento)'}`);
     // Settings usa app.getPath, que só fica disponível após o ready.
     const prefs = new Settings();
     settings = prefs;
@@ -229,6 +242,7 @@ void acquireInstance().then((acquired) => {
     });
     let lastBalloon = 0;
     invisible.on('connected', () => {
+      appLog('chat do LoL conectado pelo proxy do modo invisível');
       const preferences = prefs.getPreferences();
       if (!preferences.appearOffline || Date.now() - lastBalloon < GREETING_INTERVAL_MS) return;
       lastBalloon = Date.now();
@@ -298,7 +312,15 @@ void acquireInstance().then((acquired) => {
     const updater = new Updater((status) => mainWindow?.webContents.send('update:status', status));
     ipcMain.handle('update:status', () => updater.getStatus());
     ipcMain.handle('update:check', () => updater.check());
-    ipcMain.handle('update:install', () => updater.install());
+    ipcMain.handle('update:install', () => {
+      // Reiniciar o app derruba o chat do modo invisível; espera a partida acabar.
+      const phase = connector.getState().gameflowPhase;
+      if (phase && BUSY_PHASES.has(phase)) {
+        throw new Error('Termine a partida antes de atualizar: o Rift Companion reinicia ao atualizar.');
+      }
+      appLog('atualização pedida pelo usuário');
+      return updater.install();
+    });
     if (!capturing) updater.start();
     // Versão nova aberta pela atualização: apaga o .exe antigo da mesma pasta.
     if (app.isPackaged && !capturing) {
@@ -372,6 +394,7 @@ void acquireInstance().then((acquired) => {
     quitting = true;
   });
   app.on('will-quit', () => {
+    appLog('app fechando');
     overlay?.dispose();
     invisibleMode?.dispose();
   });

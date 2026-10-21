@@ -205,6 +205,8 @@ export class InvisibleModeProxy extends EventEmitter<InvisibleModeEvents> {
 
   private async startInternal(): Promise<string> {
     await mkdir(path.dirname(this.logFile), { recursive: true }).catch(() => undefined);
+    // Guarda a sessão anterior: uma queda costuma ser investigada depois que o app já reabriu.
+    await rename(this.logFile, this.logFile.replace(/\.log$/, '.anterior.log')).catch(() => undefined);
     await writeFile(this.logFile, '').catch(() => undefined);
     this.log(`iniciando proxy (ativado=${this.state.enabled}, status=${this.state.status})`);
     try {
