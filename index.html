@@ -6,7 +6,7 @@
   <title>Rift Companion</title>
   <meta name="description" content="App gratuito para League of Legends no PC: build certa para cada partida, runas e itens com 1 clique, partida ao vivo e tier list com dados Mestre+." />
   <meta property="og:title" content="Rift Companion: app gratuito para League of Legends" />
-  <meta property="og:description" content="Build certa para cada partida, runas e itens com 1 clique, partida ao vivo e tier list Mestre+." />
+  <meta property="og:description" content="Build certa para cada confronto, runas e feitiços com 1 clique, raio-x dos 10 jogadores, overlay, fim de partida, modo invisível e Telegram. Grátis." />
   <meta property="og:image" content="https://matheusmunhoz99.github.io/rift-companion/docs/screenshots/live.png" />
   <link rel="icon" href="assets/icon.png" />
   <style>
@@ -260,6 +260,10 @@
       height: auto;
     }
 
+    .gallery .wide {
+      grid-column: 1 / -1;
+    }
+
     .gallery figcaption {
       padding: 10px 14px;
       font-size: 14px;
@@ -407,6 +411,15 @@
       <symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
         <path d="M5.5 2.5H18.5M5.5 21.5H18.5" /><path d="M7 2.5V6L12 12 7 18V21.5M17 2.5V6L12 12 17 18V21.5" /><path d="M9 21.5 12 17.5 15 21.5Z" fill="currentColor" stroke="none" />
       </symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
+        <path d="M2.5 5.5H21.5V10.5H2.5Z" /><path d="M2.5 14.5H21.5V20.5H2.5Z" /><path d="M6 8H11" />
+      </symbol>
+      <symbol id="i-mask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
+        <path d="M3 6.5H21V12.5L17 17.5H14L12 15 10 17.5H7L3 12.5Z" /><path d="M6.5 10 9.5 11.5 6.5 11.5Z M17.5 10 14.5 11.5 17.5 11.5Z" fill="currentColor" stroke="none" />
+      </symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
+        <path d="M7 3.5H17V10L12 14 7 10Z" /><path d="M7 5.5H3.5V8.5L7 10M17 5.5H20.5V8.5L17 10" /><path d="M12 14V17.5M8 20.5H16V17.5H8Z" /><path d="M12 6 13.5 8 12 10 10.5 8Z" fill="currentColor" stroke="none" />
+      </symbol>
       <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
         <path d="M6.5 2.5H17.5V21.5H6.5Z" /><path d="M10 18.5H14" /><path d="M12 7 15 10 12 13 9 10Z" fill="currentColor" stroke="none" />
       </symbol>
@@ -441,10 +454,10 @@
     <main>
       <div class="hero">
         <span class="eyebrow">Grátis · Windows 10 e 11 · Beta</span>
-        <h1>A build <em>certa</em> para cada partida de League of Legends</h1>
+        <h1>O app que sabe <em>contra quem</em> você joga e te diz o que comprar</h1>
         <p class="lead">
-          O Rift Companion descobre o seu oponente de rota e o tipo de dano do time inimigo, mostra o que os jogadores
-          Mestre+ estão usando e importa runas e itens com um clique.
+          Build certa para cada confronto, runas e feitiços com 1 clique, raio-x dos 10 jogadores, overlay em tempo real,
+          análise de fim de partida, modo invisível e o seu LoL inteiro no Telegram.
         </p>
         <div class="actions">
           <a class="btn primary" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe">
@@ -464,51 +477,81 @@
         <div class="features">
           <article class="feature">
             <svg><use href="#i-swords" /></svg>
-            <h3>Build da partida</h3>
-            <p>Detecta seu oponente de rota e se o time inimigo é de dano mágico ou físico, e mostra os itens certos para aquele jogo.</p>
+            <h3>Build por confronto</h3>
+            <p>Detecta o seu oponente de rota e o tipo de dano do time inimigo, mostra os counters, avisa quando a composição está desequilibrada e traz os itens que Mestres+ compram naquele confronto.</p>
           </article>
           <article class="feature">
             <svg><use href="#i-anvil" /></svg>
-            <h3>Runas e itens com 1 clique</h3>
-            <p>Importa a página de runas, os feitiços e o conjunto de itens direto no cliente. Nada de copiar build de site.</p>
+            <h3>Runas e feitiços com 1 clique</h3>
+            <p>Importa a página de runas, os feitiços e o conjunto de itens direto no cliente, na seleção ou pelo celular. Nada de copiar build de site.</p>
           </article>
           <article class="feature">
             <svg><use href="#i-eye" /></svg>
-            <h3>Partida ao vivo</h3>
-            <p>Elo, maestria e taxa de vitória dos 10 jogadores, chance de vitória e quem já jogou com você ou contra você.</p>
+            <h3>Raio-x da partida ao vivo</h3>
+            <p>Elo, maestria e últimas partidas dos 10 jogadores, duos e grupos, feitiços com recarga, chance de vitória e quem já jogou com você ou contra.</p>
           </article>
           <article class="feature">
-            <svg><use href="#i-rank" /></svg>
-            <h3>Tier list Mestre+</h3>
-            <p>Os campeões mais fortes de cada rota, com vitórias, escolhas e banimentos atualizados o tempo todo.</p>
+            <svg><use href="#i-layers" /></svg>
+            <h3>Overlay em tempo real</h3>
+            <p>Sobre o jogo, no modo sem bordas: KDA, CS e ouro, diferença para o seu oponente, CS contra a média Mestre+, qual habilidade evoluir e os timers dos objetivos.</p>
           </article>
           <article class="feature">
-            <svg><use href="#i-play" /></svg>
-            <h3>Fila pelo app</h3>
-            <p>Crie a sala, escolha as rotas, convide amigos e aceite a partida automaticamente.</p>
+            <svg><use href="#i-trophy" /></svg>
+            <h3>Fim de partida</h3>
+            <p>Nota de 0 a 10 para cada jogador, pódio, ranking, gráficos de dano, ouro, CS e visão, e os destaques da partida.</p>
           </article>
           <article class="feature">
-            <svg><use href="#i-hourglass" /></svg>
-            <h3>Histórico de qualquer jogador</h3>
-            <p>Busque por Riot ID e veja elo, maestria e as últimas partidas com campeões, KDA e itens.</p>
+            <svg><use href="#i-mask" /></svg>
+            <h3>Modo invisível</h3>
+            <p>Apareça offline, no celular ou online sem perder o chat de sala nem os convites. Troque pela bandeja, pelo Telegram ou pelo contato Rift Companion no chat do LoL.</p>
           </article>
           <article class="feature">
             <svg><use href="#i-phone" /></svg>
             <h3>Seu LoL no Telegram</h3>
             <p>Entre na fila, aceite a partida, escolha e bana campeões, troque no ARAM e importe runas pelo celular. Abra e feche o LoL de qualquer lugar da casa.</p>
           </article>
+          <article class="feature">
+            <svg><use href="#i-rank" /></svg>
+            <h3>Tier list e builds Mestre+</h3>
+            <p>Os campeões mais fortes de cada rota e a build de qualquer campeão contra qualquer oponente, sempre no patch atual.</p>
+          </article>
+          <article class="feature">
+            <svg><use href="#i-hourglass" /></svg>
+            <h3>Fila, aceite e histórico</h3>
+            <p>Crie a sala, escolha as rotas, convide amigos, aceite a partida automaticamente e veja o histórico de qualquer jogador pelo Riot ID.</p>
+          </article>
         </div>
       </section>
 
       <section>
         <div class="gallery">
+          <figure class="wide">
+            <img src="docs/screenshots/overlay.png" alt="Overlay sobre o jogo" width="980" height="84" loading="lazy" />
+            <figcaption>Overlay no topo do jogo: placar, CS contra a média Mestre+, diferença para o oponente, próxima habilidade e objetivos.</figcaption>
+          </figure>
           <figure>
-            <img src="docs/screenshots/builds.png" alt="Build da partida na seleção de campeões" width="1320" height="840" loading="lazy" />
-            <figcaption>Seleção de campeões: oponente detectado e perfil de dano do time inimigo.</figcaption>
+            <img src="docs/screenshots/players.png" alt="Jogadores da partida ao vivo" width="1320" height="840" loading="lazy" />
+            <figcaption>Partida ao vivo: elo, maestria, duos, feitiços e quem já jogou com você.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/screenshots/champselect.png" alt="Build do confronto na seleção de campeões" width="1320" height="840" loading="lazy" />
+            <figcaption>Seleção de campeões: oponente detectado, composição, counters e itens do confronto.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/screenshots/postgame.png" alt="Análise de fim de partida" width="1320" height="840" loading="lazy" />
+            <figcaption>Fim de partida: nota de 0 a 10, pódio, ranking, gráficos e destaques.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/screenshots/builds.png" alt="Builds e runas de qualquer campeão" width="1320" height="840" loading="lazy" />
+            <figcaption>Builds e runas Mestre+ de qualquer campeão, rota e oponente.</figcaption>
           </figure>
           <figure>
             <img src="docs/screenshots/tierlist.png" alt="Tier list por rota" width="1320" height="840" loading="lazy" />
             <figcaption>Tier list por rota com dados Mestre+ do patch atual.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/screenshots/history.png" alt="Histórico de qualquer jogador" width="1320" height="840" loading="lazy" />
+            <figcaption>Histórico de qualquer jogador pelo Riot ID.</figcaption>
           </figure>
         </div>
       </section>
@@ -532,7 +575,7 @@
         <h2>Seguro para a sua conta</h2>
         <p class="section-lead">O Rift Companion segue as regras da Riot para apps de terceiros.</p>
         <ul class="safety">
-          <li><svg><use href="#i-check" /></svg>Não injeta nada, não lê a memória e não altera arquivos do jogo.</li>
+          <li><svg><use href="#i-check" /></svg>Não injeta nada, não lê a memória e não altera arquivos do jogo. O overlay é uma janela separada.</li>
           <li><svg><use href="#i-check" /></svg>Usa só as APIs oficiais da Riot e do cliente.</li>
           <li><svg><use href="#i-check" /></svg>Não mostra informação escondida, como timers da selva inimiga.</li>
           <li><svg><use href="#i-check" /></svg>Não lê senhas e não coleta dados pessoais.</li>

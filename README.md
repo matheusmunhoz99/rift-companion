@@ -9,22 +9,23 @@
 <h1 align="center">Rift Companion</h1>
 
 <p align="center">
-  <strong>O companion gratuito de League of Legends que joga junto com você.</strong><br />
-  Build certa para cada partida, runas e itens com um clique, raio-x dos 10 jogadores
-  e o seu LoL inteiro no controle pelo Telegram.
+  <strong>O app gratuito que sabe contra quem você joga e te diz o que comprar.</strong><br />
+  Build certa para cada confronto, runas e feitiços em 1 clique, raio-x de todos os jogadores,<br />
+  overlay em tempo real, modo invisível completo e o seu LoL inteiro no Telegram.
 </p>
 
 <p align="center">
   <img alt="Windows 10 e 11" src="https://img.shields.io/badge/Windows-10%20e%2011-0b0d12?style=flat-square" />
   <img alt="Grátis" src="https://img.shields.io/badge/pre%C3%A7o-gr%C3%A1tis-2fbf71?style=flat-square" />
-  <img alt="Sem anúncios" src="https://img.shields.io/badge/an%C3%BAncios-nenhum-2fbf71?style=flat-square" />
+  <img alt="Sem anúncios" src="https://img.shields.io/badge/an%C3%BAncios-zero-2fbf71?style=flat-square" />
+  <img alt="Sem injeção" src="https://img.shields.io/badge/inje%C3%A7%C3%A3o-nenhuma-2fbf71?style=flat-square" />
   <img alt="Dados Mestre+" src="https://img.shields.io/badge/dados-Mestre%2B%20BR%20%C2%B7%20EUW%20%C2%B7%20KR-e84057?style=flat-square" />
   <img alt="Beta" src="https://img.shields.io/badge/status-beta-ffb35c?style=flat-square" />
   <a href="LICENSE"><img alt="Todos os direitos reservados" src="https://img.shields.io/badge/c%C3%B3digo-todos%20os%20direitos%20reservados-8b93a7?style=flat-square" /></a>
 </p>
 
 <p align="center">
-  <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"><img alt="Baixar para Windows" src="https://img.shields.io/badge/Baixar%20para%20Windows-e84057?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiPjxwYXRoIGQ9Ik0xMiAzVjE0LjVNNyAxMCAxMiAxNSAxNyAxME00IDE2LjVWMjAuNUgyMFYxNi41Ii8+PC9zdmc+" /></a>
+  <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"><img alt="Baixar para Windows" src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Baixar%20para%20Windows-e84057?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiPjxwYXRoIGQ9Ik0xMiAzVjE0LjVNNyAxMCAxMiAxNSAxNyAxME00IDE2LjVWMjAuNUgyMFYxNi41Ii8+PC9zdmc+" /></a>
   &nbsp;
   <a href="https://matheusmunhoz99.github.io/rift-companion/"><img alt="Site" src="https://img.shields.io/badge/Site-do%20app-181c26?style=for-the-badge" /></a>
 </p>
@@ -36,39 +37,39 @@
 <table>
   <tr>
     <td width="33%" valign="top">
-      <h3>Build da partida</h3>
-      Detecta o seu oponente de rota e se o time inimigo é de dano mágico ou físico. Mostra os itens certos para <em>aquela</em> partida.
+      <h3>Build por confronto</h3>
+      Identifica o seu oponente de rota e o tipo de dano do time inimigo. Mostra os itens, runas e feitiços que <strong>Mestres+ compram naquele confronto</strong>.
     </td>
     <td width="33%" valign="top">
       <h3>Controle pelo Telegram</h3>
-      Entre na fila, aceite a partida, escolha e bana campeões, troque no ARAM e importe runas pelo celular.
+      Fila, aceite, ban, pick, troca no ARAM, runas e feitiços — tudo pelo celular, num painel que se atualiza sozinho.
     </td>
     <td width="33%" valign="top">
-      <h3>Raio-x da partida</h3>
-      Elo, maestria e desempenho dos 10 jogadores, chance de vitória e quem já jogou com você ou contra você.
+      <h3>Raio-x de 10 jogadores</h3>
+      Elo, maestria, últimas 10, chance de vitória, feitiços com recarga, duos e quem já jogou com você ou contra.
     </td>
   </tr>
   <tr>
     <td valign="top">
-      <h3>Runas e itens em 1 clique</h3>
-      Importa página de runas, feitiços e conjunto de itens direto no cliente. Nada de copiar build de site.
-    </td>
-    <td valign="top">
-      <h3>Tier list Mestre+</h3>
-      Os campeões mais fortes de cada rota no patch atual, com dados de dezenas de milhares de partidas.
+      <h3>Overlay na partida</h3>
+      KDA, CS e ouro, <strong>diferença para o oponente</strong>, CS contra a média Mestre+, próxima habilidade e timers de todos os objetivos.
     </td>
     <td valign="top">
       <h3>Modo invisível</h3>
-      Apareça offline para os amigos sem perder chat de sala e seleção, filas ou convites enviados. Sem injeção e sem leitura de memória.
+      Offline, celular ou online — troque na hora, pela bandeja, pelo chat do LoL ou pelo Telegram. O app reinicia o LoL sozinho pelo proxy.
+    </td>
+    <td valign="top">
+      <h3>Fim de partida</h3>
+      Nota de 0 a 10, pódio, gráficos de dano, ouro, CS e visão, e os destaques de cada jogador.
     </td>
   </tr>
 </table>
 
 ---
 
-## Uma build para cada partida
+## Uma build para cada confronto
 
-Uma build "geral" ignora o que importa: **contra quem** você joga. Na seleção de campeões e na partida ao vivo, o Rift Companion:
+Uma build "geral" ignora o que mais importa: **contra quem** você joga. O Rift Companion analisa o confronto na seleção de campeões e durante a partida ao vivo:
 
 - descobre o seu **oponente de rota**, testando a rota mais provável de cada inimigo pelos dados de alto elo;
 - lê o **perfil de dano do time inimigo**: maioria mágico, maioria físico ou misto;
@@ -76,17 +77,17 @@ Uma build "geral" ignora o que importa: **contra quem** você joga. Na seleção
 - deduz a **sua rota** pelo seu time quando o jogo não informa;
 - mostra os **counters de cada inimigo**: quem vence e quem perde para ele na rota dele, começando pelo seu oponente;
 - avisa quando a **composição** está desequilibrada: time quase só físico ou só mágico, sem linha de frente;
-- traz o **ritmo Mestre+** do seu campeão: CS, ouro e nível médios aos 5, 10, 15 e 20 minutos.
+- traz o **ritmo Mestre+** do seu campeão: CS, ouro e nível médios aos 5, 10, 15 e 20 minutos para você se comparar em tempo real.
 
 <p align="center">
-  <img src="docs/screenshots/builds.png" alt="Build da partida na seleção de campeões" width="860" />
+  <img src="docs/screenshots/champselect.png" alt="Seleção de campeões com build do confronto, composição e counters" width="860" />
 </p>
 
 Tudo vem de partidas ranqueadas Solo/Duo de jogadores **Mestre, Grão-Mestre e Desafiante** do **BR, EUW e KR**, sempre no **patch atual**: runas, feitiços, itens iniciais, núcleo na ordem de compra, botas, ordem de habilidades e confrontos.
 
 ## O seu LoL no Telegram
 
-Conecte uma vez e controle o cliente pelo celular, de qualquer lugar da casa. É **um painel só**, que se atualiza sozinho conforme o jogo anda: sem encher o chat de mensagens.
+Conecte uma vez e controle o cliente pelo celular, de qualquer lugar da casa. É **um painel só**, que se atualiza sozinho conforme o jogo anda — sem encher o chat de mensagens.
 
 | Momento | O que dá para fazer pelo Telegram |
 | --- | --- |
@@ -103,42 +104,96 @@ Conecte uma vez e controle o cliente pelo celular, de qualquer lugar da casa. É
 
 Só os momentos importantes tocam no celular: partida encontrada, sua vez na seleção, início e resultado. O resto é o mesmo painel sendo editado.
 
-**Como conectar:** no app, vá em **Configurações → Avisos no Telegram → Conectar Telegram** e toque em **Iniciar** no bot. Pronto: o app lembra da conexão, mesmo depois de fechar e abrir de novo. Mande `/painel` a qualquer momento para trazer o painel.
+**Como conectar:** no app, vá em **Configurações → Avisos no Telegram → Conectar Telegram** e toque em **Iniciar** no bot. Pronto: o app lembra da conexão, mesmo depois de fechar e abrir. Mande `/painel` a qualquer momento para trazer o painel de volta.
 
 **Privado de verdade:** cada PC conectado recebe um código só dele, ligado ao seu chat. As suas mensagens e os seus botões nunca chegam a outra pessoa, e ninguém controla o seu LoL além de você.
 
 ## Raio-x da partida ao vivo
 
-- Os dois times **logo no carregamento**, direto do jogo. Elo, maestria e chance de vitória entram assim que a Riot libera a partida.
-- Elo, taxa de vitória, maestria e últimas 10 partidas de cada jogador. É só clicar no nome para ver o histórico completo.
+<p align="center">
+  <img src="docs/screenshots/players.png" alt="Jogadores da partida ao vivo com elo, maestria, duos e feitiços" width="860" />
+</p>
+
+Os dois times aparecem **logo no carregamento**, direto do jogo, sem esperar a Riot liberar a partida.
+
+- **Elo, taxa de vitória, maestria e últimas 10 partidas** de cada jogador. Clique no nome para ver o histórico completo.
+- **Feitiços com recarga**: veja os summoner spells de todos os jogadores e acompanhe o tempo de recarga ao vivo.
+- **Duos e grupos**: identifica quem está jogando junto (duo, trio ou mais) nos dois times.
 - **"Já jogaram com você"**: quem esteve nas suas últimas 10 partidas, no seu time ou contra você, com os campeões e o KDA de cada um.
-- A **sua build para esta partida**, já com o oponente e o perfil de dano do time inimigo.
+- **Chance de vitória** baseada no elo, na maestria e no histórico recente dos 10 jogadores.
+- A **sua build para esta partida**, já ajustada ao oponente e ao perfil de dano do time inimigo.
+
+## Overlay em tempo real
+
+<p align="center">
+  <img src="docs/screenshots/overlay.png" alt="Overlay sobre o jogo" width="920" />
+</p>
+
+No modo **sem bordas** (Borderless), o overlay aparece direto sobre o jogo — sem injeção, sem leitura de memória, sem risco para a conta.
+
+- **KDA, CS por minuto e ouro** em tempo real.
+- **Diferença para o oponente de rota**: CS, nível e itens lado a lado.
+- **CS e ouro contra a média Mestre+** do seu campeão no mesmo minuto da partida.
+- **Qual habilidade evoluir** a seguir (baseado na ordem Mestre+).
+- **Timers de todos os objetivos**: Dragão, Barão, Arauto/Voidgrub e Inibidores, inclusive na **Partida Rápida (Swiftplay)**.
+- Posição ajustável (esquerda, centro, direita) e opacidade nas configurações. Atalho **Ctrl+Shift+O** para mostrar/esconder.
+
+## Fim de partida
+
+Quando a partida acaba, o Rift Companion monta uma análise completa:
+
+- **Nota de 0 a 10** para cada jogador dos dois times, calculada por dano, KDA, CS, visão e participação.
+- **Pódio** com os 3 melhores jogadores da partida.
+- **Gráficos comparativos**: dano causado, dano recebido, ouro, CS e visão — todos os 10 jogadores lado a lado.
+- **Destaques**: quem deu mais dano, quem mais farmou, quem mais participou de abates, maior multikill.
+
+<p align="center">
+  <img src="docs/screenshots/postgame.png" alt="Tela de fim de partida" width="860" />
+</p>
+
+## Modo invisível
+
+Apareça **offline**, no **celular** ou **online** para os amigos e troque a qualquer momento — pela bandeja, pelas configurações, pelo Telegram ou pelo contato **Rift Companion** que aparece direto no chat do LoL.
+
+- **Chat de sala, seleção e convites enviados continuam funcionando.** Só a sua presença global é filtrada.
+- **Contato no chat do LoL**: mande "offline", "celular", "online", "ativar", "desativar" ou "ajuda" direto no chat para o Rift Companion.
+- **Reinício automático**: se o LoL foi aberto sem o modo invisível, o app fecha e reabre o Riot Client pelo proxy sozinho — esperando a partida acabar se você estiver jogando.
+- **Sem injeção e sem leitura de memória**: o modo invisível é um proxy TLS local que filtra só a presença no chat XMPP. Nenhuma mensagem vai ao servidor do Rift Companion.
+
+Para ativar: **Configurações → Ativar modo invisível**, escolha o status e abra o LoL pelo Rift Companion, pela bandeja ou pelo Telegram.
 
 ## Tier list e builds de todos os campeões
 
-<p align="center">
-  <img src="docs/screenshots/tierlist.png" alt="Tier list por rota" width="860" />
-</p>
+<table>
+  <tr>
+    <td width="50%" align="center"><img src="docs/screenshots/tierlist.png" alt="Tier list por rota" /><br /><sub>Tier list Mestre+ por rota</sub></td>
+    <td width="50%" align="center"><img src="docs/screenshots/builds.png" alt="Builds e runas de qualquer campeão" /><br /><sub>Build de qualquer campeão, rota e oponente</sub></td>
+  </tr>
+</table>
 
-Tier list por rota, com taxa de vitória, escolha e banimento, e a página de builds de qualquer campeão em qualquer rota, contra qualquer oponente.
+Tier list por rota com taxa de vitória, escolha e banimento, atualizada a cada patch automaticamente. Abra a página de builds de qualquer campeão em qualquer rota, contra qualquer oponente — runas, feitiços, itens, ordem de habilidades e confrontos.
 
-## E ainda
+## E tem mais
 
-- **Modo invisível:** apareça offline, no celular ou online e troque a qualquer momento pela bandeja, pelas configurações ou pelo contato **Rift Companion** no chat do LoL. Chat de sala/seleção e convites enviados continuam funcionando.
-- **Aceite automático** da fila.
-- **Fila pelo app:** criar sala, escolher rotas (incluindo os campeões do Jogo Dinâmico, com as rotas prioritárias), convidar amigos.
+<table>
+  <tr>
+    <td width="50%" align="center"><img src="docs/screenshots/home.png" alt="Tela inicial" /><br /><sub>Tela inicial</sub></td>
+    <td width="50%" align="center"><img src="docs/screenshots/history.png" alt="Histórico de qualquer jogador" /><br /><sub>Histórico de qualquer jogador</sub></td>
+  </tr>
+</table>
+
+- **Aceite automático** da fila — sem perder partida por distração.
+- **Fila pelo app:** criar sala, escolher rotas (incluindo os campeões do Jogo Dinâmico com as rotas prioritárias), convidar amigos e procurar partida.
 - **Histórico de qualquer jogador** pelo Riot ID: elo, maestria, partidas com campeões, KDA e itens.
-- **Overlay durante o jogo** (modo sem bordas): KDA, CS e ouro, **diferença para o seu oponente de rota** (CS, nível e itens), **CS e ouro contra a média Mestre+** do seu campeão no mesmo minuto, **qual habilidade evoluir** e os timers de todos os objetivos.
-- **Fim de partida:** nota de 0 a 10 para cada jogador, pódio, gráficos de dano, dano recebido, ouro, CS e visão, e os destaques da partida.
+- **Runas e feitiços em 1 clique**: importa a página de runas Mestre+ e os feitiços direto no cliente — na seleção de campeões ou pelo Telegram.
 - Interface **responsiva** para qualquer monitor, ícones próprios, bandeja do sistema, iniciar com o Windows e **atualização automática**.
+- **Dados sempre atuais**: a tier list e o Data Dragon se atualizam sozinhos quando sai um patch novo.
 
 ## Como instalar
 
-1. Baixe o **[RiftCompanion.exe](https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe)** (Windows 10 ou 11, cerca de 100 MB). Esse link sempre baixa a versão mais nova.
+1. Baixe o **[RiftCompanion.exe](https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe)** (Windows 10 ou 11, ~100 MB). Esse link sempre baixa a versão mais nova.
 2. Abra o arquivo. Ele roda direto, sem instalador.
 3. Abra o LoL. O app conecta sozinho e se atualiza sozinho.
-
-Para usar o **modo invisível**, ligue **Configurações → Ativar modo invisível**, escolha o status e abra o LoL pelo botão do Rift Companion, pelo ícone na bandeja ou pelo Telegram. O Riot Client precisa estar totalmente fechado antes de abrir em modo invisível.
 
 > **O Windows mostrou "O Windows protegeu o computador"?** Esse aviso aparece com apps novos que ainda não têm reputação na Microsoft. Clique em **Mais informações → Executar assim mesmo**. O código é aberto e está todo aqui.
 
@@ -180,7 +235,7 @@ Sem contas, sem senhas e sem anúncios. O servidor guarda só estatísticas agre
 
 ## Desenvolvimento
 
-Requisitos: Node.js 24.21+, Windows 10/11 e o cliente do League of Legends.
+Requisitos: Node.js 24+, Windows 10/11 e o cliente do League of Legends.
 
 ```bash
 npm install
