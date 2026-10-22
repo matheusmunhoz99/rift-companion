@@ -5,6 +5,7 @@ import { ChampionStatsPanel } from '../stats/champion-stats';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
+import { isAndroid } from '../mobile/mobile-client';
 
 const POSITIONS = [
   { value: '', label: 'Qualquer rota' },
@@ -59,6 +60,8 @@ export class BuildsView {
 
   protected select(champion: ChampionInfo): void {
     this.selected.set(champion);
+    // No celular a build fica abaixo da lista; leva até ela.
+    if (isAndroid) setTimeout(() => document.querySelector('app-builds-view .detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 }
 

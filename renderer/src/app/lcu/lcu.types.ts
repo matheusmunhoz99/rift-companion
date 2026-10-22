@@ -30,6 +30,7 @@ export interface ChampSelectState {
   assignedPosition: string;
   team: TeamMember[];
   pickActionId: number | null;
+  banActionId?: number | null;
   pickableChampionIds: number[];
   benchEnabled: boolean;
   benchChampionIds: number[];
@@ -41,6 +42,7 @@ export interface ChampSelectState {
 }
 
 export interface ChampSelectBridge {
+  ban(championId: number): Promise<void>;
   pick(championId: number): Promise<void>;
   benchSwap(championId: number): Promise<void>;
   reroll(): Promise<void>;

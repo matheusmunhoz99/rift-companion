@@ -1,4 +1,5 @@
 <div class="settings">
+  <app-mobile-link />
   <section class="card invisible">
     <div class="invisible-head">
       <h3 class="section-title">Modo invisível</h3>
@@ -92,6 +93,7 @@
     />
   </section>
 
+  @if (!android) {
   <section class="card">
     <h3 class="section-title">Avisos no Telegram</h3>
     @switch (telegram()) {
@@ -151,6 +153,9 @@
     }
   </section>
 
+  }
+
+  @if (!android) {
   <section class="card">
     <h3 class="section-title">Overlay no jogo</h3>
     <app-switch
@@ -209,7 +214,9 @@
       O overlay é uma janela separada: não injeta nada no jogo (sem risco com o Vanguard).
     </p>
   </section>
+  }
 
+  @if (!android) {
   <section class="card">
     <h3 class="section-title">Aplicativo</h3>
     <app-switch
@@ -235,13 +242,16 @@
     </button>
   </section>
 
+  }
   <section class="card">
     <h3 class="section-title">Sobre</h3>
     <div class="about-row">
       <p><strong>Rift Companion</strong> · versão beta {{ prefs.info()?.version }}</p>
+      @if (!android) {
       <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
         {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
       </button>
+      }
     </div>
     @if (updateMessage(); as message) {
       <p class="muted">{{ message }}</p>

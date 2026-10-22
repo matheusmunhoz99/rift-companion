@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain } from '../mobile/rpc';
 import type { LcuConnector } from './connector';
 import {
   cancelSearch,

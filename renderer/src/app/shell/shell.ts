@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, untracked } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { NavigationService, VIEW_TITLES, type View } from '../core/navigation.service';
 import { PreferencesService } from '../core/preferences.service';
 import { ToastService, errorText } from '../core/toast.service';
@@ -13,10 +13,14 @@ import { LiveView } from '../views/live-view';
 import { PlayView } from '../views/play-view';
 import { SettingsView } from '../views/settings-view';
 import { TierListView } from '../views/tierlist-view';
+import { isAndroid } from '../mobile/mobile-client';
+import { AndroidUpdate } from '../mobile/android-update';
 
 interface NavItem {
   view: View;
   label: string;
+  /** Rótulo curto para a barra de abas do celular. */
+  short?: string;
   icon: string;
 }
 
@@ -26,13 +30,20 @@ const NAV_GROUPS: NavItem[][] = [
     { view: 'home', label: 'Início', icon: 'home' },
     { view: 'play', label: 'Jogar', icon: 'play' },
     { view: 'champ-select', label: 'Seleção', icon: 'swords' },
-    { view: 'live', label: 'Partida ao vivo', icon: 'live' },
+    { view: 'live', label: 'Partida ao vivo', short: 'Ao vivo', icon: 'live' },
   ],
   [
     { view: 'tierlist', label: 'Tier list', icon: 'layers' },
     { view: 'builds', label: 'Builds', icon: 'book' },
     { view: 'history', label: 'Histórico', icon: 'history' },
   ],
+];
+
+/** Celular: 4 abas do fluxo da partida + "Mais" (consultas e configurações). */
+const PHONE_TABS: NavItem[] = NAV_GROUPS[0];
+const PHONE_MORE: NavItem[] = [
+  ...NAV_GROUPS[1],
+  { view: 'settings', label: 'Configurações', icon: 'settings' },
 ];
 
 /** Tom do indicador de fase: cor e se pulsa. */
@@ -64,6 +75,7 @@ function clock(seconds: number): string {
     BuildsView,
     HistoryView,
     SettingsView,
+    AndroidUpdate,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -78,10 +90,24 @@ export class Shell {
 
   protected readonly state = this.lcu.state;
   protected readonly groups = NAV_GROUPS;
+  protected readonly android = isAndroid;
+  protected readonly phoneTabs = PHONE_TABS;
+  protected readonly phoneMore = PHONE_MORE;
+  protected readonly moreOpen = signal(false);
   protected readonly title = computed(() => VIEW_TITLES[this.nav.view()]);
+
+  /** Aba "Mais" ativa quando a tela atual é uma das consultas ou as configurações. */
+  protected readonly moreActive = computed(() =>
+    PHONE_MORE.some((item) => item.view === this.nav.view()),
+  );
 
   protected viewTitle(view: View): string {
     return VIEW_TITLES[view];
+  }
+
+  protected goPhone(view: View): void {
+    this.moreOpen.set(false);
+    this.nav.go(view);
   }
 
   protected readonly phase = computed<PhaseInfo>(() => {

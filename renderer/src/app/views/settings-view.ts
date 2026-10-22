@@ -4,6 +4,8 @@ import { PreferencesService } from '../core/preferences.service';
 import { ToastService, errorText } from '../core/toast.service';
 import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
+import { MobileLink } from '../mobile/mobile-link';
+import { isAndroid } from '../mobile/mobile-client';
 
 interface TelegramBridge {
   status(): Promise<{ connected: boolean }>;
@@ -41,11 +43,12 @@ const STARTUP_STATUSES: Array<{ value: InvisibleStartupStatus; label: string }> 
 
 @Component({
   selector: 'app-settings-view',
-  imports: [Switch, Icon],
+  imports: [Switch, Icon, MobileLink],
   templateUrl: './settings-view.html',
   styleUrl: './settings-view.scss',
 })
 export class SettingsView {
+  protected readonly android = isAndroid;
   protected readonly prefs = inject(PreferencesService);
   protected readonly positions = POSITIONS;
   protected readonly statuses = STATUSES;

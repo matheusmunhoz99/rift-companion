@@ -41,8 +41,10 @@ export class ChampSelectPanel {
   /** Campeões da escolha atual, filtrados pela busca e em ordem alfabética. */
   protected readonly pickable = computed(() => {
     const term = normalize(this.search());
-    return this.session()
-      .pickableChampionIds.map((id) => this.ddragon.champion(id))
+    const candidates = this.session().banActionId != null
+      ? this.ddragon.championList()
+      : this.session().pickableChampionIds.map((id) => this.ddragon.champion(id));
+    return candidates
       .filter((champion): champion is ChampionInfo => champion !== null)
       .filter((champion) => !term || normalize(champion.name).includes(term))
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
@@ -64,6 +66,9 @@ export class ChampSelectPanel {
   }
 
   protected pick(champion: ChampionInfo): Promise<void> {
+    if (this.session().banActionId != null) {
+      return this.run(`ban:${champion.key}`, () => window.champSelect!.ban(champion.key), `${champion.name} banido.`);
+    }
     return this.run(`pick:${champion.key}`, () => window.champSelect!.pick(champion.key), `${champion.name} escolhido.`);
   }
 

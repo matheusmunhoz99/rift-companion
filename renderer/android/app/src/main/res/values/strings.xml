@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rift Companion</string>
+    <string name="title_activity_main">Rift Companion</string>
+    <string name="package_name">br.com.workscanner.riftcompanion</string>
+    <string name="custom_url_scheme">br.com.workscanner.riftcompanion</string>
+</resources>

@@ -1,0 +1,505 @@
+/* ==========================================================================
+   Rift Companion — camada do app Android.
+   Reaproveita os tokens e componentes do desktop; aqui só o layout muda para
+   caber na tela do celular: cabeçalho fixo, conteúdo rolável e barra de abas.
+   ========================================================================== */
+
+body.android-app {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--bg);
+
+  /* Altura real da barra de abas, usada como espaço no fim do conteúdo. */
+  --tabbar-h: calc(58px + env(safe-area-inset-bottom, 0px));
+
+  button,
+  .btn,
+  select,
+  a.btn {
+    touch-action: manipulation;
+  }
+  .btn {
+    min-height: 44px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* evita o zoom automático do iOS/Android ao focar */
+  }
+
+  /* ---------------------------------------------------------------- Estrutura */
+  app-root,
+  app-shell {
+    display: block;
+    height: 100dvh;
+  }
+
+  .shell.phone {
+    display: block;
+    height: 100dvh;
+  }
+
+  .shell.phone .main {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-width: 0;
+  }
+
+  /* Cabeçalho fixo com o título e o estado do jogo. */
+  .shell.phone .titlebar {
+    flex: none;
+    height: auto;
+    gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top, 0px))
+      max(16px, env(safe-area-inset-right, 0px)) 12px
+      max(16px, env(safe-area-inset-left, 0px));
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--sidebar) 92%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .shell.phone .titlebar h1 {
+    font-size: 21px;
+    font-weight: 700;
+  }
+  .shell.phone .phase {
+    flex: none;
+  }
+  .shell.phone .phase-label {
+    display: inline;
+    font-size: 12px;
+  }
+
+  /* Área que rola; o fim dela abre espaço para a barra de abas. */
+  .shell.phone .content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px max(16px, env(safe-area-inset-right, 0px))
+      calc(var(--tabbar-h) + 16px) max(16px, env(safe-area-inset-left, 0px));
+    scrollbar-width: none;
+  }
+  .shell.phone .content::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A faixa de atualização fica abaixo do cabeçalho, sem empurrar o conteúdo. */
+  .shell.phone .update-banner {
+    flex: none;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* ---------------------------------------------------------- Barra de abas */
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    align-items: stretch;
+    height: var(--tabbar-h);
+    padding: 0 max(4px, env(safe-area-inset-right, 0px))
+      env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left, 0px));
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--sidebar) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 7px 2px;
+    border: none;
+    background: none;
+    color: var(--faint);
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+  .tab-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  .tab app-icon {
+    display: flex;
+  }
+  .tab-label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .tab.active {
+    color: var(--accent);
+  }
+  .tab.active .tab-icon {
+    background: var(--accent-soft);
+  }
+  .tab:active .tab-icon {
+    transform: scale(0.9);
+  }
+  .tab-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--sidebar);
+  }
+
+  /* ---------------------------------------------------- Folha "Mais" */
+  .more-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(0, 0, 0, 0.5);
+    animation: more-fade var(--dur) var(--ease-out);
+  }
+  .more-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 46;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px max(16px, env(safe-area-inset-left, 0px))
+      calc(16px + env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--border-strong);
+    background: var(--surface);
+    box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.4);
+    animation: more-rise var(--dur-slow) var(--ease-out);
+  }
+  .more-handle {
+    width: 40px;
+    height: 4px;
+    margin: 2px auto 2px;
+    border-radius: 2px;
+    background: var(--border-strong);
+  }
+  .more-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .more-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    aspect-ratio: 1 / 0.82;
+    padding: 12px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .more-item app-icon {
+    color: var(--muted);
+  }
+  .more-item.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .more-item.active app-icon {
+    color: var(--accent);
+  }
+  .more-item:active {
+    transform: scale(0.97);
+  }
+  .more-version {
+    text-align: center;
+    font-size: 11px;
+    color: var(--faint);
+  }
+
+  @keyframes more-rise {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes more-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* ============================================================= Telas */
+
+  .card {
+    padding: 16px;
+  }
+  .modal {
+    width: calc(100vw - 32px);
+    max-width: 420px;
+    max-height: 85dvh;
+    overflow-y: auto;
+  }
+  .input {
+    max-width: 100%;
+  }
+
+  /* --- Início --- */
+  app-home-view .hero {
+    padding: 18px;
+    gap: 16px;
+  }
+  app-home-view .identity {
+    gap: 14px;
+    min-width: 0;
+  }
+  app-home-view .identity h2 {
+    font-size: 23px;
+    overflow-wrap: anywhere;
+  }
+  app-home-view .ranks {
+    width: 100%;
+  }
+  app-home-view .rank {
+    flex: 1;
+    min-width: 0;
+  }
+  app-home-view .grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-home-view .recent {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* --- Configurações: esconde o que é só do Windows e arruma os controles --- */
+  app-settings-view .settings {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  app-settings-view .status-options {
+    grid-template-columns: 1fr;
+  }
+  /* "Ao abrir o LoL": rótulo em cima e os botões numa linha que rola de lado,
+     em vez de espremer e quebrar "Lembrar o último" torto. */
+  app-settings-view .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  app-settings-view .row-label {
+    width: auto;
+  }
+  app-settings-view .segmented {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  app-settings-view .segmented::-webkit-scrollbar {
+    display: none;
+  }
+  app-settings-view .segmented button {
+    flex: 1 0 auto;
+    white-space: nowrap;
+  }
+  app-settings-view .about-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* --- Jogar --- */
+  app-play-view .lobby-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-play-view .members {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  }
+  app-play-view .queue-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* --- Seleção e builds --- */
+  app-champ-select-view .layout,
+  app-builds-view .layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-builds-view .grid {
+    max-height: 42dvh !important;
+  }
+  app-build-panel .chips,
+  app-builds-view .chips,
+  app-build-panel .stats,
+  app-builds-view .stats {
+    flex-wrap: wrap;
+  }
+  app-champion-stats {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-champion-stats .source {
+    overflow-wrap: anywhere;
+  }
+  app-champion-stats .icons {
+    gap: 3px !important;
+    flex-wrap: wrap;
+  }
+  app-champion-stats .icons img {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  app-champ-select-panel .grid {
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)) !important;
+  }
+  app-champ-select-panel .bench {
+    flex-wrap: wrap;
+  }
+
+  /* --- Partida ao vivo: jogadores --- */
+  app-live-game-view .match-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  app-live-game-view .tabs {
+    width: 100%;
+    order: 3;
+  }
+  app-live-game-view .tab {
+    flex: 1;
+    flex-direction: row;
+    gap: 6px;
+  }
+  app-live-game-view .teams {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-live-game-view .player-row {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  app-live-game-view .identity {
+    flex: 1 1 150px;
+  }
+  app-live-game-view .rank,
+  app-live-game-view .mastery {
+    width: auto !important;
+    flex: 1 1 42%;
+  }
+  app-live-game-view .rank {
+    padding-left: 46px;
+    text-align: left;
+  }
+  app-live-game-view .encounter-game {
+    grid-template-columns: 48px minmax(0, 1fr) 56px !important;
+  }
+
+  /* --- Partida ao vivo: painel do jogo --- */
+  app-live-dashboard {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-live-dashboard .scoreboard {
+    grid-template-columns: 1fr 1fr;
+  }
+  app-live-dashboard .objectives {
+    grid-row: auto;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+  app-live-dashboard .middle,
+  app-live-dashboard .bottom {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* A tabela rota-a-rota rola de lado sem alargar a página. */
+  app-live-dashboard .lanes {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  app-live-dashboard .lanes-head,
+  app-live-dashboard .matchup {
+    min-width: 860px;
+  }
+
+  /* --- Tier list: cabe sem a coluna de posição nem o total de partidas --- */
+  app-tierlist-view .toolbar {
+    flex-wrap: wrap;
+  }
+  app-tierlist-view .toolbar .input {
+    width: 100%;
+  }
+  app-tierlist-view .chips {
+    flex-wrap: wrap;
+  }
+  app-tierlist-view table {
+    font-size: 13px;
+  }
+  app-tierlist-view th,
+  app-tierlist-view td {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+  app-tierlist-view th:first-child,
+  app-tierlist-view td:first-child,
+  app-tierlist-view th:last-child,
+  app-tierlist-view td:last-child {
+    display: none;
+  }
+
+  /* --- Histórico --- */
+  app-history-view .row {
+    flex-wrap: wrap;
+  }
+  app-history-view .row input {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+  app-history-view .row select {
+    flex: 1 1 auto;
+  }
+  app-history-view .profile {
+    flex-wrap: wrap;
+  }
+  app-history-view .profile .ranks {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  app-player-summary .summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  app-history-view .match-summary {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    row-gap: 8px;
+  }
+  app-history-view .match-summary .items {
+    grid-column: 1 / -1;
+  }
+  app-match-details {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* --- Fim de partida --- */
+  app-postgame-view {
+    min-width: 0;
+  }
+  app-postgame-view .top {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

@@ -1,4 +1,5 @@
-import { ipcMain, shell } from 'electron';
+import { shell } from 'electron';
+import { ipcMain } from '../mobile/rpc';
 import { banChampion, pickChampion, rerollChampion, swapWithBench } from '../lcu/champ-select';
 import type { LcuConnector, LcuState } from '../lcu/connector';
 import type { LcuCredentials } from '../lcu/credentials';

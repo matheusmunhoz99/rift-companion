@@ -1,4 +1,5 @@
-<div class="shell">
+<div class="shell" [class.phone]="android">
+  @if (!android) {
   <aside class="sidebar">
     <div class="brand drag">
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
@@ -59,6 +60,7 @@
       <span class="version">Beta {{ prefs.info()?.version ?? '' }}</span>
     </div>
   </aside>
+  }
 
   <div class="main">
     <header class="titlebar drag">
@@ -106,6 +108,9 @@
     }
 
     <main class="content">
+      @if (android) {
+        <app-android-update />
+      }
       @switch (nav.view()) {
         @case ('home') {
           <app-home-view />
@@ -134,6 +139,59 @@
       }
     </main>
   </div>
+
+  @if (android) {
+    <!-- Celular: barra inferior com o fluxo da partida + "Mais". -->
+    <nav class="tabbar" aria-label="Navegação">
+      @for (item of phoneTabs; track item.view) {
+        <button
+          type="button"
+          class="tab"
+          [class.active]="nav.view() === item.view"
+          [attr.aria-current]="nav.view() === item.view ? 'page' : null"
+          (click)="goPhone(item.view)"
+        >
+          <span class="tab-icon">
+            <app-icon [name]="item.icon" [size]="22" />
+            @if (badge(item.view)) {
+              <span class="tab-dot" aria-label="Agora"></span>
+            }
+          </span>
+          <span class="tab-label">{{ item.short ?? item.label }}</span>
+        </button>
+      }
+      <button
+        type="button"
+        class="tab"
+        [class.active]="moreActive() || moreOpen()"
+        (click)="moreOpen.set(!moreOpen())"
+      >
+        <span class="tab-icon"><app-icon name="layers" [size]="22" /></span>
+        <span class="tab-label">Mais</span>
+      </button>
+    </nav>
+
+    @if (moreOpen()) {
+      <div class="more-backdrop" (click)="moreOpen.set(false)"></div>
+      <div class="more-sheet" role="dialog" aria-label="Mais telas">
+        <div class="more-handle"></div>
+        <div class="more-grid">
+          @for (item of phoneMore; track item.view) {
+            <button
+              type="button"
+              class="more-item"
+              [class.active]="nav.view() === item.view"
+              (click)="goPhone(item.view)"
+            >
+              <app-icon [name]="item.icon" [size]="24" />
+              <span>{{ item.label }}</span>
+            </button>
+          }
+        </div>
+        <span class="more-version">Rift Companion · Beta {{ prefs.info()?.version ?? '' }}</span>
+      </div>
+    }
+  }
 </div>
 
 @if (state().readyCheck; as check) {

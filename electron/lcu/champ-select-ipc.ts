@@ -1,6 +1,7 @@
-import { ipcMain } from 'electron';
+import { ipcMain } from '../mobile/rpc';
 import {
   pickChampion,
+  banChampion,
   rerollChampion,
   respondTrade,
   swapWithBench,
@@ -29,6 +30,7 @@ export function registerChampSelectHandlers(connector: LcuConnector): void {
   );
 
   ipcMain.handle('champ-select:reroll', () => rerollChampion(credentials()));
+  ipcMain.handle('champ-select:ban', (_event, championId: number) => banChampion(credentials(), toId(championId)));
 
   ipcMain.handle('champ-select:trade', (_event, tradeId: number, action: TradeAction) => {
     if (!TRADE_ACTIONS.includes(action)) throw new Error('Ação de troca inválida.');

@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 
+contextBridge.exposeInMainWorld('mobile', {
+  pair: () => ipcRenderer.invoke('mobile:pair'),
+  devices: () => ipcRenderer.invoke('mobile:devices'),
+  approve: (id: string) => ipcRenderer.invoke('mobile:approve', id),
+  revoke: (id: string) => ipcRenderer.invoke('mobile:revoke', id),
+});
+
 function subscribe<T>(channel: string, callback: (value: T) => void): () => void {
   const listener = (_event: IpcRendererEvent, value: T) => callback(value);
   ipcRenderer.on(channel, listener);
@@ -46,6 +53,7 @@ contextBridge.exposeInMainWorld('lobby', {
 });
 
 contextBridge.exposeInMainWorld('champSelect', {
+  ban: (championId: number) => ipcRenderer.invoke('champ-select:ban', championId),
   pick: (championId: number) => ipcRenderer.invoke('champ-select:pick', championId),
   benchSwap: (championId: number) => ipcRenderer.invoke('champ-select:bench-swap', championId),
   reroll: () => ipcRenderer.invoke('champ-select:reroll'),

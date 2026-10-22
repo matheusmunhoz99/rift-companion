@@ -1,4 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
+import { ipcMain, mobileOverride } from './mobile/rpc';
+import { AndroidLink } from './mobile/link';
 import { appLog, startAppLog } from './app-log';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -41,6 +43,7 @@ let overlay: OverlayController | null = null;
 let settings: Settings | null = null;
 let appTray: AppTray | null = null;
 let invisibleMode: InvisibleModeProxy | null = null;
+let androidLink: AndroidLink | null = null;
 let quitting = false;
 
 /**
@@ -109,6 +112,22 @@ function createWindow(): void {
 
   loadRenderer(mainWindow, devOnly('RIFT_VIEW') ? `view=${devOnly('RIFT_VIEW')}${devOnly('RIFT_PLAYER') ? `&player=${encodeURIComponent(devOnly('RIFT_PLAYER')!)}` : ''}${devOnly('RIFT_HASH') ? `&${devOnly('RIFT_HASH')}` : ''}` : '');
   scheduleCapture(mainWindow);
+
+  // Se o renderer crashar (ex.: GPU process do Chromium caiu), recarrega em vez de ficar preto.
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    if (details.reason !== 'clean-exit') {
+      appLog(`renderer crash: ${details.reason} (${details.exitCode})`);
+      mainWindow?.webContents.reload();
+    }
+  });
+
+  mainWindow.on('unresponsive', () => appLog('janela principal parou de responder'));
+  mainWindow.on('responsive', () => appLog('janela principal voltou a responder'));
+
+  // Captura erros do console do renderer para diagnóstico.
+  mainWindow.webContents.on('console-message', (_event, level, message) => {
+    if (level >= 2) appLog(`renderer[${level}]: ${message.slice(0, 500)}`);
+  });
 
   mainWindow.on('close', (event) => {
     if (quitting) return;
@@ -202,10 +221,17 @@ void acquireInstance().then((acquired) => {
     }
   });
   process.on('uncaughtExceptionMonitor', (error) => appLog(`erro não tratado: ${error.stack ?? error.message}`));
+  app.on('child-process-gone', (_event, details) => {
+    appLog(`processo do Chromium caiu: type=${details.type} reason=${details.reason} exitCode=${details.exitCode}`);
+    // Com o processo de GPU reiniciado, a janela principal pode ficar preta até ser repintada.
+    if (details.type === 'GPU') setTimeout(repaintMainWindow, 1_000);
+  });
 
   app.whenReady().then(() => {
     startAppLog(app.getPath('userData'));
     appLog(`app aberto: versão ${app.getVersion()}${app.isPackaged ? '' : ' (desenvolvimento)'}`);
+    const gpu = app.getGPUFeatureStatus();
+    appLog(`gpu: rasterização=${gpu.rasterization} composição=${gpu.gpu_compositing}`);
     // Settings usa app.getPath, que só fica disponível após o ready.
     const prefs = new Settings();
     settings = prefs;
@@ -220,7 +246,11 @@ void acquireInstance().then((acquired) => {
       const preferences = prefs.updatePreferences(changes);
       if (!wasInvisible && preferences.appearOffline) setImmediate(() => onInvisibleEnabled());
       invisible.configure(invisibleState(preferences));
-      overlay?.sync();
+      if ('overlayEnabled' in changes) appLog(`overlay ${preferences.overlayEnabled ? 'ligado' : 'desligado'} pelo usuário`);
+      // Fora do handler do IPC: criar/esconder a janela do overlay no meio da resposta ao renderer pode travar a pintura da janela principal.
+      setTimeout(() => {
+        try { overlay?.sync(); } catch (error) { appLog(`overlay.sync erro: ${error}`); }
+      }, 50);
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
       mainWindow?.webContents.send('prefs:changed', preferences);
@@ -459,6 +489,8 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(directory);
     });
     ipcMain.handle('app:launch-league', () => openLeague(true));
+    mobileOverride('app:launch-league', () => openLeague(false));
+    if (!capturing) androidLink = new AndroidLink(connector);
 
     const demoOverlay = devOnly('RIFT_DEMO_OVERLAY');
     if (demoOverlay) {
@@ -502,6 +534,7 @@ void acquireInstance().then((acquired) => {
     quitting = true;
   });
   app.on('will-quit', () => {
+    androidLink?.stop();
     appLog('app fechando');
     overlay?.dispose();
     invisibleMode?.dispose();
@@ -526,6 +559,26 @@ async function acquireInstance(): Promise<boolean> {
     if (app.requestSingleInstanceLock(data)) return true;
   }
   return false;
+}
+
+/** Força a janela principal a desenhar de novo; se o renderer não responder, recarrega. */
+function repaintMainWindow(): void {
+  const window = mainWindow;
+  if (!window || window.isDestroyed()) return;
+  window.webContents.invalidate();
+  const bounds = window.getBounds();
+  if (!window.isMaximized() && !window.isFullScreen()) {
+    window.setBounds({ ...bounds, width: bounds.width + 1 });
+    window.setBounds(bounds);
+  }
+  void Promise.race([
+    window.webContents.executeJavaScript('1').then(() => true),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3_000)),
+  ]).then((alive) => {
+    if (alive || window.isDestroyed()) return;
+    appLog('janela principal sem resposta depois da queda: recarregando');
+    window.webContents.reload();
+  });
 }
 
 function showMainWindow(): void {

@@ -1,4 +1,5 @@
-import { app, ipcMain } from 'electron';
+import { app } from 'electron';
+import { ipcMain } from '../mobile/rpc';
 import path from 'node:path';
 import type { LcuConnector } from '../lcu/connector';
 import { lcuRequest } from '../lcu/http';

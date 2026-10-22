@@ -29,10 +29,10 @@
   <p class="feedback" [class.error]="message.kind === 'error'">{{ message.text }}</p>
 }
 
-@if (session().pickActionId !== null) {
+@if (session().pickActionId !== null || session().banActionId != null) {
   <section class="block">
     <header class="block-header">
-      <h4>Escolha seu campeão</h4>
+      <h4>{{ session().banActionId != null ? 'Escolha quem banir' : 'Escolha seu campeão' }}</h4>
       <input
         type="search"
         placeholder="Buscar campeão"
@@ -40,7 +40,7 @@
         (input)="search.set($any($event.target).value)"
       />
     </header>
-    @if (session().pickableChampionIds.length === 0) {
+    @if (session().pickableChampionIds.length === 0 && session().banActionId == null) {
       <p class="muted">Carregando opções…</p>
     } @else {
       <div class="grid">

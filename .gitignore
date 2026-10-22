@@ -7,3 +7,5 @@ renderer/.angular/
 .omc/
 release/
 release-check*/
+release-overlay/
+release-android/
