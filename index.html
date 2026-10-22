@@ -1,708 +1,688 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rift Companion</title>
-  <meta name="description" content="App gratuito para League of Legends no PC: build certa para cada partida, runas e itens com 1 clique, partida ao vivo e tier list com dados Mestre+." />
-  <meta property="og:title" content="Rift Companion: app gratuito para League of Legends" />
-  <meta property="og:description" content="Build certa para cada confronto, runas e feitiços com 1 clique, raio-x dos 10 jogadores, overlay, fim de partida, modo invisível e Telegram. Grátis." />
-  <meta property="og:image" content="https://matheusmunhoz99.github.io/rift-companion/docs/screenshots/live.png" />
-  <link rel="icon" href="assets/icon.png" />
-  <style>
-    :root {
-      --bg: #0b0d12;
-      --surface: #12151d;
-      --surface-2: #181c26;
-      --border: #232838;
-      --text: #e9ecf3;
-      --muted: #8b93a7;
-      --accent: #ff4f64;
-      --gold: #ffb35c;
-      --success: #3ecf8e;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      overflow-x: clip;
-      background: var(--bg);
-      color: var(--text);
-      font: 16px/1.6 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    a {
-      color: inherit;
-    }
-
-    .wrap {
-      width: min(1120px, 100% - 32px);
-      margin-inline: auto;
-    }
-
-    /* Topo */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 0;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 18px;
-      text-decoration: none;
-    }
-
-    .brand svg {
-      width: 34px;
-      height: 34px;
-    }
-
-    .topbar nav {
-      display: flex;
-      gap: 20px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .topbar nav a {
-      text-decoration: none;
-    }
-
-    .topbar nav a:hover {
-      color: var(--text);
-    }
-
-    /* Destaque */
-    .hero {
-      position: relative;
-      display: grid;
-      justify-items: center;
-      gap: 18px;
-      padding: clamp(40px, 8vw, 96px) 0 40px;
-      text-align: center;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0 -20% auto;
-      height: 520px;
-      background: radial-gradient(ellipse at 50% 0%, rgba(255, 79, 100, 0.18), transparent 65%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .eyebrow {
-      padding: 4px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    h1 {
-      margin: 0;
-      max-width: 820px;
-      font-size: clamp(32px, 5.5vw, 58px);
-      line-height: 1.08;
-      letter-spacing: -0.02em;
-    }
-
-    h1 em {
-      font-style: normal;
-      background: linear-gradient(90deg, var(--gold), var(--accent));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .lead {
-      max-width: 640px;
-      margin: 0;
-      font-size: clamp(16px, 2vw, 19px);
-      color: var(--muted);
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 26px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-    }
-
-    .btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .btn.primary {
-      border-color: transparent;
-      background: linear-gradient(135deg, #ff6a7c, #d9324a);
-      color: #fff;
-      box-shadow: 0 10px 30px rgba(255, 79, 100, 0.3);
-    }
-
-    .btn.primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 36px rgba(255, 79, 100, 0.42);
-    }
-
-    .btn.phone {
-      border-color: transparent;
-      background: linear-gradient(135deg, #39d98a, #1f9d63);
-      color: #06241a;
-      box-shadow: 0 10px 30px rgba(47, 191, 113, 0.28);
-    }
-
-    .btn.phone:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 36px rgba(47, 191, 113, 0.4);
-    }
-
-    .btn.ghost:hover {
-      background: var(--surface);
-    }
-
-    .fineprint {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .shot {
-      margin: 32px auto 0;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-    }
-
-    .shot img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    /* Seções */
-    section {
-      padding: clamp(48px, 7vw, 88px) 0 0;
-    }
-
-    h2 {
-      margin: 0 0 8px;
-      font-size: clamp(24px, 3.4vw, 34px);
-      letter-spacing: -0.01em;
-    }
-
-    .section-lead {
-      margin: 0 0 28px;
-      color: var(--muted);
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-      gap: 14px;
-    }
-
-    .feature {
-      padding: 22px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface);
-    }
-
-    .feature svg {
-      width: 28px;
-      height: 28px;
-      color: var(--accent);
-    }
-
-    .feature h3 {
-      margin: 12px 0 6px;
-      font-size: 18px;
-    }
-
-    .feature p {
-      margin: 0;
-      font-size: 15px;
-      color: var(--muted);
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-      gap: 14px;
-    }
-
-    .gallery figure {
-      margin: 0;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      background: var(--surface);
-    }
-
-    .gallery img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    .gallery .wide {
-      grid-column: 1 / -1;
-    }
-
-    .gallery figcaption {
-      padding: 10px 14px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .android {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      align-items: center;
-      gap: 32px;
-      padding: 28px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background:
-        radial-gradient(circle at 100% 0%, rgba(47, 191, 113, 0.1), transparent 55%), var(--surface);
-    }
-
-    .android .eyebrow {
-      color: #39d98a;
-    }
-
-    .android h2 {
-      margin: 10px 0 0;
-    }
-
-    .android .btn.phone {
-      margin-top: 18px;
-    }
-
-    .android-shots {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    .android-shots img {
-      width: 33%;
-      max-width: 210px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .android-shots img:nth-child(2) {
-      transform: translateY(-14px) scale(1.05);
-      z-index: 1;
-    }
-
-    @media (max-width: 760px) {
-      .android {
-        grid-template-columns: 1fr;
-        gap: 22px;
-      }
-      .android-shots img:nth-child(2) {
-        transform: none;
-      }
-    }
-
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-      gap: 14px;
-      counter-reset: step;
-      padding: 0;
-      list-style: none;
-    }
-
-    .steps li {
-      position: relative;
-      padding: 22px 22px 22px 64px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .steps li::before {
-      counter-increment: step;
-      content: counter(step);
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      display: grid;
-      place-items: center;
-      width: 30px;
-      height: 30px;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-weight: 700;
-      clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-      background: rgba(255, 79, 100, 0.12);
-    }
-
-    .steps strong {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--text);
-    }
-
-    .note {
-      margin-top: 14px;
-      padding: 14px 18px;
-      border: 1px solid rgba(255, 179, 92, 0.35);
-      border-radius: 10px;
-      background: rgba(255, 179, 92, 0.07);
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .note strong {
-      color: var(--gold);
-    }
-
-    .safety {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-      gap: 10px 28px;
-      padding: 0;
-      list-style: none;
-    }
-
-    .safety li {
-      display: flex;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 15px;
-    }
-
-    .safety svg {
-      flex: none;
-      width: 20px;
-      height: 20px;
-      margin-top: 3px;
-      color: var(--success);
-    }
-
-    .cta {
-      display: grid;
-      justify-items: center;
-      gap: 14px;
-      margin-top: clamp(48px, 7vw, 88px);
-      padding: clamp(32px, 6vw, 56px) 20px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: radial-gradient(ellipse at 50% 0%, rgba(255, 79, 100, 0.16), transparent 70%), var(--surface);
-      text-align: center;
-    }
-
-    footer {
-      padding: 40px 0 48px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    footer .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      margin-bottom: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .topbar nav {
-        display: none;
-      }
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
-</head>
-<body>
-  <!-- Ícones próprios do app (mesmo traço de renderer/src/app/ui/icon.ts). -->
-  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-    <defs>
-      <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M12 3V14.5M7 10 12 15 17 10" /><path d="M4 16.5V20.5H20V16.5" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f1219" />
+    <title>Rift Companion — Menos alt-tab. Mais partida.</title>
+    <meta
+      name="description"
+      content="Builds por confronto, runas em um clique e sua partida ao vivo. Conheça o Rift Companion para Windows e controle o LoL pelo app Android. Grátis e de código aberto."
+    />
+    <meta
+      property="og:title"
+      content="Rift Companion — Menos alt-tab. Mais partida."
+    />
+    <meta
+      property="og:description"
+      content="Do primeiro pick ao último GG. Seu companion para League of Legends, no PC e no Android."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta
+      property="og:image"
+      content="https://matheusmunhoz99.github.io/rift-companion/docs/screenshots/live.png"
+    />
+    <link rel="icon" href="assets/icon.png" />
+    <link
+      rel="preload"
+      href="docs/site/fonts/barlow-semi-condensed-700.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="docs/site/style.css" />
+    <script src="docs/site/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+    <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M4 12h15M13 5l7 7-7 7" />
       </symbol>
-      <symbol id="i-swords" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M4 3.5H7L16 12.5 13 15.5 4 6.5Z" /><path d="M20 3.5H17L8 12.5 11 15.5 20 6.5Z" /><path d="M12.5 18.5 18.5 12.5M11.5 18.5 5.5 12.5" /><path d="M16 17 20.5 21.5M8 17 3.5 21.5" />
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
       </symbol>
-      <symbol id="i-anvil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M2.5 5.5H20.5L21.5 8.5 16.5 10 15 13H9L7.5 10 2.5 8.5Z" /><path d="M9.5 13V16.5M14.5 13V16.5" /><path d="M6.5 20.5 8 16.5H16L17.5 20.5Z" fill="currentColor" stroke="none" />
+      <symbol id="i-windows" viewBox="0 0 24 24">
+        <path
+          d="m3 5 8-1v7H3Zm10-1 8-1v8h-8ZM3 13h8v7l-8-1Zm10 0h8v8l-8-1Z"
+          fill="currentColor"
+          stroke="none"
+        />
       </symbol>
-      <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M2 12 7 6H17L22 12 17 18H7Z" /><path d="M12 8.5 15.5 12 12 15.5 8.5 12Z" fill="currentColor" stroke="none" />
+      <symbol id="i-phone" viewBox="0 0 24 24">
+        <rect x="6" y="2" width="12" height="20" rx="2" />
+        <path d="M10 5h4M11 19h2" />
       </symbol>
-      <symbol id="i-rank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M4.5 20.5 12 16.5 19.5 20.5" /><path d="M4.5 14.5 12 10.5 19.5 14.5" /><path d="M4.5 8.5 12 3.5 19.5 8.5Z" fill="currentColor" stroke="none" />
+      <symbol id="i-swords" viewBox="0 0 24 24">
+        <path
+          d="M4 3.5H7L16 12.5 13 15.5 4 6.5ZM20 3.5H17L8 12.5 11 15.5 20 6.5ZM12.5 18.5 18.5 12.5M11.5 18.5 5.5 12.5M16 17 20.5 21.5M8 17 3.5 21.5"
+        />
       </symbol>
-      <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M5.5 3.5 20 12 5.5 20.5 8.5 12Z" /><path d="M8.5 12 14 12 8 15.5Z" fill="currentColor" stroke="none" />
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path d="M2 12 7 6H17L22 12 17 18H7Z" />
+        <path d="M12 8.5 15.5 12 12 15.5 8.5 12Z" fill="currentColor" />
       </symbol>
-      <symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M5.5 2.5H18.5M5.5 21.5H18.5" /><path d="M7 2.5V6L12 12 7 18V21.5M17 2.5V6L12 12 17 18V21.5" /><path d="M9 21.5 12 17.5 15 21.5Z" fill="currentColor" stroke="none" />
+      <symbol id="i-rank" viewBox="0 0 24 24">
+        <path d="M4.5 20.5 12 16.5 19.5 20.5M4.5 14.5 12 10.5 19.5 14.5" />
+        <path d="M4.5 8.5 12 3.5 19.5 8.5Z" fill="currentColor" />
       </symbol>
-      <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M2.5 5.5H21.5V10.5H2.5Z" /><path d="M2.5 14.5H21.5V20.5H2.5Z" /><path d="M6 8H11" />
+      <symbol id="i-anvil" viewBox="0 0 24 24">
+        <path
+          d="M2.5 5.5H20.5L21.5 8.5 16.5 10 15 13H9L7.5 10 2.5 8.5ZM9.5 13V16.5M14.5 13V16.5M6.5 20.5 8 16.5H16L17.5 20.5Z"
+        />
       </symbol>
-      <symbol id="i-mask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M3 6.5H21V12.5L17 17.5H14L12 15 10 17.5H7L3 12.5Z" /><path d="M6.5 10 9.5 11.5 6.5 11.5Z M17.5 10 14.5 11.5 17.5 11.5Z" fill="currentColor" stroke="none" />
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <path
+          d="M5.5 2.5H18.5M5.5 21.5H18.5M7 2.5V6L12 12 7 18V21.5M17 2.5V6L12 12 17 18V21.5"
+        />
       </symbol>
-      <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M7 3.5H17V10L12 14 7 10Z" /><path d="M7 5.5H3.5V8.5L7 10M17 5.5H20.5V8.5L17 10" /><path d="M12 14V17.5M8 20.5H16V17.5H8Z" /><path d="M12 6 13.5 8 12 10 10.5 8Z" fill="currentColor" stroke="none" />
+      <symbol id="i-chat" viewBox="0 0 24 24">
+        <path d="M3.5 4.5H20.5V16.5H11L6.5 20.5V16.5H3.5ZM8 10.5H16" />
       </symbol>
-      <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
-        <path d="M6.5 2.5H17.5V21.5H6.5Z" /><path d="M10 18.5H14" /><path d="M12 7 15 10 12 13 9 10Z" fill="currentColor" stroke="none" />
+      <symbol id="i-qr" viewBox="0 0 24 24">
+        <path
+          d="M3 3h6v6H3ZM15 3h6v6h-6ZM3 15h6v6H3ZM15 15h3v3h3v3h-6ZM21 12v3M12 3v3M12 12H6M12 18v3"
+        />
       </symbol>
-      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+      <symbol id="i-check" viewBox="0 0 24 24">
         <path d="M3.5 12.5 9.5 18.5 20.5 5.5" />
       </symbol>
-      <symbol id="logo" viewBox="0 0 32 32">
-        <path d="M16 1.8 28.3 8.9V23.1L16 30.2 3.7 23.1V8.9Z" fill="#141821" stroke="url(#logo-edge)" stroke-width="1.6" />
-        <path d="M16 6.5 23 16 16 25.5 9 16Z" fill="url(#logo-core)" />
-        <path d="M16.5 8.2 18.7 11.1" stroke="#ffd1d7" stroke-width="0.8" opacity="0.6" />
-        <path d="M8.6 12.6 23.4 19.4" stroke="#141821" stroke-width="1.8" />
+      <symbol id="i-expand" viewBox="0 0 24 24">
+        <path d="M14 3h7v7M21 3l-7 7M10 21H3v-7M3 21l7-7" />
       </symbol>
-      <linearGradient id="logo-edge" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#ffb35c" /><stop offset="1" stop-color="#e8455a" />
-      </linearGradient>
-      <linearGradient id="logo-core" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ff7184" /><stop offset="1" stop-color="#c3233c" />
-      </linearGradient>
-    </defs>
-  </svg>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M6 18 18 6" />
+      </symbol>
+    </svg>
 
-  <div class="wrap">
-    <header class="topbar">
-      <a class="brand" href="#"><svg><use href="#logo" /></svg><span>Rift <strong>Companion</strong></span></a>
-      <nav>
-        <a href="#recursos">Recursos</a>
-        <a href="#instalar">Como instalar</a>
-        <a href="https://github.com/matheusmunhoz99/rift-companion">GitHub</a>
-      </nav>
+    <header class="header">
+      <div class="wrap header-inner">
+        <a class="brand" href="#" aria-label="Rift Companion — início"
+          ><img src="assets/icon.png" width="34" height="34" alt="" /><span
+            >RIFT<span class="brand-light"> COMPANION</span></span
+          ></a
+        >
+        <nav aria-label="Navegação principal">
+          <a href="#recursos">O app</a><a href="#android">No celular</a
+          ><a href="#duvidas">Dúvidas</a>
+        </nav>
+        <a class="button small" href="#download"
+          >Baixar grátis <svg><use href="#i-download" /></svg
+        ></a>
+      </div>
     </header>
 
-    <main>
-      <div class="hero">
-        <span class="eyebrow">Grátis · Windows 10 e 11 · Android · Beta</span>
-        <h1>O app que sabe <em>contra quem</em> você joga e te diz o que comprar</h1>
-        <p class="lead">
-          Build certa para cada confronto, runas e feitiços com 1 clique, raio-x dos 10 jogadores, overlay em tempo real,
-          análise de fim de partida, modo invisível e o seu LoL no PC e no <strong>celular</strong>.
-        </p>
-        <div class="actions">
-          <a class="btn primary" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe">
-            <svg><use href="#i-download" /></svg> Baixar para Windows
-          </a>
-          <a class="btn phone" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">
-            <svg><use href="#i-phone" /></svg> Baixar APK Android
-          </a>
-          <a class="btn ghost" href="#recursos">Ver recursos</a>
+    <main id="conteudo">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="status-dot"></span> SEU COMPANION PARA LEAGUE OF
+            LEGENDS
+          </p>
+          <h1 id="hero-title">
+            Menos alt-tab.<br />Mais <span>partida.</span>
+          </h1>
+          <p class="hero-description">
+            A build do seu confronto. As runas em um clique. O jogo inteiro na
+            sua mão — no PC ou no celular.
+          </p>
+          <div class="hero-actions">
+            <a
+              class="button primary"
+              href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"
+              ><svg><use href="#i-windows" /></svg> Baixar para Windows
+              <svg class="end-icon"><use href="#i-arrow" /></svg
+            ></a>
+            <a
+              class="text-link"
+              href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk"
+              ><svg><use href="#i-phone" /></svg> Baixar APK Android
+              <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <p class="hero-note">Grátis. Sem anúncios. Código aberto.</p>
         </div>
-        <span class="fineprint">Sem cadastro e sem anúncios. Abriu o cliente do LoL, ele conecta sozinho.</span>
-        <div class="shot">
-          <img src="docs/screenshots/live.png" alt="Partida ao vivo no Rift Companion" width="1320" height="840" />
+        <div class="hero-visual">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+          <div class="visual-label">
+            <span class="tiny-square"></span> VISÃO DE JOGO, FORA DO JOGO.
+          </div>
+          <div class="desktop-preview">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true"
+                ><i></i><i></i><i></i></span
+              ><span>Rift Companion</span
+              ><span class="live-label"
+                ><span class="status-dot"></span> PARTIDA AO VIVO</span
+              >
+            </div>
+            <img
+              src="docs/screenshots/live.png"
+              width="1320"
+              height="840"
+              alt="Rift Companion no Windows com placar, itens dos jogadores e objetivos da partida"
+              fetchpriority="high"
+            />
+          </div>
+          <div class="hero-phone phone-frame">
+            <img
+              src="docs/screenshots/phone-live.png"
+              width="412"
+              height="915"
+              alt="A mesma partida acompanhada no app Android"
+            />
+          </div>
+          <div class="sync-label">
+            <svg><use href="#i-qr" /></svg
+            ><span
+              >Seu PC. Seu celular.<br /><strong>O mesmo Rift.</strong></span
+            >
+          </div>
+          <span class="screen-caption">Capturas reais do aplicativo</span>
+        </div>
+      </section>
+
+      <div class="platform-strip">
+        <div class="wrap strip-inner">
+          <span>DO LOBBY AO GG.</span>
+          <span
+            ><svg><use href="#i-swords" /></svg> Builds por confronto</span
+          >
+          <span
+            ><svg><use href="#i-anvil" /></svg> Runas em 1 clique</span
+          >
+          <span
+            ><svg><use href="#i-eye" /></svg> Partida ao vivo</span
+          >
+          <span
+            ><svg><use href="#i-phone" /></svg> PC + Android</span
+          >
         </div>
       </div>
 
-      <section id="recursos">
-        <h2>Tudo o que você precisa, do lobby ao fim da partida</h2>
-        <p class="section-lead">Dados de milhares de partidas ranqueadas de alto elo do BR, EUW e KR, sempre no patch atual.</p>
-        <div class="features">
-          <article class="feature">
-            <svg><use href="#i-swords" /></svg>
-            <h3>Build por confronto</h3>
-            <p>Detecta o seu oponente de rota e o tipo de dano do time inimigo, mostra os counters, avisa quando a composição está desequilibrada e traz os itens que Mestres+ compram naquele confronto.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-anvil" /></svg>
-            <h3>Runas e feitiços com 1 clique</h3>
-            <p>Importa a página de runas, os feitiços e o conjunto de itens direto no cliente, na seleção ou pelo celular. Nada de copiar build de site.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-eye" /></svg>
-            <h3>Raio-x da partida ao vivo</h3>
-            <p>Elo, maestria e últimas partidas dos 10 jogadores, duos e grupos, feitiços com recarga, chance de vitória e quem já jogou com você ou contra.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-layers" /></svg>
-            <h3>Overlay em tempo real</h3>
-            <p>Sobre o jogo, no modo sem bordas: KDA, CS e ouro, diferença para o seu oponente, CS contra a média Mestre+, qual habilidade evoluir e os timers dos objetivos.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-trophy" /></svg>
-            <h3>Fim de partida</h3>
-            <p>Nota de 0 a 10 para cada jogador, pódio, ranking, gráficos de dano, ouro, CS e visão, e os destaques da partida.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-mask" /></svg>
-            <h3>Modo invisível</h3>
-            <p>Apareça offline, no celular ou online sem perder o chat de sala nem os convites. Troque pela bandeja, pelo Telegram ou pelo contato Rift Companion no chat do LoL.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-phone" /></svg>
-            <h3>Seu LoL no Telegram</h3>
-            <p>Entre na fila, aceite a partida, escolha e bana campeões, troque no ARAM e importe runas pelo celular. Abra e feche o LoL de qualquer lugar da casa.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-rank" /></svg>
-            <h3>Tier list e builds Mestre+</h3>
-            <p>Os campeões mais fortes de cada rota e a build de qualquer campeão contra qualquer oponente, sempre no patch atual.</p>
-          </article>
-          <article class="feature">
-            <svg><use href="#i-hourglass" /></svg>
-            <h3>Fila, aceite e histórico</h3>
-            <p>Crie a sala, escolha as rotas, convide amigos, aceite a partida automaticamente e veja o histórico de qualquer jogador pelo Riot ID.</p>
-          </article>
-        </div>
-      </section>
-
-      <section>
-        <div class="gallery">
-          <figure class="wide">
-            <img src="docs/screenshots/overlay.png" alt="Overlay sobre o jogo" width="980" height="84" loading="lazy" />
-            <figcaption>Overlay no topo do jogo: placar, CS contra a média Mestre+, diferença para o oponente, próxima habilidade e objetivos.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/players.png" alt="Jogadores da partida ao vivo" width="1320" height="840" loading="lazy" />
-            <figcaption>Partida ao vivo: elo, maestria, duos, feitiços e quem já jogou com você.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/champselect.png" alt="Build do confronto na seleção de campeões" width="1320" height="840" loading="lazy" />
-            <figcaption>Seleção de campeões: oponente detectado, composição, counters e itens do confronto.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/postgame.png" alt="Análise de fim de partida" width="1320" height="840" loading="lazy" />
-            <figcaption>Fim de partida: nota de 0 a 10, pódio, ranking, gráficos e destaques.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/builds.png" alt="Builds e runas de qualquer campeão" width="1320" height="840" loading="lazy" />
-            <figcaption>Builds e runas Mestre+ de qualquer campeão, rota e oponente.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/tierlist.png" alt="Tier list por rota" width="1320" height="840" loading="lazy" />
-            <figcaption>Tier list por rota com dados Mestre+ do patch atual.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/screenshots/history.png" alt="Histórico de qualquer jogador" width="1320" height="840" loading="lazy" />
-            <figcaption>Histórico de qualquer jogador pelo Riot ID.</figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <section id="android" class="android">
-        <div class="android-text">
-          <span class="eyebrow">Novo · app Android</span>
-          <h2>O seu LoL também no celular</h2>
-          <p class="section-lead">
-            Vincule o celular ao PC lendo um QR Code, como no WhatsApp Web. Crie sala, entre na fila, aceite a
-            partida, bane e escolhe campeões, troque no ARAM, importe runas e acompanhe a partida ao vivo — tudo
-            pelo celular, com o mesmo visual do app.
+      <section id="recursos" class="section wrap">
+        <div class="section-heading reveal">
+          <div>
+            <p class="eyebrow">01 / EM CADA FASE DO JOGO</p>
+            <h2>
+              Da escolha do campeão<br />ao último
+              <span class="accent">GG.</span>
+            </h2>
+          </div>
+          <p>
+            Não é só uma lista de builds.<br />É contexto para o que está
+            acontecendo<br class="desktop-break" />
+            na sua partida.
           </p>
-          <p class="note">
-            O PC continua sendo quem fala com o LoL; o celular só mostra e comanda. A senha do LoL e a chave da Riot
-            <strong>nunca vão ao celular</strong>. Até 5 aparelhos, cada um aprovado no PC. O app se atualiza sozinho.
+        </div>
+        <div class="showcase reveal">
+          <div
+            class="stage-tabs"
+            role="tablist"
+            aria-label="Explore as telas do aplicativo"
+          >
+            <button
+              id="tab-select"
+              role="tab"
+              aria-selected="true"
+              aria-controls="stage-panel"
+              data-stage="select"
+            >
+              <span class="tab-number">01</span
+              ><svg><use href="#i-swords" /></svg
+              ><span>Antes do jogo<small>Entre com um plano.</small></span>
+            </button>
+            <button
+              id="tab-live"
+              role="tab"
+              aria-selected="false"
+              aria-controls="stage-panel"
+              tabindex="-1"
+              data-stage="live"
+            >
+              <span class="tab-number">02</span><svg><use href="#i-eye" /></svg
+              ><span
+                >Durante a partida<small>Leia o que está rolando.</small></span
+              >
+            </button>
+            <button
+              id="tab-post"
+              role="tab"
+              aria-selected="false"
+              aria-controls="stage-panel"
+              tabindex="-1"
+              data-stage="post"
+            >
+              <span class="tab-number">03</span><svg><use href="#i-rank" /></svg
+              ><span>Depois do GG<small>Entenda como foi.</small></span>
+            </button>
+          </div>
+          <div
+            id="stage-panel"
+            role="tabpanel"
+            aria-labelledby="tab-select"
+            tabindex="0"
+          >
+            <div class="stage-copy">
+              <div>
+                <h3 id="stage-title">A build muda. O confronto também.</h3>
+                <p id="stage-description">
+                  Veja o seu oponente, a composição dos times e sugestões de
+                  itens. Importe runas e feitiços direto no cliente, sem ficar
+                  copiando de outra aba.
+                </p>
+              </div>
+              <span class="stage-tag" id="stage-tag">SELEÇÃO DE CAMPEÕES</span>
+            </div>
+            <a
+              class="stage-image zoomable"
+              href="docs/screenshots/champselect.png"
+              aria-label="Ampliar captura da seleção de campeões"
+              ><img
+                id="stage-image"
+                src="docs/screenshots/champselect.png"
+                width="1320"
+                height="840"
+                alt="Seleção de campeões com composição dos times, counters e build do confronto"
+                loading="lazy"
+              /><span class="expand-label"
+                ><svg><use href="#i-expand" /></svg> Ampliar tela</span
+              ></a
+            >
+          </div>
+        </div>
+        <div class="overlay-note reveal">
+          <svg><use href="#i-eye" /></svg>
+          <div>
+            <strong>Olho no jogo, informação por perto.</strong>
+            <p>
+              O overlay reúne placar, farm e objetivos sobre a partida, no modo
+              sem bordas.
+            </p>
+          </div>
+          <img
+            src="docs/screenshots/overlay.png"
+            width="980"
+            height="84"
+            alt="Barra compacta do overlay com KDA, farm e objetivos"
+            loading="lazy"
+          />
+        </div>
+      </section>
+
+      <section id="android" class="mobile-section">
+        <div class="wrap mobile-grid">
+          <div class="mobile-art reveal">
+            <span class="mobile-watermark" aria-hidden="true"
+              >RIFT<br />ON THE GO.</span
+            >
+            <div class="phone-frame phone-back">
+              <img
+                src="docs/screenshots/phone-select.png"
+                width="412"
+                height="915"
+                alt="Escolha de campeão e composição do time pelo Android"
+                loading="lazy"
+              />
+            </div>
+            <div class="phone-frame phone-front">
+              <img
+                src="docs/screenshots/phone-home.png"
+                width="412"
+                height="915"
+                alt="Tela inicial do Rift Companion no Android com acesso ao cliente conectado"
+                loading="lazy"
+              />
+            </div>
+            <div class="pairing-chip">
+              <svg><use href="#i-qr" /></svg> VINCULADO POR QR CODE
+              <span class="status-dot"></span>
+            </div>
+          </div>
+          <div class="mobile-copy reveal">
+            <p class="eyebrow">
+              <svg><use href="#i-phone" /></svg> 02 / RIFT COMPANION PARA
+              ANDROID
+            </p>
+            <h2>
+              A fila chamou.<br />Seu celular
+              <span class="accent">atende.</span>
+            </h2>
+            <p>
+              Foi pegar uma água? Aceite a partida pelo celular. Crie a sala,
+              escolha seu campeão e importe as runas antes de voltar para a
+              cadeira.
+            </p>
+            <div class="mobile-features">
+              <span
+                ><svg><use href="#i-check" /></svg> Sala, fila e aceite</span
+              ><span
+                ><svg><use href="#i-check" /></svg> Picks, bans e ARAM</span
+              ><span
+                ><svg><use href="#i-check" /></svg> Runas e feitiços</span
+              ><span
+                ><svg><use href="#i-check" /></svg> Placar e estatísticas ao
+                vivo</span
+              >
+            </div>
+            <ol class="pairing-steps">
+              <li>
+                <span>1</span>
+                <div>
+                  <strong>Gere o QR Code no PC</strong>
+                  <p>Configurações → Conectar celular Android.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Leia com o app no celular</strong>
+                  <p>Toque em “Ler QR Code do PC”.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Confirme o aparelho no Windows</strong>
+                  <p>Pronto. O PC executa, o celular comanda.</p>
+                </div>
+              </li>
+            </ol>
+            <a
+              class="button primary"
+              href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk"
+              ><svg><use href="#i-phone" /></svg> Baixar APK Android
+              <svg class="end-icon"><use href="#i-download" /></svg
+            ></a>
+            <p class="fineprint">
+              Android 8 ou superior. Mantenha o PC e o Rift Companion ligados e
+              conectados à internet.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section wrap extras">
+        <div class="section-heading reveal">
+          <div>
+            <p class="eyebrow">03 / OS DETALHES FAZEM DIFERENÇA</p>
+            <h2>Seu jeito de jogar.<br />Seu jeito de usar.</h2>
+          </div>
+          <p>
+            Ferramentas para preparar a próxima partida<br
+              class="desktop-break"
+            />
+            e deixar o app do seu jeito.
           </p>
-          <a class="btn phone" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">
-            <svg><use href="#i-phone" /></svg> Baixar APK Android
-          </a>
-          <span class="fineprint">Android 8 ou superior. Fora da Play Store: o Android pede para permitir a instalação.</span>
         </div>
-        <div class="android-shots">
-          <img src="docs/screenshots/phone-live.png" alt="Partida ao vivo no app Android" loading="lazy" />
-          <img src="docs/screenshots/phone-select.png" alt="Seleção de campeões no app Android" loading="lazy" />
-          <img src="docs/screenshots/phone-home.png" alt="Tela inicial no app Android" loading="lazy" />
+        <div class="feature-grid">
+          <article class="feature feature-build reveal">
+            <div class="feature-heading">
+              <svg><use href="#i-anvil" /></svg><span>PREPARAÇÃO</span>
+            </div>
+            <h3>Seu main merece<br />mais que uma build genérica.</h3>
+            <p>
+              Explore builds por rota e oponente, além da tier list com dados de
+              partidas Mestre+.
+            </p>
+            <a
+              class="feature-shot zoomable"
+              href="docs/screenshots/builds.png"
+              aria-label="Ampliar tela de builds"
+              ><img
+                src="docs/screenshots/builds.png"
+                width="1320"
+                height="840"
+                alt="Pesquisa de builds e runas por campeão, rota e confronto"
+                loading="lazy"
+              /><span class="expand-label"
+                ><svg><use href="#i-expand" /></svg> Ver tela</span
+              ></a
+            >
+          </article>
+          <article class="feature feature-presence reveal">
+            <div class="feature-heading">
+              <svg><use href="#i-eye" /></svg><span>PRESENÇA NO CHAT</span>
+            </div>
+            <h3>Hoje, só mais<br />uma solo.</h3>
+            <p>
+              Quer jogar quieto? O modo invisível permite aparecer offline para
+              os amigos, mantendo o chat da sala e os convites.
+            </p>
+            <div
+              class="presence-preview"
+              aria-label="Exemplo dos modos de presença disponíveis"
+            >
+              <img src="assets/icon.png" width="42" height="42" alt="" />
+              <div>
+                <strong>Rift Companion</strong
+                ><span>Você escolhe como aparecer.</span>
+              </div>
+            </div>
+            <div class="presence-options">
+              <span class="selected"><i></i> Offline</span
+              ><span><i></i> Celular</span><span><i></i> Online</span>
+            </div>
+            <p class="feature-footnote">Ative nas configurações do app.</p>
+          </article>
+          <article class="feature compact reveal">
+            <svg><use href="#i-history" /></svg>
+            <div>
+              <h3>Seu histórico tem história.</h3>
+              <p>
+                Consulte partidas por Riot ID e reveja os números além do
+                vitória ou derrota.
+              </p>
+            </div>
+            <a
+              class="icon-link zoomable"
+              href="docs/screenshots/history.png"
+              aria-label="Ver captura do histórico de partidas"
+              ><svg><use href="#i-arrow" /></svg
+            ></a>
+          </article>
+          <article class="feature compact reveal">
+            <svg><use href="#i-chat" /></svg>
+            <div>
+              <h3>Prefere o Telegram? Também tem.</h3>
+              <p>
+                Conecte o bot nas configurações e acesse o painel da fila e da
+                seleção pelo chat.
+              </p>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section id="instalar">
-        <h2>Como instalar</h2>
-        <p class="section-lead">Não precisa instalar nada além do próprio app.</p>
-        <ol class="steps">
-          <li><strong>Baixe o app</strong>Clique em "Baixar para Windows" e salve o arquivo <code>RiftCompanion.exe</code>.</li>
-          <li><strong>Abra o arquivo</strong>Ele roda direto, sem instalador. Se quiser, coloque numa pasta fixa e crie um atalho.</li>
-          <li><strong>Abra o LoL</strong>Com o cliente aberto e logado, o app conecta sozinho. Ele se atualiza sozinho também.</li>
-        </ol>
-        <p class="note">
-          <strong>O Windows mostrou "O Windows protegeu o computador"?</strong> Esse aviso aparece com apps novos que
-          ainda não têm reputação na Microsoft. Clique em <em>Mais informações</em> e depois em <em>Executar assim mesmo</em>.
-          O código do app é aberto e pode ser conferido no GitHub.
-        </p>
-        <p class="note">
-          <strong>No celular?</strong> Baixe o <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">APK Android</a>,
-          instale (o Android pede para permitir a instalação, é só autorizar) e, no PC, vá em
-          <em>Configurações › Conectar celular Android › Gerar QR Code</em>. No app, toque em <em>Ler QR Code do PC</em> e confirme o aparelho no PC.
+      <section id="download" class="download-section wrap">
+        <div class="download-heading reveal">
+          <img src="assets/icon.png" width="64" height="64" alt="" />
+          <p class="eyebrow">SEU PRÓXIMO DUO NÃO OCUPA UMA VAGA.</p>
+          <h2>Te vejo no <span class="accent">Rift.</span></h2>
+          <p>Escolha sua plataforma. O resto a gente simplifica.</p>
+        </div>
+        <div class="download-grid reveal">
+          <article class="download-card windows-card">
+            <div class="download-platform">
+              <svg><use href="#i-windows" /></svg><span>O APP PRINCIPAL</span
+              ><span class="file-type">.EXE</span>
+            </div>
+            <h3>Rift no seu PC.</h3>
+            <p>
+              Builds, runas, partida ao vivo, overlay e a conexão com o seu
+              celular.
+            </p>
+            <a
+              class="button primary"
+              href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"
+              >Baixar para Windows <svg><use href="#i-download" /></svg></a
+            ><span class="download-meta"
+              >Windows 10 / 11 · 64 bits · Portátil</span
+            >
+            <div class="install-note">
+              <strong>Baixou, abriu, conectou.</strong>
+              <p>
+                Salve o .exe numa pasta, abra o Rift Companion e entre no
+                cliente do LoL.
+              </p>
+            </div>
+          </article>
+          <article class="download-card">
+            <div class="download-platform">
+              <svg><use href="#i-phone" /></svg><span>SEU CONTROLE REMOTO</span
+              ><span class="file-type">.APK</span>
+            </div>
+            <h3>Rift na sua mão.</h3>
+            <p>
+              O visual que você conhece. A fila, a seleção e os dados da partida
+              onde você estiver.
+            </p>
+            <a
+              class="button secondary"
+              href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk"
+              >Baixar para Android <svg><use href="#i-download" /></svg></a
+            ><span class="download-meta"
+              >Android 8+ · APK direto · Requer o app no PC</span
+            >
+            <div class="install-note">
+              <strong>Instale. Escaneie. Confirme.</strong>
+              <p>
+                O APK é instalado fora da Play Store. Autorize a instalação
+                somente se confiar na origem.
+              </p>
+            </div>
+          </article>
+        </div>
+        <p class="download-disclaimer">
+          Em beta e em evolução. Encontrou algo estranho?
+          <a href="https://github.com/matheusmunhoz99/rift-companion/issues"
+            >Conte no GitHub <span aria-hidden="true">↗</span></a
+          >
         </p>
       </section>
 
-      <section>
-        <h2>Seguro para a sua conta</h2>
-        <p class="section-lead">O Rift Companion segue as regras da Riot para apps de terceiros.</p>
-        <ul class="safety">
-          <li><svg><use href="#i-check" /></svg>Não injeta nada, não lê a memória e não altera arquivos do jogo. O overlay é uma janela separada.</li>
-          <li><svg><use href="#i-check" /></svg>Usa só as APIs oficiais da Riot e do cliente.</li>
-          <li><svg><use href="#i-check" /></svg>Não mostra informação escondida, como timers da selva inimiga.</li>
-          <li><svg><use href="#i-check" /></svg>Não lê senhas e não coleta dados pessoais.</li>
-        </ul>
+      <section id="duvidas" class="section wrap faq-grid">
+        <div class="reveal">
+          <p class="eyebrow">ANTES DO PRIMEIRO JOGO</p>
+          <h2>Sem dúvida<br />na hora do pick.</h2>
+          <a
+            class="text-link"
+            href="https://github.com/matheusmunhoz99/rift-companion"
+            >Conhecer o projeto <svg><use href="#i-arrow" /></svg
+          ></a>
+        </div>
+        <div class="faq-list reveal">
+          <details>
+            <summary>É grátis mesmo?<span aria-hidden="true">+</span></summary>
+            <p>
+              Sim. O Rift Companion é gratuito, sem anúncios e com código
+              aberto. Você pode conferir o projeto e acompanhar as mudanças no
+              GitHub.
+            </p>
+          </details>
+          <details>
+            <summary>
+              O Android funciona sem o computador?<span aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              Para controlar o LoL e acompanhar a sessão, o PC precisa estar
+              ligado, conectado à internet e com o Rift Companion aberto. O
+              celular envia comandos ao computador vinculado; o jogo continua
+              rodando no Windows. O app mostra dados da partida, não uma
+              transmissão de vídeo.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Preciso colocar minha senha da Riot no celular?<span
+                aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              Não. A vinculação acontece por QR Code e precisa ser aprovada no
+              PC. Não informe sua senha da Riot no app Android. Use a versão
+              atual do Rift Companion no Windows para ter a opção de vinculação
+              nas configurações.
+            </p>
+          </details>
+          <details>
+            <summary>
+              O sistema mostrou um aviso ao instalar. E agora?<span
+                aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              O Windows pode mostrar um aviso de reputação para o executável, e
+              o Android pede autorização para instalar um APK fora da Play
+              Store. Confira a origem do download e só continue se confiar no
+              arquivo. Não é necessário desativar o antivírus. Se tiver dúvidas,
+              consulte o código e os relatos no GitHub.
+            </p>
+          </details>
+          <details>
+            <summary>
+              É um aplicativo oficial da Riot Games?<span aria-hidden="true"
+                >+</span
+              >
+            </summary>
+            <p>
+              Não. É um projeto independente, não endossado pela Riot Games. O
+              app usa integrações com o cliente e APIs para apresentar dados e
+              executar comandos. Isso não representa aprovação da Riot nem
+              garantia contra mudanças nas regras ou nas integrações.
+            </p>
+          </details>
+        </div>
       </section>
-
-      <div class="cta">
-        <h2>Pronto para subir de elo?</h2>
-        <a class="btn primary" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe">
-          <svg><use href="#i-download" /></svg> Baixar o Rift Companion
-        </a>
-        <span class="fineprint">Grátis · Windows 10 e 11 · cerca de 100 MB</span>
-      </div>
     </main>
 
-    <footer>
-      <div class="links">
-        <a href="https://github.com/matheusmunhoz99/rift-companion">Código no GitHub</a>
-        <a href="https://github.com/matheusmunhoz99/rift-companion/blob/main/PRIVACY.md">Privacidade</a>
-        <a href="https://github.com/matheusmunhoz99/rift-companion/blob/main/README.en.md">English</a>
-        <a href="https://github.com/matheusmunhoz99/rift-companion/blob/main/README.es.md">Español</a>
-        <a href="https://github.com/matheusmunhoz99/rift-companion/issues">Sugestões e problemas</a>
+    <footer class="footer">
+      <div class="wrap">
+        <div class="footer-top">
+          <a class="brand" href="#"
+            ><img src="assets/icon.png" width="32" height="32" alt="" /><span
+              >RIFT<span class="brand-light"> COMPANION</span></span
+            ></a
+          ><span>Feito para quem sempre diz “só mais uma”.</span
+          ><a class="text-link" href="#conteudo">Voltar ao topo ↑</a>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/matheusmunhoz99/rift-companion">GitHub</a
+          ><a
+            href="https://github.com/matheusmunhoz99/rift-companion/blob/main/PRIVACY.md"
+            >Privacidade</a
+          ><a href="https://github.com/matheusmunhoz99/rift-companion/issues"
+            >Feedback e suporte</a
+          ><a
+            href="https://github.com/matheusmunhoz99/rift-companion/blob/main/README.en.md"
+            lang="en"
+            >English</a
+          ><a
+            href="https://github.com/matheusmunhoz99/rift-companion/blob/main/README.es.md"
+            lang="es"
+            >Español</a
+          >
+        </div>
+        <p class="legal">
+          O Rift Companion não é endossado pela Riot Games e não reflete as
+          opiniões da Riot Games ou de qualquer pessoa oficialmente envolvida na
+          produção ou gestão de propriedades da Riot Games. Riot Games e todas
+          as propriedades associadas são marcas comerciais ou marcas registradas
+          da Riot Games, Inc.
+        </p>
       </div>
-      <p>
-        O Rift Companion não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de qualquer pessoa
-        oficialmente envolvida na produção ou gestão de propriedades da Riot Games. Riot Games e todas as propriedades
-        associadas são marcas comerciais ou marcas registradas da Riot Games, Inc.
-      </p>
     </footer>
-  </div>
-</body>
+    <dialog id="image-dialog" aria-label="Captura ampliada do aplicativo">
+      <button class="dialog-close" aria-label="Fechar captura ampliada">
+        <svg><use href="#i-close" /></svg></button
+      ><img id="dialog-image" alt="" />
+      <p id="dialog-caption"></p>
+    </dialog>
+  </body>
 </html>
