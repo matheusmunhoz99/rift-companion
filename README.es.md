@@ -27,6 +27,8 @@
 <p align="center">
   <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"><img alt="Descargar para Windows" src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Descargar%20para%20Windows-e84057?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiPjxwYXRoIGQ9Ik0xMiAzVjE0LjVNNyAxMCAxMiAxNSAxNyAxME00IDE2LjVWMjAuNUgyMFYxNi41Ii8+PC9zdmc+" /></a>
   &nbsp;
+  <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk"><img alt="Descargar para Android" src="https://img.shields.io/badge/%F0%9F%93%B1%20Descargar%20APK%20Android-2fbf71?style=for-the-badge" /></a>
+  &nbsp;
   <a href="https://matheusmunhoz99.github.io/rift-companion/"><img alt="Sitio web" src="https://img.shields.io/badge/Sitio-del%20app-181c26?style=for-the-badge" /></a>
 </p>
 
@@ -109,6 +111,21 @@ Solo los momentos importantes suenan en el móvil: partida encontrada, tu turno 
 **Cómo conectar:** en el app, ve a **Configurações → Avisos no Telegram → Conectar Telegram** y toca **Iniciar** en el bot. El app recuerda la conexión, incluso después de cerrarlo y abrirlo de nuevo. Envía `/painel` en cualquier momento para traer el panel.
 
 **Privado de verdad:** cada PC conectado recibe un código propio, ligado a tu chat. Tus mensajes y botones nunca llegan a otra persona, y nadie más que tú controla tu LoL.
+
+## También en el móvil (app Android)
+
+Además de Telegram, hay un **app para Android** con las mismas pantallas que el app de Windows. **Vinculas el móvil al PC leyendo un código QR** (como en WhatsApp Web) y controlas tu LoL desde cualquier lugar:
+
+- **Crear sala, elegir roles, entrar en cola y aceptar la partida** desde el móvil.
+- **Banear y elegir campeones** en la selección, **cambiar en ARAM** e **importar runas** con un toque.
+- **Seguir la partida en vivo** (los dos equipos, hechizos, objetivos) y la **pantalla de final de partida**.
+- **Tier list, builds e historial** de cualquier jugador, con un diseño propio de móvil.
+
+El PC sigue siendo quien habla con el LoL: el móvil solo muestra y comanda. La contraseña local del LoL y la clave de Riot **nunca llegan al móvil** — el servidor solo intermedia los comandos por HTTPS. Hasta 5 dispositivos, cada uno aprobado en el PC y revocable en cualquier momento. El app **se actualiza solo**: cuando sale una versión nueva, te avisa y la instala.
+
+**Cómo vincular:** abre el Rift Companion en Windows, ve a **Configurações → Conectar celular Android → Gerar QR Code**, abre el app en el móvil y toca **Ler QR Code do PC**. Después solo confirma el dispositivo en el PC.
+
+> **Descargar:** [RiftCompanion.apk](https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk) (Android 8 o superior). Al ser una app fuera de Play Store, Android te pide permitir la instalación; solo acéptalo.
 
 ## Radiografía de la partida en vivo
 

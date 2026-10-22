@@ -171,6 +171,18 @@
       box-shadow: 0 14px 36px rgba(255, 79, 100, 0.42);
     }
 
+    .btn.phone {
+      border-color: transparent;
+      background: linear-gradient(135deg, #39d98a, #1f9d63);
+      color: #06241a;
+      box-shadow: 0 10px 30px rgba(47, 191, 113, 0.28);
+    }
+
+    .btn.phone:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 36px rgba(47, 191, 113, 0.4);
+    }
+
     .btn.ghost:hover {
       background: var(--surface);
     }
@@ -268,6 +280,59 @@
       padding: 10px 14px;
       font-size: 14px;
       color: var(--muted);
+    }
+
+    .android {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 32px;
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(47, 191, 113, 0.1), transparent 55%), var(--surface);
+    }
+
+    .android .eyebrow {
+      color: #39d98a;
+    }
+
+    .android h2 {
+      margin: 10px 0 0;
+    }
+
+    .android .btn.phone {
+      margin-top: 18px;
+    }
+
+    .android-shots {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .android-shots img {
+      width: 33%;
+      max-width: 210px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .android-shots img:nth-child(2) {
+      transform: translateY(-14px) scale(1.05);
+      z-index: 1;
+    }
+
+    @media (max-width: 760px) {
+      .android {
+        grid-template-columns: 1fr;
+        gap: 22px;
+      }
+      .android-shots img:nth-child(2) {
+        transform: none;
+      }
     }
 
     .steps {
@@ -453,15 +518,18 @@
 
     <main>
       <div class="hero">
-        <span class="eyebrow">Grátis · Windows 10 e 11 · Beta</span>
+        <span class="eyebrow">Grátis · Windows 10 e 11 · Android · Beta</span>
         <h1>O app que sabe <em>contra quem</em> você joga e te diz o que comprar</h1>
         <p class="lead">
           Build certa para cada confronto, runas e feitiços com 1 clique, raio-x dos 10 jogadores, overlay em tempo real,
-          análise de fim de partida, modo invisível e o seu LoL inteiro no Telegram.
+          análise de fim de partida, modo invisível e o seu LoL no PC e no <strong>celular</strong>.
         </p>
         <div class="actions">
           <a class="btn primary" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe">
             <svg><use href="#i-download" /></svg> Baixar para Windows
+          </a>
+          <a class="btn phone" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">
+            <svg><use href="#i-phone" /></svg> Baixar APK Android
           </a>
           <a class="btn ghost" href="#recursos">Ver recursos</a>
         </div>
@@ -556,6 +624,31 @@
         </div>
       </section>
 
+      <section id="android" class="android">
+        <div class="android-text">
+          <span class="eyebrow">Novo · app Android</span>
+          <h2>O seu LoL também no celular</h2>
+          <p class="section-lead">
+            Vincule o celular ao PC lendo um QR Code, como no WhatsApp Web. Crie sala, entre na fila, aceite a
+            partida, bane e escolhe campeões, troque no ARAM, importe runas e acompanhe a partida ao vivo — tudo
+            pelo celular, com o mesmo visual do app.
+          </p>
+          <p class="note">
+            O PC continua sendo quem fala com o LoL; o celular só mostra e comanda. A senha do LoL e a chave da Riot
+            <strong>nunca vão ao celular</strong>. Até 5 aparelhos, cada um aprovado no PC. O app se atualiza sozinho.
+          </p>
+          <a class="btn phone" href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">
+            <svg><use href="#i-phone" /></svg> Baixar APK Android
+          </a>
+          <span class="fineprint">Android 8 ou superior. Fora da Play Store: o Android pede para permitir a instalação.</span>
+        </div>
+        <div class="android-shots">
+          <img src="docs/screenshots/phone-live.png" alt="Partida ao vivo no app Android" loading="lazy" />
+          <img src="docs/screenshots/phone-select.png" alt="Seleção de campeões no app Android" loading="lazy" />
+          <img src="docs/screenshots/phone-home.png" alt="Tela inicial no app Android" loading="lazy" />
+        </div>
+      </section>
+
       <section id="instalar">
         <h2>Como instalar</h2>
         <p class="section-lead">Não precisa instalar nada além do próprio app.</p>
@@ -568,6 +661,11 @@
           <strong>O Windows mostrou "O Windows protegeu o computador"?</strong> Esse aviso aparece com apps novos que
           ainda não têm reputação na Microsoft. Clique em <em>Mais informações</em> e depois em <em>Executar assim mesmo</em>.
           O código do app é aberto e pode ser conferido no GitHub.
+        </p>
+        <p class="note">
+          <strong>No celular?</strong> Baixe o <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk">APK Android</a>,
+          instale (o Android pede para permitir a instalação, é só autorizar) e, no PC, vá em
+          <em>Configurações › Conectar celular Android › Gerar QR Code</em>. No app, toque em <em>Ler QR Code do PC</em> e confirme o aparelho no PC.
         </p>
       </section>
 

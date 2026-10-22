@@ -27,6 +27,8 @@
 <p align="center">
   <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.exe"><img alt="Baixar para Windows" src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Baixar%20para%20Windows-e84057?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiPjxwYXRoIGQ9Ik0xMiAzVjE0LjVNNyAxMCAxMiAxNSAxNyAxME00IDE2LjVWMjAuNUgyMFYxNi41Ii8+PC9zdmc+" /></a>
   &nbsp;
+  <a href="https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk"><img alt="Baixar para Android" src="https://img.shields.io/badge/%F0%9F%93%B1%20Baixar%20APK%20Android-2fbf71?style=for-the-badge" /></a>
+  &nbsp;
   <a href="https://matheusmunhoz99.github.io/rift-companion/"><img alt="Site" src="https://img.shields.io/badge/Site-do%20app-181c26?style=for-the-badge" /></a>
 </p>
 
@@ -107,6 +109,21 @@ Só os momentos importantes tocam no celular: partida encontrada, sua vez na sel
 **Como conectar:** no app, vá em **Configurações → Avisos no Telegram → Conectar Telegram** e toque em **Iniciar** no bot. Pronto: o app lembra da conexão, mesmo depois de fechar e abrir. Mande `/painel` a qualquer momento para trazer o painel de volta.
 
 **Privado de verdade:** cada PC conectado recebe um código só dele, ligado ao seu chat. As suas mensagens e os seus botões nunca chegam a outra pessoa, e ninguém controla o seu LoL além de você.
+
+## Também no celular (app Android)
+
+Além do Telegram, existe um **app para Android** com as mesmas telas do app de Windows. Você **vincula o celular ao PC lendo um QR Code** (como no WhatsApp Web) e controla o seu LoL de qualquer lugar:
+
+- **Criar sala, escolher rotas, entrar na fila e aceitar a partida** pelo celular.
+- **Banir e escolher campeões** na seleção, **trocar no ARAM** e **importar runas** com um toque.
+- **Acompanhar a partida ao vivo** (os dois times, feitiços, objetivos) e a **tela de fim de partida**.
+- **Tier list, builds e histórico** de qualquer jogador, com o visual próprio de celular.
+
+O PC continua sendo quem fala com o LoL: o celular só mostra e comanda. A senha local do LoL e a chave da Riot **nunca vão ao celular** — o servidor só intermedeia os comandos por HTTPS. Até 5 aparelhos, cada um aprovado no PC, e você pode revogar quando quiser. O app **se atualiza sozinho**: quando sai uma versão nova, ele avisa e instala.
+
+**Como vincular:** abra o Rift Companion no Windows, vá em **Configurações → Conectar celular Android → Gerar QR Code**, abra o app no celular e toque em **Ler QR Code do PC**. Depois é só confirmar o aparelho no PC.
+
+> **Baixar:** [RiftCompanion.apk](https://rift-api.workscanner.com.br/downloads/RiftCompanion.apk) (Android 8 ou superior). Como é um app fora da Play Store, o Android pede para permitir a instalação; é só autorizar.
 
 ## Raio-x da partida ao vivo
 
