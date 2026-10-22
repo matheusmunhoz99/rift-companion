@@ -78,9 +78,15 @@ export function toChampSelect(
   const me = session.myTeam?.find((player) => player.cellId === session.localPlayerCellId);
   if (!me) return null;
 
-  const pickActionId = findMyPickAction(session);
   const benchChampionIds =
     session.benchChampions?.map((bench) => bench.championId) ?? session.benchChampionIds ?? [];
+  const benchEnabled = session.benchEnabled ?? benchChampionIds.length > 0;
+
+  // No ARAM (e nos modos com banco), não há escolha nem banimento livre: o campeão
+  // vem sorteado e só muda pelo banco ou por troca. A grade de escolher todos os
+  // campeões é só do draft normal/ranqueada; aqui ela fica de fora.
+  const pickActionId = benchEnabled ? null : findMyPickAction(session);
+  const banActionId = benchEnabled ? null : findMyAction(session, 'ban');
 
   return {
     championId: me.championId,
@@ -93,9 +99,9 @@ export function toChampSelect(
       isMe: player.cellId === session.localPlayerCellId,
     })),
     pickActionId,
-    banActionId: findMyAction(session, 'ban'),
+    banActionId,
     pickableChampionIds: pickActionId === null ? [] : pickableChampionIds,
-    benchEnabled: session.benchEnabled ?? benchChampionIds.length > 0,
+    benchEnabled,
     benchChampionIds: benchChampionIds.filter((id) => id > 0),
     allowRerolling: session.allowRerolling ?? false,
     rerollsRemaining: session.rerollsRemaining ?? 0,

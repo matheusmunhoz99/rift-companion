@@ -265,7 +265,10 @@ export class LcuConnector extends EventEmitter {
     void this.saveSnapshot(session);
 
     // Mostra a sessão na hora; os campeões escolhíveis chegam em seguida.
-    const actionId = findMyPickAction(session);
+    // No ARAM (modo com banco) não há grade de escolha, então nem busca a lista.
+    const benchMode =
+      session.benchEnabled ?? (session.benchChampions?.length ?? session.benchChampionIds?.length ?? 0) > 0;
+    const actionId = benchMode ? null : findMyPickAction(session);
     const known = actionId !== null && this.pickable?.actionId === actionId;
     this.setState({
       ...this.state,
