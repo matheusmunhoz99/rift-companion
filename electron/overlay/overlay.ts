@@ -41,7 +41,10 @@ export class OverlayController {
   }
 
   dispose(): void {
-    this.stop();
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+    if (this.window && !this.window.isDestroyed()) this.window.destroy();
+    this.window = null;
     globalShortcut.unregister(OVERLAY_SHORTCUT);
   }
 
@@ -54,8 +57,9 @@ export class OverlayController {
   private stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    this.window?.destroy();
-    this.window = null;
+    // Esconde em vez de destruir: criar/destruir janela transparente repetidamente
+    // pode crashar o processo GPU do Chromium no Windows, deixando tudo preto.
+    if (this.window && !this.window.isDestroyed()) this.window.hide();
   }
 
   private async poll(): Promise<void> {
@@ -67,10 +71,7 @@ export class OverlayController {
     window.webContents.send('overlay:data', data);
     if (this.hiddenByUser) return;
     if (!window.isVisible()) window.showInactive();
-    // Jogos em tela cheia (com a otimização de tela cheia do Windows) tomam o topo;
-    // reafirmar a cada atualização mantém o overlay visível quando o sistema permite.
-    window.setAlwaysOnTop(true, 'screen-saver');
-    window.moveTop();
+    window.setAlwaysOnTop(true, 'pop-up-menu');
   }
 
   private toggleByUser(): void {
@@ -87,7 +88,6 @@ export class OverlayController {
       width: WIDTH,
       height: HEIGHT,
       frame: false,
-      transparent: true,
       resizable: false,
       movable: false,
       focusable: false,
@@ -95,6 +95,7 @@ export class OverlayController {
       hasShadow: false,
       show: false,
       alwaysOnTop: true,
+      backgroundColor: '#000',
       webPreferences: {
         preload: this.preloadPath,
         contextIsolation: true,
@@ -102,9 +103,14 @@ export class OverlayController {
         sandbox: true,
       },
     });
-    window.setAlwaysOnTop(true, 'screen-saver');
+    window.setAlwaysOnTop(true, 'pop-up-menu');
     window.setIgnoreMouseEvents(true);
     window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    window.webContents.on('render-process-gone', (_event, details) => {
+      if (details.reason !== 'clean-exit' && !window.isDestroyed()) {
+        window.webContents.reload();
+      }
+    });
     this.applyLayout(window);
     this.loadPage(window);
     this.window = window;

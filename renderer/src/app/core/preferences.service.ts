@@ -53,9 +53,16 @@ export class PreferencesService {
   }
 
   async set(changes: Partial<Preferences>): Promise<void> {
+    const previous = this.preferences();
     this.preferences.update((current) => ({ ...current, ...changes }));
-    const saved = await window.app?.setPreferences(changes);
-    if (saved) this.preferences.set(saved);
+    try {
+      const saved = await window.app?.setPreferences(changes);
+      if (saved) this.preferences.set(saved);
+    } catch (error) {
+      console.error('prefs.set falhou:', error);
+      this.preferences.set(previous);
+      this.toast.show(errorText(error), 'error');
+    }
   }
 
   async checkUpdate(): Promise<UpdateStatus> {

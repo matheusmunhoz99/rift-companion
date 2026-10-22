@@ -258,7 +258,7 @@ export function timingsForQueue(config: TimingsConfig, queueId: number | null): 
 const INHIBITOR_RESPAWN_S = 5 * 60;
 const SUMMONERS_RIFT_MODES = new Set(['CLASSIC', 'SWIFTPLAY']);
 const MAX_EVENTS = 20;
-const LANES: Record<string, string> = { L: 'Topo', C: 'Meio', R: 'Base' };
+const LANES: Record<string, string> = { L: 'Topo', C: 'Meio', R: 'Bot' };
 
 function emptyTeam(): LiveTeam {
   return { kills: 0, towers: 0, inhibitors: 0, dragons: [], barons: 0, heralds: 0, grubs: 0, atakhan: 0 };
