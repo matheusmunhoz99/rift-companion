@@ -52,6 +52,8 @@ export interface MatchSummary {
   gameEndTimestamp: number;
   gameDurationSeconds: number;
   participants: MatchParticipant[];
+  /** "local": veio do histórico do cliente do LoL (modos que a API da Riot não entrega). */
+  source?: "local";
 }
 
 export interface RiotSettings {

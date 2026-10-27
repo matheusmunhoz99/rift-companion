@@ -104,7 +104,7 @@ export class HistoryView {
 
   protected async loadMore(): Promise<void> {
     this.loading.set('more');
-    await this.guard(() => this.loadMatches(this.matches().length));
+    await this.guard(() => this.loadMatches(this.serverOffset));
     this.loading.set(null);
   }
 
@@ -182,9 +182,18 @@ export class HistoryView {
     const player = this.player();
     if (!player) return;
     const page = await window.riot!.getMatches(player.puuid, player.platformId, start, PAGE_SIZE);
-    this.matches.update((current) => [...current, ...page]);
-    this.hasMore.set(page.length === PAGE_SIZE);
+    // Partidas do cliente (modos fora da API da Riot) não contam no deslocamento do servidor.
+    const fromServer = page.filter((match) => match.source !== 'local').length;
+    this.serverOffset = start + fromServer;
+    this.matches.update((current) => {
+      const known = new Set(current.map((match) => match.matchId));
+      return [...current, ...page.filter((match) => !known.has(match.matchId))];
+    });
+    this.hasMore.set(fromServer === PAGE_SIZE);
   }
+
+  /** Quantas partidas do servidor já foram lidas (a próxima página começa aqui). */
+  private serverOffset = 0;
 
   private async loadSettings(): Promise<void> {
     if (!window.riot) return;

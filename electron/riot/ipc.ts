@@ -9,6 +9,7 @@ import { toLiveDashboard, type RawDashboardData } from '../overlay/live-dashboar
 import { createTimingsSource } from '../overlay/timings-source';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
+import { LocalHistory, mergePage, toSummary as toLocalSummary, type MatchSummary } from './local-history';
 
 /** Servidor que guarda a chave da Riot (server/). Pode ser trocado em desenvolvimento. */
 export const RIFT_API_URL = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
@@ -105,15 +106,57 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     },
   );
 
+  // Servidor antigo (sem a rota) responde 404: fica sem dados reais e o app usa a estimativa.
+  ipcMain.handle('stats:damage', () => apiGet('/v1/stats/damage').catch(() => ({})));
+
   ipcMain.handle('stats:counters', (_event, championId: number, position: string | null) => {
     const query = position ? `?position=${enc(position)}` : '';
     return apiGet(`/v1/stats/counters/${Number(championId)}${query}`);
   });
 
+  // A API da Riot não entrega alguns modos (ex.: ARAM: Desordem, fila 2400). Para o
+  // jogador logado, completa com o histórico do próprio cliente do LoL.
+  const localHistory = new LocalHistory();
+  const myApiPuuid = new Map<string, string>();
+  const apiPuuidOfMe = async (platformId: string): Promise<string | null> => {
+    const me = connector.getState().summoner;
+    if (!me?.gameName) return null;
+    const key = `${platformId}:${me.gameName}#${me.tagLine}`.toLowerCase();
+    const known = myApiPuuid.get(key);
+    if (known) return known;
+    const profile = await apiGet<{ puuid?: string }>(
+      `/v1/players/${enc(platformId)}/${enc(me.gameName)}/${enc(me.tagLine)}`,
+    ).catch(() => null);
+    if (profile?.puuid) myApiPuuid.set(key, profile.puuid);
+    return profile?.puuid ?? null;
+  };
+
   ipcMain.handle(
     'riot:get-matches',
-    (_event, puuid: string, platformId: string, start: number, count: number) =>
-      apiGet(`/v1/matches/${enc(platformId)}/${enc(puuid)}?start=${start}&count=${count}`),
+    async (_event, puuid: string, platformId: string, start: number, count: number) => {
+      const path = (s: number, c: number) => `/v1/matches/${enc(platformId)}/${enc(puuid)}?start=${s}&count=${c}`;
+      const page = await apiGet<MatchSummary[]>(path(start, count));
+      const credentials = connector.getCredentials();
+      const me = connector.getState().summoner;
+      if (!credentials || !me || (await apiPuuidOfMe(platformId)) !== puuid) return page;
+      try {
+        // Fim da partida logo antes desta página: limita as partidas do cliente que entram aqui.
+        const before = start > 0 ? (await apiGet<MatchSummary[]>(path(start - 1, 1)))[0] : undefined;
+        const upper = before?.gameEndTimestamp ?? Infinity;
+        const known = new Set(page.map((m) => m.matchId));
+        const lower = page.length >= count && page.length ? page[page.length - 1].gameEndTimestamp : -Infinity;
+        const games = (await localHistory.recent(credentials)).filter((g) => {
+          const end = g.gameCreation + g.gameDuration * 1000;
+          return !known.has(`${g.platformId}_${g.gameId}`) && end < upper && end >= lower;
+        });
+        const local = (await Promise.all(games.map((g) => localHistory.game(credentials, g.gameId))))
+          .map((g) => (g ? toLocalSummary(g, me.puuid, puuid) : null))
+          .filter((m): m is MatchSummary => m !== null);
+        return mergePage(page, local, upper, page.length >= count);
+      } catch {
+        return page;
+      }
+    },
   );
 }
 
