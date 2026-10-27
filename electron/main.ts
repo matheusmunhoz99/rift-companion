@@ -21,7 +21,10 @@ import { removeOldVersions, Updater } from './updater';
 import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
-import { closeLeagueAndRiotClient, isRiotClientRunning, launchLeague, riotChatRoute, type LeagueLaunchResult } from './lcu/riot-client';
+import {
+  closeLeagueAndRiotClient, isRiotClientRunning, launchLeague, riotChatRoute, riotClientPids, trustRiotClient,
+  type LeagueLaunchResult,
+} from './lcu/riot-client';
 import { PostGameService } from './lcu/postgame';
 
 const rendererUrl = process.env.RENDERER_URL;
@@ -35,6 +38,8 @@ const BUSY_PHASES = new Set(['ChampSelect', 'GameStart', 'InProgress', 'Reconnec
 const INVISIBLE_WAIT_PHASES = new Set([...BUSY_PHASES, 'Matchmaking', 'ReadyCheck']);
 /** Logo depois de abrir (ou do app reabrir), o chat do Riot Client ainda está conectando. */
 const CHAT_ROUTE_PATIENCE_MS = 45_000;
+/** Quando você mesmo clica em "Abrir LoL", não dá para esperar tanto. */
+const USER_CHAT_ROUTE_PATIENCE_MS = 8_000;
 const GREETING_INTERVAL_MS = 30 * 60 * 1000;
 
 const connector = new LcuConnector();
@@ -323,14 +328,14 @@ void acquireInstance().then((acquired) => {
     };
 
     /** Para onde vai o chat do Riot Client aberto; 'unknown' vira espera até o chat conectar. */
-    const chatRoute = async (configUrl: string) => {
-      const deadline = Date.now() + CHAT_ROUTE_PATIENCE_MS;
+    const chatRoute = async (configUrl: string, patienceMs: number) => {
+      const deadline = Date.now() + patienceMs;
       for (;;) {
         if (invisible.hasActiveChat()) return 'proxied' as const;
         const route = await riotChatRoute(configUrl, invisible.chatPort());
         if (route !== 'unknown') return route;
         if (Date.now() >= deadline) return 'direct' as const;
-        await new Promise((resolve) => setTimeout(resolve, 3_000));
+        await new Promise((resolve) => setTimeout(resolve, 2_000));
       }
     };
 
@@ -339,11 +344,12 @@ void acquireInstance().then((acquired) => {
     let invisibleRestartPending = false;
     let invisibleRestartDeclined = false;
     let invisibleRestart: Promise<'restarted' | 'waiting' | 'declined' | 'not-needed'> | null = null;
-    const restartLeagueInvisible = (ask: boolean) => {
+    const restartLeagueInvisible = (ask: boolean, patienceMs = CHAT_ROUTE_PATIENCE_MS) => {
       invisibleRestart ??= (async () => {
         if (capturing || !prefs.getPreferences().appearOffline) return 'not-needed' as const;
         const configUrl = await invisible.start();
-        const route = await chatRoute(configUrl);
+        const route = await chatRoute(configUrl, patienceMs);
+        if (route === 'proxied') trustRiotClient(configUrl, await riotClientPids());
         if (route !== 'direct' || !prefs.getPreferences().appearOffline) {
           invisibleRestartPending = false;
           return 'not-needed' as const;
@@ -383,8 +389,10 @@ void acquireInstance().then((acquired) => {
         balloon('Reiniciando o LoL invisível', 'Fechando o LoL e o Riot Client e abrindo de novo pelo modo invisível…');
         await closeLeagueAndRiotClient(connector.getCredentials());
         const result = await launchConfiguredLeague();
-        if (result !== 'started') throw new Error('O Riot Client não abriu de novo. Abra o LoL pelo Rift Companion.');
-        appLog('LoL reaberto pelo proxy do modo invisível');
+        if (result !== 'started' && result !== 'riot-client' && result !== 'already-open') {
+          throw new Error('O Riot Client não abriu de novo. Tente "Abrir LoL" outra vez em alguns segundos.');
+        }
+        appLog(`LoL reaberto pelo proxy do modo invisível (${result})`);
         return 'restarted' as const;
       })().finally(() => { invisibleRestart = null; });
       return invisibleRestart;
@@ -395,8 +403,12 @@ void acquireInstance().then((acquired) => {
       const result = await launchConfiguredLeague();
       if (result !== 'restart-required') return result;
       invisibleRestartDeclined = false;
-      const restart = await restartLeagueInvisible(ask);
-      return restart === 'not-needed' ? 'already-open' : restart;
+      // Pedido seu: não espera 45 s pelo chat; em poucos segundos já decide.
+      const restart = await restartLeagueInvisible(ask, USER_CHAT_ROUTE_PATIENCE_MS);
+      if (restart !== 'not-needed') return restart;
+      // O Riot Client aberto já passa pelo proxy: falta só pedir para ele abrir o LoL.
+      const retry = await launchConfiguredLeague();
+      return retry === 'restart-required' ? 'already-open' : retry;
     };
 
     onInvisibleEnabled = () => {

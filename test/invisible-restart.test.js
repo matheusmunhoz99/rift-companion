@@ -26,8 +26,8 @@ test('sem linha de comando (sem administrador), a conexão de chat decide', () =
 });
 
 test('Riot Client aberto por este app vale como no proxy, mesmo antes do chat conectar', () => {
-  assert.equal(route(riot(null, 7), [], { pid: 7, url: URL }), 'proxied');
-  assert.equal(route(riot(null, 8), [], { pid: 7, url: URL }), 'unknown', 'outro processo: ainda não dá para saber');
+  assert.equal(route(riot(null, 7), [], { pids: [7], url: URL }), 'proxied');
+  assert.equal(route(riot(null, 8), [], { pids: [7], url: URL }), 'unknown', 'outro processo: ainda não dá para saber');
 });
 
 test('chat ainda conectando e nada conhecido: espera (não reinicia à toa)', () => {

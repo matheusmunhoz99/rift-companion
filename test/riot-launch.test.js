@@ -13,8 +13,12 @@ function launcher(options = {}) {
   const localRequire = createRequire(filename);
   const events = { spawns: [], requests: 0, processQueries: 0 };
   const execFile = () => { throw new Error('Use promisify no launcher.'); };
-  execFile[util.promisify.custom] = async (_exe, _args, settings) => {
+  execFile[util.promisify.custom] = async (exe, _args, settings) => {
     assert.equal(settings.windowsHide, true);
+    // Depois do spawn, o Riot Client "aparece" na lista de processos.
+    if (exe === 'tasklist.exe') {
+      return { stdout: events.spawns.length ? '"RiotClientServices.exe","4321","Console","1","50.000 K"\r\n' : '', stderr: '' };
+    }
     events.processQueries++;
     if (options.queryError) throw new Error('CIM indisponível');
     return { stdout: JSON.stringify(options.processes ?? []), stderr: '' };
@@ -32,6 +36,7 @@ function launcher(options = {}) {
   const module = { exports: {} };
   const context = vm.createContext({
     module, exports: module.exports, process: { platform: 'win32', env: { LOCALAPPDATA: 'C:/test-only' } },
+    setTimeout, clearTimeout,
     require(name) {
       if (name === 'node:child_process') return childProcess;
       if (name === 'node:fs') return {
