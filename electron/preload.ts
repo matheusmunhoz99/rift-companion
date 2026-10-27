@@ -93,6 +93,7 @@ contextBridge.exposeInMainWorld('stats', {
     ipcRenderer.invoke('stats:champion', championId, position, opponentId ?? null, damage ?? null),
   counters: (championId: number, position: string | null) =>
     ipcRenderer.invoke('stats:counters', championId, position),
+  damage: () => ipcRenderer.invoke('stats:damage'),
 });
 
 contextBridge.exposeInMainWorld('builds', {

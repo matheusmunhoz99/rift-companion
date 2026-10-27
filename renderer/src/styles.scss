@@ -391,3 +391,15 @@ code {
     scroll-behavior: auto !important;
   }
 }
+
+/* Cores de elo (iguais às do cliente do LoL), usadas em qualquer tela via data-tier. */
+[data-tier='IRON'] { --tier: #7a7f8a; }
+[data-tier='BRONZE'] { --tier: #b07650; }
+[data-tier='SILVER'] { --tier: #a7b3c0; }
+[data-tier='GOLD'] { --tier: #e0b04e; }
+[data-tier='PLATINUM'] { --tier: #43c2b0; }
+[data-tier='EMERALD'] { --tier: #33c47a; }
+[data-tier='DIAMOND'] { --tier: #7895ff; }
+[data-tier='MASTER'] { --tier: #b673f2; }
+[data-tier='GRANDMASTER'] { --tier: #ef5466; }
+[data-tier='CHALLENGER'] { --tier: #f5d06b; }

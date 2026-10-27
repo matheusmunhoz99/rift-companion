@@ -93,6 +93,15 @@ export interface StatsBridge {
     damage?: EnemyDamage | null,
   ): Promise<ChampionStats | null>;
   counters(championId: number, position: string | null): Promise<CounterData>;
+  /** Fatia real de dano mágico/físico/verdadeiro por campeão (Mestre+). */
+  damage?(): Promise<Record<number, ChampionDamageShare>>;
+}
+
+export interface ChampionDamageShare {
+  ap: number;
+  ad: number;
+  true: number;
+  games: number;
 }
 
 declare global {

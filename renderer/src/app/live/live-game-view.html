@@ -59,38 +59,47 @@
   }
 
   @if (encounters() === 'loading') {
-    <p class="muted encounters-note">Procurando jogadores das suas últimas 10 partidas…</p>
+    <p class="muted encounters-note">Procurando jogadores conhecidos nas suas últimas 20 partidas…</p>
   } @else if (encounterSummaries().length > 0) {
     <section class="encounters">
       <header class="encounters-head">
         <h4>Já jogaram com você</h4>
-        <span class="muted">nas suas últimas 10 partidas · clique para ver as partidas</span>
+        <span class="muted">dos jogadores desta sala, estes apareceram nas suas últimas 20 partidas · toque para ver os jogos</span>
       </header>
 
       @for (summary of encounterSummaries(); track summary.player.riotId) {
         <div class="encounter-card" [class.open]="openEncounter() === summary.player.riotId">
           <button type="button" class="encounter-row" (click)="toggleEncounter(summary.player.riotId)">
-            <span class="side-pill" [class.enemy]="!summary.player.allyNow">
-              {{ summary.player.allyNow ? 'Aliado agora' : 'Inimigo agora' }}
-            </span>
-            <span class="who">
-              {{ name(summary.player.riotId).gameName }}@if (name(summary.player.riotId).tag) {<span class="muted">#{{ name(summary.player.riotId).tag }}</span>}
-            </span>
-            <span class="champs">
-              @for (championId of summary.champions; track championId) {
-                @if (iconUrl(championId); as icon) {
-                  <img [src]="icon" [alt]="ddragon.champion(championId)?.name ?? ''" [title]="ddragon.champion(championId)?.name ?? ''" />
+            @if (iconUrl(summary.currentChampionId); as icon) {
+              <img class="enc-avatar" [src]="icon" [alt]="ddragon.champion(summary.currentChampionId)?.name ?? ''" [title]="ddragon.champion(summary.currentChampionId)?.name ?? ''" />
+            } @else {
+              <span class="enc-avatar placeholder" aria-hidden="true"></span>
+            }
+
+            <div class="enc-main">
+              <div class="enc-top">
+                <span class="who">
+                  {{ name(summary.player.riotId).gameName }}@if (name(summary.player.riotId).tag) {<span class="muted">#{{ name(summary.player.riotId).tag }}</span>}
+                </span>
+                <span class="side-pill" [class.enemy]="!summary.player.allyNow">
+                  {{ summary.player.allyNow ? 'No seu time' : 'Time inimigo' }}
+                </span>
+              </div>
+              <div class="enc-record">
+                @if (summary.together) {
+                  <span class="rec ally" [title]="summary.togetherWins + ' vitórias de ' + summary.together + ' jogando juntos'">
+                    <strong>{{ summary.together }}x</strong> juntos
+                    <span class="wl">{{ summary.togetherWins }}V{{ summary.together - summary.togetherWins ? ' ' + (summary.together - summary.togetherWins) + 'D' : '' }}</span>
+                  </span>
                 }
-              }
-            </span>
-            <span class="record">
-              @if (summary.together) {
-                <span class="chip ally">Juntos {{ summary.together }} · {{ summary.togetherWins }}V</span>
-              }
-              @if (summary.against) {
-                <span class="chip enemy">Contra {{ summary.against }} · {{ summary.againstWins }}V</span>
-              }
-            </span>
+                @if (summary.against) {
+                  <span class="rec enemy" [title]="summary.againstWins + ' vitórias suas de ' + summary.against + ' contra ele'">
+                    <strong>{{ summary.against }}x</strong> contra
+                    <span class="wl">{{ summary.againstWins }}V{{ summary.against - summary.againstWins ? ' ' + (summary.against - summary.againstWins) + 'D' : '' }}</span>
+                  </span>
+                }
+              </div>
+            </div>
             <span class="chevron" aria-hidden="true">▾</span>
           </button>
 
@@ -141,91 +150,164 @@
     </section>
   }
 
-  <div class="teams">
+  <div class="teams-cards">
     @for (team of [allies(), enemies()]; track $index) {
-      <section class="team" [class.enemy-team]="$index === 1">
-        <h4>{{ $index === 0 ? 'Seu time' : 'Inimigos' }}</h4>
-        @for (player of team; track player.puuid || $index) {
-          <article
-            class="player"
-            [class.me]="player === me()"
-            [class.open]="expanded() === player.puuid"
-            [class.in-party]="!!partyOf(player)"
-            [style.--party]="partyOf(player)?.color ?? null"
-          >
-            <button type="button" class="player-row" [disabled]="!player.puuid" (click)="toggle(player)">
-              @if (laneShort(player); as lane) {
-                <span class="lane-pill" [title]="positionLabel(player)">{{ lane }}</span>
+      <section class="team-row" [class.enemy-team]="$index === 1">
+        <header class="team-head">
+          <h4 class="team-title">{{ $index === 0 ? 'Seu time' : 'Inimigos' }}</h4>
+          @if (teamDamage(team); as d) {
+            <div
+              class="team-dmg"
+              [class.estimated]="!d.measured"
+              [title]="d.measured ? 'Dano real dos campeões nas partidas Mestre+' : 'Estimativa pelo perfil de cada campeão'"
+            >
+              <span class="dmg-text ad-text">{{ d.measured ? '' : '~' }}{{ pct(d.ad) }}% AD</span>
+              <span class="dmg-bar">
+                <span class="ad" [style.flex-grow]="d.ad"></span>
+                @if (d.true >= 0.02) {
+                  <span class="tru" [style.flex-grow]="d.true"></span>
+                }
+                <span class="ap" [style.flex-grow]="d.ap"></span>
+              </span>
+              <span class="dmg-text ap-text">{{ d.measured ? '' : '~' }}{{ pct(d.ap) }}% AP</span>
+              @if (d.true >= 0.05) {
+                <span class="dmg-text tru-text">{{ pct(d.true) }}% verdadeiro</span>
               }
-              @if (iconUrl(player.championId); as icon) {
-                <img class="champ" [src]="icon" [alt]="ddragon.champion(player.championId)?.name ?? ''" />
-              }
-              <div class="stack">
-                @for (spellId of player.summonerSpellIds; track $index) {
-                  @if (ddragon.spellIconUrl(spellId); as spell) {
-                    <img class="small" [src]="spell" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
-                  }
-                }
-              </div>
-              <div class="stack">
-                @if (ddragon.runeIconUrl(player.keystoneId); as rune) {
-                  <img class="small rune" [src]="rune" [alt]="ddragon.runeName(player.keystoneId)" [title]="ddragon.runeName(player.keystoneId)" />
-                }
-                @if (ddragon.runeIconUrl(player.subStyleId); as sub) {
-                  <img class="small rune sub" [src]="sub" [alt]="ddragon.runeName(player.subStyleId)" />
-                }
-              </div>
+            </div>
+          }
+        </header>
+        <div class="cards">
+          @for (player of team; track player.puuid || $index) {
+            <article
+              class="pcard"
+              [class.me]="player === me()"
+              [class.open]="expanded() === player.puuid"
+              [class.ranked]="!!mainRank(player.ranked)"
+              [class.apex]="isApex(mainRank(player.ranked)?.tier)"
+              [attr.data-tier]="mainRank(player.ranked)?.tier ?? null"
+              [style.--splash]="splashStyle(player.championId)"
+            >
+              <button type="button" class="pcard-body" [disabled]="!player.puuid" (click)="toggle(player)">
+                <span class="pcard-splash" aria-hidden="true"></span>
 
-              <div class="identity">
-                <span
-                  class="nick"
-                  [class.link]="!!player.puuid"
-                  [title]="'Ver histórico de ' + player.riotId"
-                  (click)="$event.stopPropagation(); openPlayer(player)"
-                >
-                  {{ name(player.riotId).gameName }}@if (name(player.riotId).tag) {<span class="muted">#{{ name(player.riotId).tag }}</span>}
-                </span>
-                <span class="muted champ-name">
-                  {{ ddragon.champion(player.championId)?.name }}
-                  @if (partyOf(player); as party) {
-                    <span class="party-tag" [style.color]="party.color" [style.border-color]="party.color" [title]="party.label + ' (jogando juntos)'">{{ party.label }}</span>
+                <span class="pcard-top">
+                  @if (laneShort(player); as lane) {
+                    <span class="lane-pill" [title]="positionLabel(player)">{{ lane }}</span>
                   }
-                  @if (encounterOf(player); as met) {
-                    <span class="met" title="Já jogou com você nas suas últimas 10 partidas">
-                      Já jogou · {{ met.encounters.length }}x
-                    </span>
+                  @if (player === me()) {
+                    <span class="you-pill">Você</span>
                   }
                 </span>
-              </div>
 
-              <div class="rank">
-                @if (mainRank(player.ranked); as rank) {
-                  <span>{{ rankText(rank) }}</span>
-                  <span class="muted">
-                    {{ rank.wins }}V {{ rank.losses }}D
-                    @if (winRate(rank.wins, rank.losses); as rate) {
-                      · <span [class.good]="rate >= 52" [class.bad]="rate < 48">{{ rate }}%</span>
+                <span class="pcard-name">
+                  <span
+                    class="nick"
+                    [class.link]="!!player.puuid"
+                    [title]="'Ver histórico de ' + player.riotId"
+                    (click)="$event.stopPropagation(); openPlayer(player)"
+                  >{{ name(player.riotId).gameName }}</span>
+                  <span class="champ-name">{{ ddragon.champion(player.championId)?.name }}</span>
+                </span>
+
+                <span class="pcard-kit">
+                  <span class="kit-side">
+                    @for (spellId of player.summonerSpellIds; track $index) {
+                      @if (ddragon.spellIconUrl(spellId); as spell) {
+                        <img [src]="spell" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+                      }
                     }
                   </span>
-                } @else if (waitingRiot()) {
-                  <span class="muted">Carregando…</span>
+                  <span class="portrait" [title]="tierLabel(player)">
+                    @if (iconUrl(player.championId); as icon) {
+                      <img [src]="icon" [alt]="ddragon.champion(player.championId)?.name ?? ''" />
+                    }
+                    @if (tierShort(player); as short) {
+                      <span class="tier-badge">{{ short }}</span>
+                    }
+                  </span>
+                  <span class="kit-side">
+                    @if (ddragon.runeIconUrl(player.keystoneId); as rune) {
+                      <img class="keystone" [src]="rune" [alt]="ddragon.runeName(player.keystoneId)" [title]="ddragon.runeName(player.keystoneId)" />
+                    }
+                    @if (ddragon.runeIconUrl(player.subStyleId); as sub) {
+                      <img class="substyle" [src]="sub" [alt]="ddragon.runeName(player.subStyleId)" [title]="ddragon.runeName(player.subStyleId)" />
+                    }
+                  </span>
+                </span>
+
+                @if (mainRank(player.ranked); as rank) {
+                  <span class="pcard-rank"><span class="tier-gem"></span>{{ tierName(rank) }}<span class="pdl">{{ rank.leaguePoints }} PDL</span></span>
                 } @else {
-                  <span class="muted">Sem elo</span>
+                  <span class="pcard-rank unranked">{{ waitingRiot() ? 'Carregando elo…' : 'Sem elo' }}</span>
                 }
-              </div>
 
-              <div class="mastery">
-                @if (player.mastery; as mastery) {
-                  <span>Maestria {{ mastery.level }}</span>
-                  <span class="muted">{{ (mastery.points / 1000).toFixed(1) }}k pts</span>
-                } @else if (!waitingRiot()) {
-                  <span class="muted">Primeira vez?</span>
+                <span class="pcard-tags">
+                  @for (tag of cardTags(player).tags; track tag.label) {
+                    <span class="tag" [attr.data-tone]="tag.tone" [style.--tag]="tag.color ?? null">{{ tag.label }}</span>
+                  }
+                  @if (cardTags(player).more; as more) {
+                    <span class="tag" data-tone="muted">+{{ more }}</span>
+                  }
+                </span>
+
+                <span class="pcard-stats">
+                  <span class="stat">
+                    @if (rankWinRate(player); as rate) {
+                      <strong [class.good]="rate >= 52" [class.bad]="rate < 48">{{ rate }}%</strong>
+                    } @else {
+                      <strong class="dim">—</strong>
+                    }
+                    <span>vitórias</span>
+                  </span>
+                  <span class="stat">
+                    <strong [class.dim]="!rankGames(player)">{{ rankGames(player) || '—' }}</strong>
+                    <span>ranqueadas</span>
+                  </span>
+                  <span class="stat">
+                    @if (player.mastery; as mastery) {
+                      <strong>{{ (mastery.points / 1000).toFixed(0) }}k</strong>
+                      <span>maestria {{ mastery.level }}</span>
+                    } @else {
+                      <strong class="dim">0</strong>
+                      <span>maestria</span>
+                    }
+                  </span>
+                </span>
+
+                @if (damage.of(player.championId); as d) {
+                  <span
+                    class="pcard-dmg"
+                    [class.estimated]="!d.measured"
+                    [title]="(d.measured ? 'Dano real nas partidas Mestre+: ' : 'Estimativa: ') + pct(d.ad) + '% físico, ' + pct(d.ap) + '% mágico' + (d.true >= 0.02 ? ', ' + pct(d.true) + '% verdadeiro' : '')"
+                  >
+                    <span class="dmg-bar">
+                      <span class="ad" [style.flex-grow]="d.ad"></span>
+                      @if (d.true >= 0.02) {
+                        <span class="tru" [style.flex-grow]="d.true"></span>
+                      }
+                      <span class="ap" [style.flex-grow]="d.ap"></span>
+                    </span>
+                    <span class="dmg-labels">
+                      <span class="ad-text">{{ d.measured ? '' : '~' }}{{ pct(d.ad) }}% AD</span>
+                      @if (d.true >= 0.08) {
+                        <span class="tru-text">{{ pct(d.true) }}% verd.</span>
+                      }
+                      <span class="ap-text">{{ d.measured ? '' : '~' }}{{ pct(d.ap) }}% AP</span>
+                    </span>
+                  </span>
                 }
-              </div>
-            </button>
+              </button>
+            </article>
+          }
+        </div>
 
-            @if (expanded() === player.puuid) {
-              <div class="recent">
+        @for (player of team; track player.puuid || $index) {
+          @if (expanded() === player.puuid) {
+            <div class="recent">
+              <div class="recent-title">
+                Últimas partidas de <strong>{{ name(player.riotId).gameName }}</strong>
+                <button type="button" class="close-recent" (click)="toggle(player)" aria-label="Fechar">×</button>
+              </div>
                 @switch (recentFor(player)) {
                   @case ('loading') {
                     <span class="muted">Carregando últimas partidas…</span>
@@ -284,9 +366,8 @@
                     }
                   }
                 }
-              </div>
-            }
-          </article>
+            </div>
+          }
         }
       </section>
     }

@@ -229,11 +229,12 @@ button {
 .encounter-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border: none;
   border-radius: 8px;
+  background: transparent;
   color: var(--text);
   font-weight: 400;
   text-align: left;
@@ -243,19 +244,30 @@ button {
   }
 }
 
-.side-pill {
+.enc-avatar {
   flex: none;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ally-strong) 20%, transparent);
-  color: var(--ally-text);
-  font-size: 11px;
-  font-weight: 700;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  object-fit: cover;
 
-  &.enemy {
-    background: color-mix(in srgb, var(--danger) 16%, transparent);
-    color: var(--danger);
+  &.placeholder {
+    background: var(--surface-2);
   }
+}
+
+.enc-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.enc-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .who {
@@ -265,39 +277,62 @@ button {
   white-space: nowrap;
 }
 
-.champs {
-  display: flex;
-  gap: 3px;
+.side-pill {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ally-strong) 20%, transparent);
+  color: var(--ally-text);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 
-  img {
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
+  &.enemy {
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger);
   }
 }
 
-.record {
+.enc-record {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-left: auto;
+  gap: 6px 8px;
+  font-size: 12px;
 }
 
-.chip {
-  padding: 1px 7px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
+.rec {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+
+  strong {
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .wl {
+    font-weight: 700;
+    font-size: 11px;
+  }
 
   &.ally {
-    background: color-mix(in srgb, var(--ally-strong) 18%, transparent);
-    color: var(--ally-text);
+    background: color-mix(in srgb, var(--ally-strong) 14%, transparent);
+
+    .wl {
+      color: var(--ally-text);
+    }
   }
 
   &.enemy {
-    background: color-mix(in srgb, var(--danger) 15%, transparent);
-    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+
+    .wl {
+      color: var(--danger);
+    }
   }
 }
 
@@ -415,90 +450,497 @@ button {
   }
 }
 
-// Times.
-.teams {
+// Times: uma fileira de 5 cards por time.
+.teams-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 16px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
 }
 
-.team {
+.team-row {
   display: grid;
-  align-content: start;
-  gap: 6px;
+  gap: 8px;
+}
 
-  h4 {
-    color: var(--ally-text);
-  }
+.team-title {
+  color: var(--ally-text);
 
-  &.enemy-team h4 {
+  .enemy-team & {
     color: var(--danger);
   }
 }
 
-.player {
+.cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// Card do jogador: arte do campeão no topo, kit no meio, números embaixo.
+.pcard {
+  --team: var(--ally-strong);
   position: relative;
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--ally-strong);
-  border-radius: 8px;
-  background: var(--bg);
-  transition: border-color 0.15s;
+  border-radius: 14px;
+  background: var(--surface);
+  transition:
+    transform var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 
   .enemy-team & {
-    border-left-color: var(--danger);
+    --team: var(--danger);
+  }
+
+  // Sem elo: cor neutra (a cor do elo vem do data-tier global).
+  &:not([data-tier]) {
+    --tier: var(--border-strong);
+  }
+
+  // Faixa do time embaixo do card.
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--team);
+    opacity: 0.85;
+  }
+
+  &.ranked {
+    border-color: color-mix(in srgb, var(--tier) 45%, var(--border));
+  }
+
+  &.apex {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--tier) 30%, transparent),
+      0 0 22px color-mix(in srgb, var(--tier) 18%, transparent);
   }
 
   &:hover {
-    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--tier) 75%, var(--border));
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   }
 
   &.me {
     border-color: var(--accent);
-    border-left-color: var(--accent);
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
-      var(--bg);
-  }
-
-  // Grupo: faixa na cor do grupo logo depois da borda do time.
-  &.in-party::after {
-    content: '';
-    position: absolute;
-    top: 6px;
-    bottom: 6px;
-    left: 2px;
-    width: 3px;
-    border-radius: 2px;
-    background: var(--party);
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   &.open {
-    border-color: var(--border-strong);
+    border-color: color-mix(in srgb, var(--tier) 80%, var(--text));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier) 80%, var(--text));
   }
 }
 
-.player-row {
+.pcard-body {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 5px 10px 5px 12px;
+  padding: 10px 12px 14px;
   border: none;
-  border-radius: 8px;
+  background: none;
   color: var(--text);
   font-weight: 400;
-  text-align: left;
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.025);
-  }
+  text-align: center;
+  cursor: pointer;
 
   &:disabled {
     opacity: 1;
+    cursor: default;
+  }
+}
+
+.pcard-splash {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 158px;
+  background: var(--splash, none) center 16% / cover no-repeat;
+  opacity: 0.6;
+  -webkit-mask-image: linear-gradient(180deg, #000 25%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 25%, transparent 100%);
+  transition: transform var(--dur-slow) var(--ease-out);
+
+  .pcard:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.pcard-top {
+  position: relative;
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+
+  .lane-pill {
+    background: rgba(8, 10, 16, 0.6);
+    color: var(--text);
+    backdrop-filter: blur(4px);
+  }
+}
+
+.you-pill {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pcard-name {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  max-width: 100%;
+  margin-top: 22px;
+
+  .nick {
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
+    white-space: nowrap;
+
+    &.link:hover {
+      color: var(--accent);
+    }
+  }
+
+  .champ-name {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+// Feitiços | retrato com o anel do elo | runas.
+.pcard-kit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kit-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 22px;
+
+  img {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+
+  .keystone {
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .substyle {
+    width: 16px;
+    height: 16px;
+    opacity: 0.85;
+  }
+}
+
+.portrait {
+  position: relative;
+  flex: none;
+  width: 60px;
+  height: 60px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--border-strong);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+  }
+
+  .ranked & {
+    background: linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--tier) 100%, white 30%),
+      var(--tier) 50%,
+      color-mix(in srgb, var(--tier) 50%, black)
+    );
+    box-shadow: 0 0 14px color-mix(in srgb, var(--tier) 40%, transparent);
+  }
+
+  .apex & {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--tier) 60%, transparent),
+      0 0 20px color-mix(in srgb, var(--tier) 60%, transparent);
+  }
+}
+
+.tier-badge {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  min-width: 22px;
+  padding: 0 5px;
+  border: 2px solid var(--surface);
+  border-radius: 5px;
+  background: var(--tier);
+  color: #10131a;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 13px;
+  white-space: nowrap;
+}
+
+// Elo em destaque, na cor dele.
+.pcard-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-top: 4px;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--tier) 80%, var(--text));
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  .pdl {
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  &.unranked {
+    color: var(--faint);
+  }
+}
+
+.tier-gem {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  background: var(--tier);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tier) 70%, transparent);
+}
+
+// Etiquetas: o que vale saber do jogador de relance.
+.pcard-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  min-height: 20px;
+  max-height: 44px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.tag {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &[data-tone='good'] {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+  }
+
+  &[data-tone='bad'] {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    color: color-mix(in srgb, var(--danger) 80%, white);
+  }
+
+  &[data-tone='warn'] {
+    background: color-mix(in srgb, var(--warning) 14%, transparent);
+    color: var(--warning);
+  }
+
+  &[data-tone='accent'] {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
+
+  &[data-tone='party'] {
+    background: color-mix(in srgb, var(--tag) 16%, transparent);
+    color: var(--tag);
+  }
+}
+
+.pcard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+
+.stat {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+
+  strong {
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    overflow: hidden;
+    color: var(--faint);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tier-text {
+    color: color-mix(in srgb, var(--tier) 80%, var(--text));
+  }
+
+  .dim {
+    color: var(--faint);
+  }
+}
+
+// Dano físico (AD, vermelho) x mágico (AP, azul) x verdadeiro (branco).
+.team-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+
+.team-dmg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+
+  .dmg-bar {
+    width: 180px;
+    height: 7px;
+  }
+}
+
+.dmg-bar {
+  --ad: #f2545f;
+  --ap: #4d8dff;
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+
+  span {
+    min-width: 3px;
+    border-radius: 3px;
+  }
+
+  .ad {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ad) 70%, black), var(--ad));
+  }
+
+  .ap {
+    background: linear-gradient(90deg, var(--ap), color-mix(in srgb, var(--ap) 70%, black));
+  }
+
+  .tru {
+    background: #e9ecf3;
+  }
+}
+
+.dmg-text,
+.dmg-labels span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ad-text {
+  color: #ff7a82;
+}
+
+.ap-text {
+  color: #7fa9ff;
+}
+
+.tru-text {
+  color: #dfe3ec;
+}
+
+.pcard-dmg {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+
+.dmg-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.recent-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.close-recent {
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
   }
 }
 
@@ -515,110 +957,17 @@ button {
   text-align: center;
 }
 
-.champ {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-}
-
-.stack {
-  display: grid;
-  gap: 2px;
-}
-
-img.small {
-  width: 17px;
-  height: 17px;
-  border-radius: 3px;
-
-  &.rune {
-    border-radius: 50%;
-    background: var(--surface-2);
-  }
-
-  &.sub {
-    padding: 2px;
-  }
-}
-
-.identity {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-  margin-left: 4px;
-
-  .nick {
-    overflow: hidden;
-    font-size: 13px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .champ-name {
-    overflow: hidden;
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-.nick.link {
-  cursor: pointer;
-
-  &:hover {
-    color: var(--accent);
-    text-decoration: underline;
-  }
-}
-
-.party-tag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 5px;
-  border: 1px solid;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.met {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--accent);
-  color: var(--bg);
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.rank,
-.mastery {
-  display: grid;
-  font-size: 12px;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.rank {
-  width: 128px;
-}
-
-.mastery {
-  width: 78px;
-}
-
 // Resumo das últimas partidas de um jogador da partida.
 .recent {
   container-type: inline-size;
   display: grid;
   gap: 10px;
-  padding: 10px 12px 12px;
-  border-top: 1px solid var(--border);
+  padding: 12px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
   font-size: 12px;
+  animation: recent-in var(--dur) var(--ease-out);
 
   .error {
     color: var(--danger);
@@ -745,4 +1094,21 @@ img.small {
     background: var(--danger);
     animation: pulse 1.6s ease-in-out infinite;
   }
+}
+
+@keyframes recent-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+// Sem dano real medido ainda: barra apagada e "~" no número (é só estimativa).
+.estimated .dmg-bar {
+  opacity: 0.45;
+}
+
+.estimated .dmg-labels span,
+.estimated.team-dmg .dmg-text {
+  opacity: 0.7;
 }

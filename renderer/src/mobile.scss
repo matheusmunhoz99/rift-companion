@@ -388,24 +388,13 @@ body.android-app {
     flex-direction: row;
     gap: 6px;
   }
-  app-live-game-view .teams {
-    grid-template-columns: minmax(0, 1fr) !important;
+  /* Cards dos jogadores: 2 por linha no celular. */
+  app-live-game-view .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px;
   }
-  app-live-game-view .player-row {
-    flex-wrap: wrap;
-    row-gap: 4px;
-  }
-  app-live-game-view .identity {
-    flex: 1 1 150px;
-  }
-  app-live-game-view .rank,
-  app-live-game-view .mastery {
-    width: auto !important;
-    flex: 1 1 42%;
-  }
-  app-live-game-view .rank {
-    padding-left: 46px;
-    text-align: left;
+  app-live-game-view .pcard:hover {
+    transform: none;
   }
   app-live-game-view .encounter-game {
     grid-template-columns: 48px minmax(0, 1fr) 56px !important;

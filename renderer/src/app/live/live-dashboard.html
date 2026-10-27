@@ -71,7 +71,13 @@
           @for (p of [m.ally, m.enemy]; track $index) {
             @if (p; as player) {
               @let tag = tagOf(player);
-              <div class="lane-player" [class.mirror]="$index === 1" [class.me]="player.isMe" [class.dead]="player.isDead">
+              <div
+                class="lane-player"
+                [class.mirror]="$index === 1"
+                [class.me]="player.isMe"
+                [class.dead]="player.isDead"
+                [style.--art]="championArt(player)"
+              >
                 <div
                   class="champ"
                   [class.party]="!!tag?.party"

@@ -17,7 +17,7 @@ export const READ_CHANNELS = new Set([
   'lobby:queues', 'lobby:friends', 'lobby:champions', 'builds:get',
   'riot:get-settings', 'riot:find-player', 'riot:get-live-game', 'riot:get-local-game',
   'riot:get-live-dashboard', 'riot:get-premades', 'riot:get-matches',
-  'stats:meta', 'stats:tierlist', 'stats:champion', 'stats:counters', 'telegram:status',
+  'stats:meta', 'stats:tierlist', 'stats:champion', 'stats:counters', 'stats:damage', 'telegram:status',
 ]);
 const WRITE_CHANNELS = new Set([
   'prefs:set', 'app:launch-league', 'riot:set-platform',

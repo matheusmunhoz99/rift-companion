@@ -3,7 +3,8 @@ import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveGame, LiveParticipant, LocalGame, MatchSummary } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
-import { mainRank, queueName, rankText, winRate } from '../riot/labels';
+import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
+import type { RankedEntry } from '../history/riot.types';
 import { findEncounters, type PlayerEncounters } from './encounters';
 import type { PlayerTag } from './live-dashboard';
 import { estimateWinChance } from './win-chance';
@@ -14,6 +15,19 @@ import { MatchDetails } from '../match/match-details';
 import { PARTY_COLORS, PARTY_NAMES, rememberParties } from '../match/parties';
 import { LiveDashboardPanel } from './live-dashboard';
 import { LiveDataService } from './live-data.service';
+import { ChampionDamageService } from '../stats/champion-damage.service';
+
+interface CardTag {
+  label: string;
+  tone: 'party' | 'accent' | 'good' | 'warn' | 'bad' | 'muted';
+  color?: string;
+}
+
+/** Siglas de elo como no cliente em português (Prata P, Platina PL...). */
+const TIER_SHORT: Record<string, string> = {
+  IRON: 'F', BRONZE: 'B', SILVER: 'P', GOLD: 'O', PLATINUM: 'PL', EMERALD: 'E',
+  DIAMOND: 'D', MASTER: 'M', GRANDMASTER: 'GM', CHALLENGER: 'DS',
+};
 
 /** Summoner's Rift: o único mapa com as cinco rotas. */
 const SUMMONERS_RIFT = 11;
@@ -27,12 +41,14 @@ const LANE_SHORT: Record<string, string> = {
 
 const RECENT_GAMES = 10;
 /** Quantas partidas suas são cruzadas com os jogadores da partida atual. */
-const ENCOUNTER_GAMES = 10;
+const ENCOUNTER_GAMES = 20;
 /**
  * A Riot só libera a partida no spectator 2 a 3 minutos depois do início.
  * Enquanto isso a tela usa os dados locais do jogo e tenta de novo a cada 15 s.
  */
 const RETRY_MS = 15_000;
+/** No começo (sem nada na tela ainda), tenta de novo bem mais rápido. */
+const FIRST_RETRY_MS = 4_000;
 
 interface RecentSummary {
   games: number;
@@ -50,6 +66,8 @@ interface RecentSummary {
 /** Resumo de uma pessoa em "Já jogaram com você". */
 interface EncounterSummary {
   player: PlayerEncounters;
+  /** Campeão da pessoa nesta partida (0 quando ainda não dá para saber). */
+  currentChampionId: number;
   together: number;
   togetherWins: number;
   against: number;
@@ -89,6 +107,8 @@ export class LiveGameView {
   protected readonly waitingRiot = signal(false);
 
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Tentativas seguidas sem conseguir montar a partida (para só mostrar erro se insistir). */
+  private failures = 0;
 
   protected readonly me = computed(() => {
     const game = this.game();
@@ -256,20 +276,24 @@ export class LiveGameView {
   protected readonly openEncounter = signal<string | null>(null);
   protected readonly openMatchId = signal<string | null>(null);
 
-  protected readonly encounterSummaries = computed<EncounterSummary[]>(() =>
-    this.encounterList().map((player) => {
+  protected readonly encounterSummaries = computed<EncounterSummary[]>(() => {
+    const current = new Map(
+      (this.game()?.participants ?? []).map((p) => [p.riotId.toLowerCase(), p.championId]),
+    );
+    return this.encounterList().map((player) => {
       const together = player.encounters.filter((e) => e.sameTeam);
       const against = player.encounters.filter((e) => !e.sameTeam);
       return {
         player,
+        currentChampionId: current.get(player.riotId.toLowerCase()) ?? 0,
         together: together.length,
         togetherWins: together.filter((e) => e.youWon).length,
         against: against.length,
         againstWins: against.filter((e) => e.youWon).length,
         champions: [...new Set(player.encounters.map((e) => e.them.championId))],
       };
-    }),
-  );
+    });
+  });
 
   protected toggleEncounter(riotId: string): void {
     this.openEncounter.update((current) => (current === riotId ? null : riotId));
@@ -322,6 +346,26 @@ export class LiveGameView {
   protected readonly mainRank = mainRank;
   protected readonly winRate = winRate;
 
+  /** Mestre, Grão-Mestre e Desafiante ganham um brilho a mais na borda, como no cliente. */
+  protected isApex(tier: string | undefined): boolean {
+    return tier === 'MASTER' || tier === 'GRANDMASTER' || tier === 'CHALLENGER';
+  }
+
+  protected tierLabel(player: LiveParticipant): string {
+    const rank = mainRank(player.ranked);
+    return rank ? rankText(rank) : 'Sem elo';
+  }
+
+  /** Selo curto no canto do campeão: "D2", "O4", "M"... */
+  protected tierShort(player: LiveParticipant): string | null {
+    const rank = mainRank(player.ranked);
+    if (!rank) return null;
+    const letter = TIER_SHORT[rank.tier] ?? (TIER_NAMES[rank.tier] ?? rank.tier)[0];
+    if (this.isApex(rank.tier)) return letter;
+    const division = { I: '1', II: '2', III: '3', IV: '4' }[rank.rank] ?? '';
+    return `${letter}${division}`;
+  }
+
   constructor() {
     // Carrega ao entrar em partida e limpa ao sair.
     effect(() => {
@@ -368,6 +412,7 @@ export class LiveGameView {
       const game = await window.riot.getLiveGame(summoner.gameName, summoner.tagLine, platformId);
       this.game.set(game);
       this.waitingRiot.set(false);
+      this.failures = 0;
       // A Riot API não informa rotas; o jogo local às vezes sim.
       void window.riot.getLocalGame().then(
         (local) => local && this.rememberPositions(local),
@@ -376,25 +421,42 @@ export class LiveGameView {
       void this.loadEncounters(game, platformId);
       void this.loadPremades(game, summoner.gameName, summoner.tagLine, platformId);
     } catch (error) {
-      const text = cleanError(error);
-      if (!/não está em partida/.test(text)) {
-        if (!this.game()) this.error.set(text);
-        return;
-      }
-      // A Riot ainda não liberou a partida: mostra os times pelos dados do próprio jogo.
-      const local = await window.riot.getLocalGame().catch(() => null);
-      if (local && local.players.length > 0) {
-        this.rememberPositions(local);
-        const game = this.fromLocal(local);
-        if (!this.game() || this.waitingRiot()) this.game.set(game);
-        this.waitingRiot.set(true);
-        void this.loadEncounters(game, platformId);
-      } else if (!this.game()) {
-        this.error.set('A partida está carregando. Os times aparecem assim que o jogo abrir.');
-      }
-      this.retryTimer = setTimeout(() => void this.load(), RETRY_MS);
+      await this.showFromLocalOrRetry(platformId, error);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * A Riot ainda não publicou a partida no spectator (normal nos primeiros minutos),
+   * ou o servidor hesitou. Monta os times pelos dados do próprio jogo quando dá e
+   * tenta sozinho até a partida aparecer — nunca deixa a tela num erro que exige clicar.
+   */
+  private async showFromLocalOrRetry(platformId: string, error: unknown): Promise<void> {
+    const inGame = ['InProgress', 'Reconnect'].includes(this.lcu.state().gameflowPhase ?? '');
+    const local = await window.riot!.getLocalGame().catch(() => null);
+
+    if (local && local.players.length > 0) {
+      this.rememberPositions(local);
+      const game = this.fromLocal(local);
+      if (!this.game() || this.waitingRiot()) this.game.set(game);
+      this.waitingRiot.set(true);
+      this.error.set(null);
+      this.failures = 0;
+      void this.loadEncounters(game, platformId);
+    } else if (!this.game()) {
+      // Sem nada ainda: mensagem calma nas primeiras tentativas; o erro real só se insistir.
+      this.failures++;
+      this.error.set(
+        this.failures <= 3
+          ? 'Carregando a partida… os times aparecem em instantes.'
+          : cleanError(error),
+      );
+    }
+
+    // Enquanto estamos em partida e ainda falta a versão da Riot, tenta de novo sozinho.
+    if (inGame && (!this.game() || this.waitingRiot())) {
+      this.retryTimer = setTimeout(() => void this.load(), this.game() ? RETRY_MS : FIRST_RETRY_MS);
     }
   }
 
@@ -435,6 +497,61 @@ export class LiveGameView {
   protected iconUrl(championId: number): string | null {
     const champion = this.ddragon.champion(championId);
     return champion ? this.ddragon.championIconUrl(champion) : null;
+  }
+
+  /** Fundo do card: arte do campeão (CSS url pronto para --splash). */
+  protected splashStyle(championId: number): string | null {
+    const champion = this.ddragon.champion(championId);
+    return champion ? `url("${this.ddragon.championLoadingUrl(champion)}")` : null;
+  }
+
+  protected readonly damage = inject(ChampionDamageService);
+
+  protected teamDamage(team: LiveParticipant[]) {
+    return this.damage.team(team.map((player) => player.championId));
+  }
+
+  protected pct(value: number): number {
+    return Math.round(value * 100);
+  }
+
+  /** "Ouro II", "Mestre": divisão só abaixo do Mestre. */
+  protected tierName(rank: RankedEntry): string {
+    return this.isApex(rank.tier) ? tierLabelOf(rank.tier) : `${tierLabelOf(rank.tier)} ${rank.rank}`;
+  }
+
+  /** Partidas ranqueadas na fila do elo principal. */
+  protected rankGames(player: LiveParticipant): number {
+    const rank = mainRank(player.ranked);
+    return rank ? rank.wins + rank.losses : 0;
+  }
+
+  protected rankWinRate(player: LiveParticipant): number | null {
+    const rank = mainRank(player.ranked);
+    return rank ? winRate(rank.wins, rank.losses) : null;
+  }
+
+  /**
+   * Etiquetas curtas do card: o que vale saber do jogador de relance. Máximo 3; o
+   * resto vira "+N".
+   */
+  protected cardTags(player: LiveParticipant): { tags: CardTag[]; more: number } {
+    const tags: CardTag[] = [];
+    const party = this.partyOf(player);
+    if (party) tags.push({ label: party.label, tone: 'party', color: party.color });
+    const met = this.encounterOf(player);
+    if (met) tags.push({ label: `Já jogou ${met.encounters.length}x`, tone: 'accent' });
+    const points = player.mastery?.points ?? 0;
+    const champion = this.ddragon.champion(player.championId)?.name;
+    if (points >= 100_000) tags.push({ label: champion ? `Main ${champion}` : 'Main', tone: 'good' });
+    else if (player.mastery && points < 5_000) tags.push({ label: 'Pouca experiência', tone: 'warn' });
+    else if (!player.mastery && !this.waitingRiot()) tags.push({ label: 'Primeira vez', tone: 'warn' });
+    const rate = this.rankWinRate(player);
+    const games = this.rankGames(player);
+    if (rate !== null && games >= 20 && rate >= 57) tags.push({ label: 'Em alta', tone: 'good' });
+    if (rate !== null && games >= 20 && rate <= 44) tags.push({ label: 'Em baixa', tone: 'bad' });
+    if (games > 0 && games < 15) tags.push({ label: 'Poucas ranqueadas', tone: 'muted' });
+    return { tags: tags.slice(0, 3), more: Math.max(0, tags.length - 3) };
   }
 
   protected name(riotId: string): { gameName: string; tag: string } {
@@ -555,6 +672,7 @@ export class LiveGameView {
     this.premades.set([]);
     this.premadesFor = 0;
     this.knownPositions.set(new Map());
+    this.failures = 0;
   }
 
   private clearRetry(): void {

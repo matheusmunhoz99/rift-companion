@@ -154,6 +154,12 @@ export class LiveDashboardPanel {
     return champion ? this.ddragon.championIconUrl(champion) : null;
   }
 
+  /** Arte larga do campeão, no fundo da linha da rota. */
+  protected championArt(player: LivePlayer): string | null {
+    const champion = this.ddragon.champion(this.ddragon.championKeyOf(player.championKey));
+    return champion ? `url("https://ddragon.leagueoflegends.com/cdn/img/champion/centered/${champion.id}_0.jpg")` : null;
+  }
+
   protected value(player: LivePlayer): number {
     return this.live.itemValue(player);
   }

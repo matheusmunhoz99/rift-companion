@@ -98,6 +98,11 @@ export class DataDragonService {
     return version ? `${BASE_URL}/cdn/${version}/img/champion/${champion.id}.png` : null;
   }
 
+  /** Arte vertical da tela de carregamento (ótima para cards em pé). */
+  championLoadingUrl(champion: ChampionInfo): string {
+    return `${BASE_URL}/cdn/img/champion/loading/${champion.id}_0.jpg`;
+  }
+
   profileIconUrl(iconId: number): string | null {
     const version = this.version();
     return version ? `${BASE_URL}/cdn/${version}/img/profileicon/${iconId}.png` : null;

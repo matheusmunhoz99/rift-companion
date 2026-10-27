@@ -85,7 +85,8 @@ h4 {
   min-width: 2ch;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 40px;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--side-color, var(--text)) 45%, transparent);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -250,21 +251,36 @@ h4 {
 
 // Duas linhas: nome em cima, KDA e CS embaixo; itens ao lado.
 .lane-player {
+  position: relative;
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 46px;
+  overflow: hidden;
   padding: 4px 8px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--ally-strong);
-  border-radius: 8px;
-  background: var(--well);
+  border-radius: 10px;
+  // Arte do campeão do lado de fora, sumindo para o centro.
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--well) 5%, transparent), color-mix(in srgb, var(--well) 70%, transparent) 30%, var(--well) 58%),
+    var(--art, none) left 30% center / 60% auto no-repeat,
+    var(--well);
+  transition: border-color var(--dur) var(--ease-out);
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
 
   &.mirror {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     border-right: 3px solid var(--enemy-strong);
     border-left-width: 1px;
+    background:
+      linear-gradient(270deg, color-mix(in srgb, var(--well) 5%, transparent), color-mix(in srgb, var(--well) 70%, transparent) 30%, var(--well) 58%),
+      var(--art, none) right 30% center / 60% auto no-repeat,
+      var(--well);
     direction: rtl;
 
     > * {
@@ -284,7 +300,9 @@ h4 {
   &.me {
     border-color: var(--accent);
     background:
-      linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, var(--well) 5%, transparent), color-mix(in srgb, var(--well) 70%, transparent) 30%, var(--well) 58%),
+      var(--art, none) left 30% center / 60% auto no-repeat,
       var(--well);
   }
 
@@ -436,11 +454,22 @@ h4 {
 }
 
 .lane-diff {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
   color: var(--muted);
   font-family: var(--font-display);
   font-size: 14px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+
+  &.ahead {
+    background: color-mix(in srgb, var(--ally-strong) 18%, transparent);
+  }
+
+  &.behind {
+    background: color-mix(in srgb, var(--enemy-strong) 18%, transparent);
+  }
 }
 
 .lane-cs {
@@ -1004,4 +1033,14 @@ h4 {
     border-color: var(--border-strong);
     color: var(--muted);
   }
+}
+
+
+/* Cores de cada lado do placar. */
+.side.ally {
+  --side-color: var(--ally-strong);
+}
+
+.side.enemy {
+  --side-color: var(--enemy-strong);
 }
