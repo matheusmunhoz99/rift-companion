@@ -18,6 +18,27 @@
         </span>
       }
     </div>
+    <!-- Os 3 melhores da partida (os dois times), compactos no próprio resultado. -->
+    <div class="mini-podium" aria-label="Melhores da partida">
+      @for (p of podium(); track p.puuid || p.riotId) {
+        <button
+          type="button"
+          class="mini-step"
+          [attr.data-place]="p.rank"
+          [class.ally]="ally(p)"
+          [class.me]="p.isMe"
+          [title]="'Ver histórico de ' + p.riotId"
+          (click)="openPlayer(p)"
+        >
+          <span class="mini-avatar">
+            @if (icon(p.championId); as src) {<img [src]="src" [alt]="championName(p.championId)" />}
+            <span class="medal num">{{ p.rank }}</span>
+          </span>
+          <span class="mini-name">{{ name(p.riotId) }}</span>
+          <span class="mini-score num">{{ p.score.toFixed(1) }}</span>
+        </button>
+      }
+    </div>
     @if (me(); as m) {
       <div class="my-score" [attr.data-tone]="scoreTone(m.score)">
         <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
@@ -32,30 +53,7 @@
     }
   </header>
 
-  <div class="top">
-    <!-- Pódio dos 3 melhores da partida (os dois times). -->
-    <section class="panel podium-panel">
-      <h3>Melhores da partida</h3>
-      <div class="podium">
-        @for (p of podium(); track p.puuid || p.riotId) {
-          <div class="step" [attr.data-place]="p.rank" [class.ally]="ally(p)" [class.me]="p.isMe" [style.--art]="art(p.championId)">
-            <button type="button" class="step-player" [title]="'Ver histórico de ' + p.riotId" (click)="openPlayer(p)">
-              <span class="step-art" aria-hidden="true"></span>
-              <span class="avatar">
-                @if (icon(p.championId); as src) {<img [src]="src" [alt]="championName(p.championId)" />}
-                <span class="medal num">{{ p.rank }}</span>
-              </span>
-              <span class="step-name">{{ name(p.riotId) }}</span>
-              <span class="step-champ muted">{{ championName(p.championId) }}</span>
-              <span class="step-score num">{{ p.score.toFixed(1) }}</span>
-              <span class="step-kda num muted">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
-            </button>
-            <div class="pedestal"><span class="num">{{ p.rank }}º</span></div>
-          </div>
-        }
-      </div>
-    </section>
-
+  <div class="board">
     <!-- Ranking de 1 a 10 pela nota. -->
     <section class="panel ranking-panel">
       <header class="panel-head">
@@ -95,9 +93,6 @@
         }
       </ol>
     </section>
-  </div>
-
-  <div class="bottom">
     <!-- Gráfico por estatística, os 10 jogadores lado a lado. -->
     <section class="panel chart-panel">
       <header class="panel-head">

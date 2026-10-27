@@ -551,7 +551,7 @@ export class LiveGameView {
     if (rate !== null && games >= 20 && rate >= 57) tags.push({ label: 'Em alta', tone: 'good' });
     if (rate !== null && games >= 20 && rate <= 44) tags.push({ label: 'Em baixa', tone: 'bad' });
     if (games > 0 && games < 15) tags.push({ label: 'Poucas ranqueadas', tone: 'muted' });
-    return { tags: tags.slice(0, 3), more: Math.max(0, tags.length - 3) };
+    return { tags: tags.slice(0, 2), more: Math.max(0, tags.length - 2) };
   }
 
   protected name(riotId: string): { gameName: string; tag: string } {

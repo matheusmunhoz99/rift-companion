@@ -187,7 +187,13 @@
               [attr.data-tier]="mainRank(player.ranked)?.tier ?? null"
               [style.--splash]="splashStyle(player.championId)"
             >
-              <button type="button" class="pcard-body" [disabled]="!player.puuid" (click)="toggle(player)">
+              <button
+                type="button"
+                class="pcard-body"
+                [disabled]="!player.puuid"
+                title="Clique para ver as últimas partidas; no nome, o histórico completo"
+                (click)="toggle(player)"
+              >
                 <span class="pcard-splash" aria-hidden="true"></span>
 
                 <span class="pcard-top">
@@ -372,10 +378,6 @@
       </section>
     }
   </div>
-
-  <p class="hint muted">
-    Clique num jogador para ver as últimas partidas dele (e o placar de cada uma), ou no nome para abrir o histórico completo.
-  </p>
   }
 } @else if (loading()) {
   <p class="muted">Carregando a partida…</p>

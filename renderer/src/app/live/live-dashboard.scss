@@ -565,10 +565,10 @@ h4 {
 
 .bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(200px, 1fr) minmax(200px, 1fr);
   gap: 12px;
 
-  @media (max-width: 1180px) {
+  @media (max-width: 980px) {
     grid-template-columns: 1fr 1fr;
 
     .chart-card {
@@ -1043,4 +1043,117 @@ h4 {
 
 .side.enemy {
   --side-color: var(--enemy-strong);
+}
+
+
+// Janela baixa: rota a rota e os painéis de baixo mais compactos, sem rolar.
+@media (max-height: 780px) {
+  .scoreboard {
+    padding-block: 6px 8px;
+  }
+
+  .kills {
+    font-size: 32px;
+  }
+
+  .lanes {
+    gap: 4px;
+    padding: 8px 10px 10px;
+  }
+
+  .lane-player {
+    min-height: 34px;
+    padding-block: 1px;
+  }
+
+  .chart svg {
+    height: 80px;
+  }
+
+  .feed {
+    max-height: 104px;
+  }
+
+  .card {
+    gap: 6px;
+    padding: 8px 10px 10px;
+  }
+}
+
+// O KDA nunca some: quem encolhe é o "CS · x/min" (com reticências).
+.numbers {
+  .kda {
+    flex: none;
+  }
+
+  .muted {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+// Rota a rota estreito: itens menores para sobrar espaço para o nome e o KDA.
+.lanes {
+  container-type: inline-size;
+}
+
+@container (max-width: 900px) {
+  .items {
+    gap: 1px;
+
+    img,
+    .empty {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  .who .name {
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 780px) {
+  // Rota e diferença de ouro numa linha só; o CS fica no título.
+  .lane-center {
+    gap: 0;
+  }
+
+  .lane-cs {
+    display: none;
+  }
+
+  .lane-tag {
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
+  .lane-diff {
+    font-size: 13px;
+  }
+}
+
+@media (max-height: 780px) {
+  .me-card .stats {
+    row-gap: 2px;
+  }
+
+  .me-card .gold {
+    font-size: 16px;
+  }
+
+  .hp {
+    height: 13px;
+  }
+}
+
+@media (max-height: 780px) {
+  .scoreboard {
+    gap: 4px 14px;
+  }
+
+  .lanes {
+    gap: 2px;
+  }
 }

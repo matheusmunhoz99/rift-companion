@@ -453,7 +453,7 @@ button {
 // Times: uma fileira de 5 cards por time.
 .teams-cards {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .team-row {
@@ -469,13 +469,26 @@ button {
   }
 }
 
+.team-row {
+  container-type: inline-size;
+}
+
+// 5 por linha enquanto couber (cards de ~150px já leem bem); depois 3 e 2.
 .cards {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
+}
 
-  @media (max-width: 1100px) {
+@container (max-width: 760px) {
+  .cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 480px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -546,9 +559,9 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  padding: 10px 12px 14px;
+  padding: 8px 10px 12px;
   border: none;
   background: none;
   color: var(--text);
@@ -565,7 +578,7 @@ button {
 .pcard-splash {
   position: absolute;
   inset: 0 0 auto;
-  height: 158px;
+  height: 132px;
   background: var(--splash, none) center 16% / cover no-repeat;
   opacity: 0.6;
   -webkit-mask-image: linear-gradient(180deg, #000 25%, transparent 100%);
@@ -608,7 +621,7 @@ button {
   display: grid;
   gap: 2px;
   max-width: 100%;
-  margin-top: 22px;
+  margin-top: clamp(4px, 1.8vh, 16px);
 
   .nick {
     overflow: hidden;
@@ -671,8 +684,8 @@ button {
 .portrait {
   position: relative;
   flex: none;
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
   padding: 3px;
   border-radius: 50%;
   background: var(--border-strong);
@@ -725,7 +738,7 @@ button {
   align-items: center;
   gap: 6px;
   max-width: 100%;
-  margin-top: 4px;
+  margin-top: 2px;
   overflow: hidden;
   color: color-mix(in srgb, var(--tier) 80%, var(--text));
   font-family: var(--font-display);
@@ -762,8 +775,7 @@ button {
   justify-content: center;
   gap: 4px;
   min-height: 20px;
-  max-height: 44px;
-  margin-top: 2px;
+  max-height: 20px;
   overflow: hidden;
 }
 
@@ -807,7 +819,7 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   width: 100%;
-  padding-top: 9px;
+  padding-top: 6px;
   border-top: 1px solid var(--border);
 }
 
@@ -1111,4 +1123,55 @@ button {
 .estimated .dmg-labels span,
 .estimated.team-dmg .dmg-text {
   opacity: 0.7;
+}
+
+// Janela baixa: cards mais compactos para as duas fileiras caberem sem rolar.
+@media (max-height: 780px) {
+  .pcard-body {
+    gap: 4px;
+    padding: 6px 8px 10px;
+  }
+
+  .pcard-splash {
+    height: 104px;
+  }
+
+  .pcard-name {
+    margin-top: 2px;
+
+    .nick {
+      font-size: 14px;
+    }
+
+    .champ-name {
+      display: none;
+    }
+  }
+
+  .portrait {
+    width: 44px;
+    height: 44px;
+  }
+
+  .kit-side {
+    width: 18px;
+
+    img {
+      width: 18px;
+      height: 18px;
+    }
+
+    .substyle {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .stat strong {
+    font-size: 13px;
+  }
+
+  .dmg-labels {
+    font-size: 10px;
+  }
 }

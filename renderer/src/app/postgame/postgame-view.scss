@@ -324,13 +324,23 @@ h3 {
 
 /* ------------------------------------------------------------------ Pódio */
 
-.top {
+// Ranking | gráfico | destaques, lado a lado: a partida inteira sem rolar.
+.board {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: stretch;
   gap: 12px;
 
   @media (max-width: 1080px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    .highlights-panel {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -631,15 +641,6 @@ h3 {
 
 /* ------------------------------------------------------------------ Gráficos */
 
-.bottom {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 12px;
-
-  @media (max-width: 1080px) {
-    grid-template-columns: 1fr;
-  }
-}
 
 .metric-chips {
   display: flex;
@@ -888,4 +889,294 @@ h3 {
   font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ Mini pódio no resultado */
+
+.result {
+  min-height: 0;
+  padding: 16px 22px;
+}
+
+.result-word {
+  font-size: 38px;
+}
+
+.mini-podium {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.mini-step {
+  --medal: var(--bronze);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 92px;
+  padding: 8px 6px;
+  border: 1px solid color-mix(in srgb, var(--medal) 45%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease-out);
+  animation: player-in var(--dur-slow) var(--ease-out) both;
+
+  &[data-place='1'] {
+    --medal: var(--gold);
+    padding-bottom: 16px;
+    box-shadow: 0 0 22px color-mix(in srgb, var(--medal) 24%, transparent);
+  }
+
+  &[data-place='2'] {
+    --medal: var(--silver);
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &.me {
+    border-color: var(--accent);
+  }
+}
+
+.mini-avatar {
+  position: relative;
+  margin-bottom: 6px;
+
+  img {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--medal);
+    border-radius: 50%;
+  }
+
+  .medal {
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    transform: translateX(-50%);
+    min-width: 18px;
+    border-radius: 9px;
+    background: var(--medal);
+    color: #10131a;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+  }
+}
+
+.mini-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-score {
+  color: var(--medal);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ Painéis compactos */
+
+.board .panel {
+  min-width: 0;
+}
+
+// A explicação da nota abre por cima do ranking, sem empurrar a tela.
+.ranking-panel {
+  position: relative;
+}
+
+.ranking-panel .formula {
+  position: absolute;
+  inset: 52px 12px 12px;
+  z-index: 3;
+  overflow-y: auto;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.board .rank-row {
+  padding-block: 3px;
+}
+
+.board .highlights {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 1080px) {
+  .board .highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------------ Ajustes para caber sem rolar */
+
+// Resultado numa linha: texto | mini pódio | anel da nota.
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  flex-wrap: nowrap;
+  gap: 18px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    .mini-podium {
+      display: none;
+    }
+  }
+}
+
+.mini-podium {
+  margin-left: 0;
+}
+
+.my-score {
+  width: 104px;
+  height: 104px;
+}
+
+// Ranking estreito: nome com espaço, barra curta.
+.board .rank-row {
+  grid-template-columns: 18px 24px minmax(0, 1fr) auto 44px 30px;
+  gap: 6px;
+}
+
+.board .rank-kda {
+  font-size: 11px;
+}
+
+// Destaques em duas colunas, com o valor embaixo do nome.
+.board .highlights {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.board .highlight {
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    'img text'
+    'img value';
+  row-gap: 0;
+  padding: 5px 8px 5px 5px;
+
+  img {
+    grid-area: img;
+    width: 28px;
+    height: 28px;
+  }
+
+  .hl-text {
+    grid-area: text;
+    min-width: 0;
+  }
+
+  .hl-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hl-value {
+    grid-area: value;
+    justify-self: start;
+    font-size: 13px;
+  }
+}
+
+// Janela baixa: tudo um pouco menor para continuar sem rolar.
+@media (max-height: 780px) {
+  .result {
+    padding: 10px 18px;
+  }
+
+  .result-word {
+    font-size: 30px;
+  }
+
+  .result-champ {
+    display: none;
+  }
+
+  .chip-stat {
+    padding: 3px 8px;
+
+    strong {
+      font-size: 13px;
+    }
+  }
+
+  .my-score {
+    width: 84px;
+    height: 84px;
+  }
+
+  .ring-center strong {
+    font-size: 26px;
+  }
+
+  .mini-step {
+    width: 80px;
+    padding: 5px 4px;
+
+    &[data-place='1'] {
+      padding-bottom: 9px;
+    }
+  }
+
+  .mini-avatar img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .board .rank-row {
+    padding-block: 1px;
+  }
+
+  .board .highlight {
+    padding-block: 3px;
+  }
+
+  .board .bar-row {
+    min-height: 0;
+  }
+}
+
+// Botões do gráfico numa linha só, rolando de lado dentro do painel.
+.board .metric-chips {
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .metric {
+    flex: none;
+  }
+}
+
+.board .chart-panel .panel-head {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+@media (max-height: 780px) {
+  .board .highlight:nth-child(n + 9) {
+    display: none;
+  }
 }
