@@ -46,10 +46,106 @@ h3 {
   justify-content: space-between;
   gap: 8px 12px;
 
-  .small {
-    cursor: help;
-    text-decoration: underline dotted;
-    text-underline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ Como a nota é calculada */
+
+.formula-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover,
+  &.open {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+  }
+}
+
+.formula {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--well);
+  animation: player-in var(--dur) var(--ease-out) both;
+}
+
+.formula-intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+
+  strong {
+    color: var(--text);
+  }
+}
+
+.formula-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) 46px;
+    grid-template-areas:
+      'label bar weight'
+      'detail detail detail';
+    align-items: center;
+    column-gap: 10px;
+    font-size: 12px;
+  }
+
+  .f-label {
+    grid-area: label;
+    font-weight: 600;
+  }
+
+  .f-bar {
+    grid-area: bar;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--surface-2);
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: 3px;
+      background: var(--success);
+    }
+  }
+
+  .f-weight {
+    grid-area: weight;
+    color: var(--success);
+    text-align: right;
+  }
+
+  .f-detail {
+    grid-area: detail;
+    color: var(--faint);
+    font-size: 11px;
+  }
+
+  .negative {
+    .f-bar span {
+      background: var(--danger);
+    }
+
+    .f-weight {
+      color: var(--danger);
+    }
   }
 }
 
@@ -70,17 +166,18 @@ h3 {
 .result {
   --side: var(--muted);
 
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px 24px;
-  padding: 14px 18px;
-  border: 1px solid color-mix(in srgb, var(--side) 40%, var(--border));
+  gap: 16px 28px;
+  min-height: 150px;
+  overflow: hidden;
+  padding: 22px 26px;
+  border: 1px solid color-mix(in srgb, var(--side) 45%, var(--border));
   border-radius: var(--radius);
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--side) 22%, transparent), transparent 55%),
-    var(--surface);
+  background: var(--surface);
 
   &.win {
     --side: var(--ally-strong);
@@ -89,19 +186,45 @@ h3 {
   &.loss {
     --side: var(--enemy-strong);
   }
+
+  // Faixa colorida do resultado à esquerda.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--side);
+  }
+}
+
+// Arte do seu campeão à direita, sumindo para a esquerda na cor do resultado.
+.result-art {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--surface) 28%, color-mix(in srgb, var(--surface) 55%, transparent) 60%, transparent),
+    linear-gradient(0deg, color-mix(in srgb, var(--side) 22%, transparent), transparent 70%),
+    var(--art, none) right 20% center / cover no-repeat;
+  opacity: 0.95;
+  pointer-events: none;
 }
 
 .result-main {
+  position: relative;
   display: grid;
-  gap: 2px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .result-word {
-  color: color-mix(in srgb, var(--side) 55%, var(--text));
+  color: color-mix(in srgb, var(--side) 60%, var(--text));
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 44px;
   font-weight: 700;
+  letter-spacing: 0.5px;
   line-height: 1;
+  text-shadow: 0 0 30px color-mix(in srgb, var(--side) 45%, transparent);
+  text-transform: uppercase;
 }
 
 .result-meta {
@@ -109,35 +232,95 @@ h3 {
   font-size: 13px;
 }
 
-.my-place {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.result-champ {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
 
-  img {
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--accent);
-    border-radius: 10px;
+.result-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.chip-stat {
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--muted);
+  font-size: 12px;
+
+  strong {
+    margin-right: 3px;
+    color: var(--text);
+    font-size: 14px;
   }
 }
 
-.my-rank {
-  color: var(--accent);
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1;
+// Anel da nota (0 a 10) na cor da nota.
+.my-score {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 118px;
+  height: 118px;
 }
 
-.my-detail {
+.ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+
+  circle {
+    fill: none;
+    stroke-width: 9;
+  }
+}
+
+.ring-track {
+  stroke: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.ring-fill {
+  stroke: var(--tone);
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--tone) 60%, transparent));
+  animation: ring-in 900ms var(--ease-out) both;
+}
+
+.ring-center {
+  position: relative;
   display: grid;
-  font-size: 13px;
+  justify-items: center;
+  line-height: 1;
 
   strong {
     color: var(--tone);
-    font-size: 16px;
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 700;
+  }
+
+  span {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
   }
 }
+
+@keyframes ring-in {
+  from {
+    stroke-dasharray: 0 400;
+  }
+}
+
 
 /* ------------------------------------------------------------------ Pódio */
 
@@ -167,7 +350,7 @@ h3 {
 
 .step {
   --medal: var(--bronze);
-  --height: 64px;
+  --height: 26px;
   --delay: 0ms;
 
   display: grid;
@@ -176,33 +359,63 @@ h3 {
 
   &[data-place='1'] {
     --medal: var(--gold);
-    --height: 118px;
+    --height: 58px;
     --delay: 260ms;
   }
 
   &[data-place='2'] {
     --medal: var(--silver);
-    --height: 88px;
+    --height: 40px;
     --delay: 130ms;
   }
 }
 
+// Card do jogador no pódio, com a arte do campeão atrás.
 .step-player {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 2px;
-  padding: 0;
-  border: none;
-  background: none;
+  width: 100%;
+  overflow: hidden;
+  padding: 14px 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--medal) 45%, var(--border));
+  border-radius: 12px;
+  background: var(--surface-2);
   color: var(--text);
   text-align: center;
   cursor: pointer;
   animation: player-in var(--dur-slow) var(--ease-out) both;
   animation-delay: calc(var(--delay) + 260ms);
+  transition:
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+
+  > :not(.step-art) {
+    position: relative;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  }
 
   &:hover .step-name {
     color: var(--accent-strong);
   }
+
+  .step[data-place='1'] & {
+    box-shadow: 0 0 24px color-mix(in srgb, var(--medal) 22%, transparent);
+  }
+}
+
+.step-art {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 10%, var(--surface-2) 78%),
+    var(--art, none) center 18% / cover no-repeat;
+  opacity: 0.55;
 }
 
 .avatar {
@@ -285,7 +498,7 @@ h3 {
 
   span {
     color: var(--medal);
-    font-size: 28px;
+    font-size: 18px;
     font-weight: 700;
   }
 

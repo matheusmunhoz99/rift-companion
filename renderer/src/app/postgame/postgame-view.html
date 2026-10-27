@@ -1,17 +1,32 @@
 @if (game(); as g) {
-  <!-- Resultado: o que mais importa primeiro. -->
-  <header class="result" [class.win]="g.myTeamWon === true" [class.loss]="g.myTeamWon === false">
+  <!-- Resultado: o que mais importa primeiro, com a arte do seu campeão. -->
+  <header class="result" [class.win]="g.myTeamWon === true" [class.loss]="g.myTeamWon === false" [style.--art]="heroArt()">
+    <span class="result-art" aria-hidden="true"></span>
     <div class="result-main">
       <span class="result-word">{{ g.myTeamWon === null ? 'Fim de partida' : g.myTeamWon ? 'Vitória' : 'Derrota' }}</span>
       <span class="result-meta">{{ title() }} · {{ duration(g.durationSeconds) }} · {{ ago(g.endedAt) }}</span>
+      @if (me(); as m) {
+        <span class="result-champ">
+          {{ championName(m.championId) }} · nível {{ m.level }}
+        </span>
+        <span class="result-chips">
+          <span class="chip-stat"><strong class="num">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</strong> KDA {{ kda(m) }}</span>
+          <span class="chip-stat"><strong class="num">{{ thousands(m.damageToChampions) }}</strong> de dano</span>
+          <span class="chip-stat"><strong class="num">{{ m.cs }}</strong> CS · {{ perMinute(m.cs, g.durationSeconds) }}/min</span>
+          <span class="chip-stat"><strong class="num">{{ thousands(m.gold) }}</strong> de ouro</span>
+          <span class="chip-stat"><strong class="num">{{ m.vision }}</strong> de visão</span>
+        </span>
+      }
     </div>
     @if (me(); as m) {
-      <div class="my-place">
-        @if (icon(m.championId); as src) {<img [src]="src" [alt]="championName(m.championId)" />}
-        <span class="my-rank num">{{ m.rank }}º</span>
-        <span class="my-detail">
-          <span>de 10 · nota <strong class="num" [attr.data-tone]="scoreTone(m.score)">{{ m.score.toFixed(1) }}</strong></span>
-          <span class="muted num">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }} · {{ thousands(m.damageToChampions) }} de dano</span>
+      <div class="my-score" [attr.data-tone]="scoreTone(m.score)">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-track" cx="60" cy="60" r="52" />
+          <circle class="ring-fill" cx="60" cy="60" r="52" [attr.stroke-dasharray]="ringDash(m.score)" />
+        </svg>
+        <span class="ring-center">
+          <strong class="num">{{ m.score.toFixed(1) }}</strong>
+          <span>{{ m.rank }}º de 10</span>
         </span>
       </div>
     }
@@ -23,8 +38,9 @@
       <h3>Melhores da partida</h3>
       <div class="podium">
         @for (p of podium(); track p.puuid || p.riotId) {
-          <div class="step" [attr.data-place]="p.rank" [class.ally]="ally(p)" [class.me]="p.isMe">
+          <div class="step" [attr.data-place]="p.rank" [class.ally]="ally(p)" [class.me]="p.isMe" [style.--art]="art(p.championId)">
             <button type="button" class="step-player" [title]="'Ver histórico de ' + p.riotId" (click)="openPlayer(p)">
+              <span class="step-art" aria-hidden="true"></span>
               <span class="avatar">
                 @if (icon(p.championId); as src) {<img [src]="src" [alt]="championName(p.championId)" />}
                 <span class="medal num">{{ p.rank }}</span>
@@ -44,10 +60,28 @@
     <section class="panel ranking-panel">
       <header class="panel-head">
         <h3>Ranking</h3>
-        <span class="muted small" title="Nota relativa à partida: participação, KDA, dano, dano recebido, ouro, visão, CS e estruturas. Morrer desconta. O melhor tem 10.">
-          como a nota é calculada
-        </span>
+        <button type="button" class="formula-toggle" [class.open]="showFormula()" (click)="showFormula.set(!showFormula())">
+          {{ showFormula() ? 'Fechar' : 'Como a nota é calculada' }}
+        </button>
       </header>
+      @if (showFormula()) {
+        <div class="formula">
+          <p class="formula-intro">
+            Cada quesito compara você com o <strong>melhor da partida</strong> naquele quesito (o melhor vale 100%).
+            Os quesitos somam com os pesos abaixo e o jogador de maior soma fica com <strong>10</strong>; os outros, proporcionalmente.
+          </p>
+          <ul class="formula-list">
+            @for (f of formula; track f.label) {
+              <li [class.negative]="f.weight < 0">
+                <span class="f-label">{{ f.label }}</span>
+                <span class="f-bar"><span [style.width.%]="(f.weight < 0 ? -f.weight : f.weight) * 5"></span></span>
+                <strong class="f-weight num">{{ f.weight > 0 ? '+' : '' }}{{ f.weight }}%</strong>
+                <span class="f-detail">{{ f.detail }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
       <ol class="ranking">
         @for (p of ranking(); track p.puuid || p.riotId) {
           <li class="rank-row" [class.ally]="ally(p)" [class.me]="p.isMe">

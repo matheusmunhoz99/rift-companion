@@ -27,12 +27,48 @@ const METRICS: Array<{ key: MetricKey; label: string }> = [
   { key: 'structureDamage', label: 'Estruturas' },
 ];
 
+/** O placar do fim de jogo traz só o modo interno, não o número da fila. */
+const MODE_NAMES: Record<string, string> = {
+  RANKED_SOLO_5x5: 'Ranqueada Solo/Duo',
+  RANKED_FLEX_SR: 'Ranqueada Flex',
+  NORMAL: 'Normal',
+  SWIFTPLAY: 'Partida Rápida',
+  CLASSIC: 'Partida',
+  ARAM: 'ARAM',
+  KIWI: 'ARAM: Desordem',
+  CHERRY: 'Arena',
+  URF: 'URF',
+  ARURF: 'URF',
+  ONEFORALL: 'Um por Todos',
+  ULTBOOK: 'Livro de Ultimates',
+  NEXUSBLITZ: 'Blitz do Nexus',
+  STRAWBERRY: 'Swarm',
+  PRACTICETOOL: 'Modo de treino',
+};
+
 const MULTIKILL: Record<number, string> = {
   2: 'Abate duplo',
   3: 'Abate triplo',
   4: 'Abate quádruplo',
   5: 'Pentakill',
 };
+
+/**
+ * O que entra na nota (os mesmos pesos do cálculo em electron/lcu/postgame.ts).
+ * Cada quesito compara você com o melhor da partida naquele quesito.
+ */
+const FORMULA: Array<{ label: string; weight: number; detail: string }> = [
+  { label: 'Participação em abates', weight: 20, detail: '(abates + assistências) ÷ abates do seu time' },
+  { label: 'Dano a campeões', weight: 20, detail: 'dano total causado a campeões inimigos' },
+  { label: 'KDA', weight: 16, detail: '(abates + assistências) ÷ mortes' },
+  { label: 'Ouro', weight: 10, detail: 'ouro ganho na partida' },
+  { label: 'Visão', weight: 10, detail: 'placar de visão (sentinelas colocadas e destruídas)' },
+  { label: 'Linha de frente', weight: 9, detail: 'dano recebido + dano mitigado' },
+  { label: 'CS', weight: 6, detail: 'tropas e monstros abatidos' },
+  { label: 'Estruturas', weight: 5, detail: 'dano a torres e inibidores' },
+  { label: 'Vitória', weight: 4, detail: 'bônus para quem venceu' },
+  { label: 'Mortes', weight: -12, detail: 'desconta quanto mais você morreu' },
+];
 
 interface Highlight {
   title: string;
@@ -59,6 +95,30 @@ export class PostGameView {
 
   protected readonly metrics = METRICS;
   protected readonly metric = signal<MetricKey>('damageToChampions');
+  protected readonly formula = FORMULA;
+  protected readonly showFormula = signal(false);
+
+  /** Arte do seu campeão no fundo do resultado. */
+  protected readonly heroArt = computed(() => {
+    const me = this.me();
+    const champion = me ? this.ddragon.champion(me.championId) : null;
+    return champion ? `url("https://ddragon.leagueoflegends.com/cdn/img/champion/centered/${champion.id}_0.jpg")` : null;
+  });
+
+  protected art(championId: number): string | null {
+    const champion = this.ddragon.champion(championId);
+    return champion ? `url("${this.ddragon.championLoadingUrl(champion)}")` : null;
+  }
+
+  /** Anel da nota: comprimento do traço (circunferência 2πr com r = 52). */
+  protected ringDash(score: number): string {
+    const length = 2 * Math.PI * 52;
+    return `${(Math.max(0, Math.min(10, score)) / 10) * length} ${length}`;
+  }
+
+  protected perMinute(value: number, seconds: number): string {
+    return seconds > 0 ? (value / (seconds / 60)).toFixed(1) : '0';
+  }
 
   /** Seu time; sem você na lista (espectador), o time azul. */
   private readonly myTeam = computed(() => this.game()?.players.find((p) => p.isMe)?.teamId ?? 100);
@@ -174,7 +234,8 @@ export class PostGameView {
   protected readonly title = computed(() => {
     const game = this.game();
     if (!game) return '';
-    return game.queueId ? queueName(game.queueId) : game.gameMode === 'ARAM' ? 'ARAM' : 'Partida';
+    if (game.queueId) return queueName(game.queueId);
+    return MODE_NAMES[game.queueType] ?? MODE_NAMES[game.gameMode] ?? 'Partida';
   });
 
   protected ally(player: PostGamePlayer): boolean {
