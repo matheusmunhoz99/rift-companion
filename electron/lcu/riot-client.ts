@@ -19,6 +19,9 @@ let launching: Promise<LeagueLaunchResult> | null = null;
 let proxiedLaunch: { pids: number[]; url: string } | null = null;
 const SPAWN_CONFIRM_MS = 12_000;
 const SPAWN_WATCH_MS = 25_000;
+const LEAGUE_EXIT_MS = 30_000;
+const BACKGROUND_SWITCH_MS = 4_000;
+const PRODUCT_LAUNCH = '/product-launcher/v1/products/league_of_legends/patchlines/live';
 
 /**
  * restarted: o LoL estava aberto sem o modo invisível e foi reaberto pelo proxy;
@@ -53,12 +56,26 @@ async function launch(clientConfigUrl: string | undefined, proxyInUse: boolean):
   const credentials = readLockfile();
   if (credentials && (!clientConfigUrl || running.some((entry) => entry.ProcessId === credentials.pid))) {
     try {
-      await lcuRequest(credentials, 'POST', '/product-launcher/v1/products/league_of_legends/patchlines/live');
-      return 'riot-client';
+      return await askRiotClient(credentials);
     } catch (error) {
-      // 423 already_launched: o LoL já está aberto (ou abrindo).
-      if (error instanceof LcuHttpError && error.status === 423) return 'already-open';
-      if (running.length) throw new Error('O Riot Client ainda não respondeu. Aguarde alguns segundos e tente novamente.');
+      // 423 already_launched: o LoL já está aberto (ou abrindo)... ou acabou de ser
+      // fechado e o LeagueClient.exe ainda está saindo (sem a janela). Nesse caso,
+      // espera ele sair e pede de novo; se a janela aparecer, ele estava abrindo.
+      if (error instanceof LcuHttpError && error.status === 423) {
+        const closing = async () => !(await anyRunning(['LeagueClientUx.exe']).catch(() => true));
+        if (!(await closing())) return 'already-open';
+        await waitFor(async () => !(await closing()) || !(await anyRunning(['LeagueClient.exe'])), LEAGUE_EXIT_MS);
+        if (!(await closing()) || await anyRunning(['LeagueClient.exe']).catch(() => true)) return 'already-open';
+        // Logo depois, o Riot Client troca para o modo de segundo plano; um pedido no
+        // meio da troca o deixa travado. Espera a troca terminar.
+        await new Promise((resolve) => setTimeout(resolve, BACKGROUND_SWITCH_MS));
+        // A troca reescreve o lockfile com outra porta e senha.
+        return askRiotClient(readLockfile() ?? credentials).catch((retry) => {
+          if (retry instanceof LcuHttpError && retry.status === 423) return 'already-open' as const;
+          throw new RiotClientNotResponding();
+        });
+      }
+      if (running.length) throw new RiotClientNotResponding();
       // Outro erro: lockfile antigo (Riot Client fechado sem apagar); tenta pelo .exe.
     }
   }
@@ -80,6 +97,26 @@ async function launch(clientConfigUrl: string | undefined, proxyInUse: boolean):
     }
   }
   throw new Error('O Riot Client não abriu. Tente de novo em alguns segundos.');
+}
+
+/** O Riot Client aberto não atende a API (travado ou ainda iniciando): quem chamou pode reiniciá-lo. */
+export class RiotClientNotResponding extends Error {
+  constructor() {
+    super('O Riot Client ainda não respondeu. Aguarde alguns segundos e tente novamente.');
+  }
+}
+
+/** Pede ao Riot Client aberto para abrir o LoL. */
+async function askRiotClient(credentials: LcuCredentials): Promise<'riot-client'> {
+  try {
+    await lcuRequest(credentials, 'POST', PRODUCT_LAUNCH);
+  } catch (error) {
+    // 404: depois de fechar o LoL, o Riot Client entra no modo de segundo plano e
+    // descarrega os serviços; só aceita argumentos novos (como uma segunda instância faria).
+    if (!(error instanceof LcuHttpError && error.status === 404)) throw error;
+    await lcuRequest(credentials, 'POST', '/riotclientapp/v1/new-args', LAUNCH_ARGS);
+  }
+  return 'riot-client';
 }
 
 function spawnRiotClient(exe: string, args: string[]): Promise<number | undefined> {
@@ -181,30 +218,85 @@ const CLIENT_PROCESSES = [
   'RiotClientServices.exe', 'Riot Client.exe', 'RiotClientUx.exe', 'RiotClientUxRender.exe', 'RiotClientCrashHandler.exe',
 ];
 
+/** Rotas de saída do Riot Client (variam com a versão e o estado dele). */
+const RIOT_QUIT_ROUTES = ['/riot-client-lifecycle/v1/quit', '/process-control/v1/process/quit'];
+
 /**
  * Fecha o cliente do LoL e o Riot Client para reabrir pelo proxy. Pede ao cliente
  * para sair (salva o que precisa), espera e só então encerra o que sobrou.
+ * `log` recebe cada etapa, para o log do app explicar uma falha.
  */
-export async function closeLeagueAndRiotClient(lcu: LcuCredentials | null): Promise<void> {
-  if (lcu) await lcuRequest(lcu, 'POST', '/process-control/v1/process/quit').catch(() => undefined);
+export async function closeLeagueAndRiotClient(
+  lcu: LcuCredentials | null, log: (message: string) => void = () => undefined,
+): Promise<void> {
+  let asked = false;
+  if (lcu) asked = await lcuRequest(lcu, 'POST', '/process-control/v1/process/quit').then(() => true, () => false);
   // O Riot Client também aceita sair pela API dele: fecha limpo e apaga o lockfile.
+  // Sem os serviços carregados (ex.: depois de uma atualização), todas as rotas dão 404.
   const riot = readLockfile();
-  if (riot) await lcuRequest(riot, 'POST', '/process-control/v1/process/quit').catch(() => undefined);
-  await waitFor(async () => !(await anyRunning(['LeagueClient.exe', 'LeagueClientUx.exe', 'RiotClientServices.exe'])), 8_000);
+  for (const route of riot ? RIOT_QUIT_ROUTES : []) {
+    if (await lcuRequest(riot!, 'POST', route).then(() => true, () => false)) {
+      asked = true;
+      break;
+    }
+  }
+  log(`fechando o LoL e o Riot Client (pedido pela API: ${asked ? 'aceito' : 'sem resposta'})`);
+  if (asked) await waitFor(async () => !(await anyRunning(['LeagueClient.exe', 'LeagueClientUx.exe', 'RiotClientServices.exe'])), 8_000);
 
-  // O que sobrou é encerrado à força, em até 3 rodadas (processos que se reabrem).
-  for (let round = 0; round < 3; round++) {
+  // O que sobrou é encerrado à força, em até 2 rodadas (processos que se reabrem).
+  for (let round = 0; round < 2; round++) {
     if (!(await anyRunning(CLIENT_PROCESSES).catch(() => true))) break;
-    const args = ['/F', '/T', ...CLIENT_PROCESSES.flatMap((name) => ['/IM', name])];
-    await execFileAsync('taskkill.exe', args, { windowsHide: true, timeout: 15_000 }).catch(() => undefined);
-    if (await waitFor(async () => !(await anyRunning(CLIENT_PROCESSES)), 6_000)) break;
+    await execFileAsync('taskkill.exe', TASKKILL_ARGS, { windowsHide: true, timeout: 15_000 }).catch(() => undefined);
+    if (await waitFor(async () => !(await anyRunning(CLIENT_PROCESSES)), 4_000)) break;
+    // "Acesso negado": o Riot Client roda como administrador (o instalador de uma
+    // atualização da Riot o reabre assim). Só um taskkill elevado consegue fechá-lo.
+    if (await riotClientElevated()) break;
+  }
+  if (await anyRunning(CLIENT_PROCESSES).catch(() => false)) {
+    log('o Riot Client está aberto como administrador: pedindo permissão ao Windows para fechá-lo');
+    await killAsAdministrator();
+    await waitFor(async () => !(await anyRunning(CLIENT_PROCESSES)), 8_000);
   }
   if (await anyRunning(CLIENT_PROCESSES).catch(() => false)) {
     throw new Error('Não consegui fechar o Riot Client. Feche pelo ícone perto do relógio e abra o LoL pelo Rift Companion.');
   }
+  log('LoL e Riot Client fechados');
   proxiedLaunch = null;
   // Dá tempo de o Windows liberar a trava de instância única do Riot Client.
   await new Promise((resolve) => setTimeout(resolve, 2_000));
+}
+
+const TASKKILL_ARGS = ['/F', '/T', ...CLIENT_PROCESSES.flatMap((name) => ['/IM', name])];
+
+/**
+ * Riot Client aberto como administrador: o Windows esconde o caminho dele de um
+ * programa comum, e o taskkill sem elevação recebe "Acesso negado".
+ */
+export async function riotClientElevated(): Promise<boolean> {
+  if (process.platform !== 'win32') return false;
+  try {
+    const { stdout } = await execFileAsync('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      "@(Get-CimInstance Win32_Process -Filter \"Name='RiotClientServices.exe'\" | Where-Object { -not $_.ExecutablePath }).Count",
+    ], { windowsHide: true, timeout: 10_000 });
+    return Number(stdout.trim()) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Encerra o Riot Client com o taskkill elevado: o Windows mostra o pedido de permissão (UAC). */
+async function killAsAdministrator(): Promise<void> {
+  const args = TASKKILL_ARGS.map((arg) => (arg.includes(' ') ? `"${arg}"` : arg)).join(' ');
+  try {
+    await execFileAsync('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      `Start-Process -FilePath taskkill.exe -ArgumentList '${args}' -Verb RunAs -WindowStyle Hidden -Wait`,
+    ], { windowsHide: true, timeout: 120_000 });
+  } catch {
+    throw new Error('O Riot Client foi aberto como administrador (uma atualização da Riot faz isso) e só fecha com a ' +
+      'sua permissão. Clique em "Abrir LoL" de novo e escolha "Sim" no aviso do Windows.');
+  }
 }
 
 async function anyRunning(names: string[]): Promise<boolean> {

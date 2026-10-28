@@ -22,7 +22,7 @@ import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
 import {
-  closeLeagueAndRiotClient, isRiotClientRunning, launchLeague, riotChatRoute, riotClientPids, trustRiotClient,
+  closeLeagueAndRiotClient, isRiotClientRunning, launchLeague, riotChatRoute, riotClientElevated, riotClientPids, RiotClientNotResponding, trustRiotClient,
   type LeagueLaunchResult,
 } from './lcu/riot-client';
 import { PostGameService } from './lcu/postgame';
@@ -365,14 +365,17 @@ void acquireInstance().then((acquired) => {
           return 'waiting' as const;
         }
         invisibleRestartPending = false;
-        if (ask) {
+        // Só o Riot Client aberto (sem o LoL): não há sala a perder, então nem pergunta.
+        const elevated = await riotClientElevated();
+        if (ask && connector.getState().status === 'connected') {
           showMainWindow();
           const options = {
             type: 'question' as const,
             title: 'Rift Companion',
             message: 'Para ficar invisível, o LoL precisa reiniciar.',
             detail: 'O LoL e o Riot Client foram abertos sem o modo invisível. O Rift Companion fecha os dois e abre ' +
-              'de novo já invisível; é só esperar uns segundos. Se você estiver numa sala, vai sair dela.',
+              'de novo já invisível; é só esperar uns segundos. Se você estiver numa sala, vai sair dela.' +
+              (elevated ? ' O Riot Client está aberto como administrador: o Windows vai pedir permissão para fechá-lo.' : ''),
             buttons: ['Reiniciar o LoL agora', 'Agora não'],
             defaultId: 0,
             cancelId: 1,
@@ -387,7 +390,7 @@ void acquireInstance().then((acquired) => {
         }
         appLog('reiniciando o LoL e o Riot Client pelo proxy do modo invisível');
         balloon('Reiniciando o LoL invisível', 'Fechando o LoL e o Riot Client e abrindo de novo pelo modo invisível…');
-        await closeLeagueAndRiotClient(connector.getCredentials());
+        await closeLeagueAndRiotClient(connector.getCredentials(), appLog);
         const result = await launchConfiguredLeague();
         if (result !== 'started' && result !== 'riot-client' && result !== 'already-open') {
           throw new Error('O Riot Client não abriu de novo. Tente "Abrir LoL" outra vez em alguns segundos.');
@@ -399,8 +402,23 @@ void acquireInstance().then((acquired) => {
     };
 
     /** "Abrir LoL" (tela inicial, bandeja, Telegram): se precisar, reinicia sozinho em vez de pedir para fechar. */
-    const openLeague = async (ask: boolean): Promise<LeagueLaunchResult> => {
-      const result = await launchConfiguredLeague();
+    const openLeague = (ask: boolean): Promise<LeagueLaunchResult> => openLeagueSteps(ask).then(
+      (result) => {
+        appLog(`Abrir LoL: ${result ?? 'Riot Client não encontrado'}`);
+        return result;
+      },
+      (error: unknown) => {
+        appLog(`Abrir LoL falhou: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
+      },
+    );
+    const openLeagueSteps = async (ask: boolean): Promise<LeagueLaunchResult> => {
+      const result = await launchConfiguredLeague().catch((error: unknown) => {
+        // Riot Client travado sem o LoL aberto: não há sala a perder, então reinicia os dois.
+        if (!(error instanceof RiotClientNotResponding) || connector.getState().status === 'connected') throw error;
+        appLog('o Riot Client não responde: fechando e abrindo de novo');
+        return closeLeagueAndRiotClient(null, appLog).then(() => launchConfiguredLeague());
+      });
       if (result !== 'restart-required') return result;
       invisibleRestartDeclined = false;
       // Pedido seu: não espera 45 s pelo chat; em poucos segundos já decide.
