@@ -1,65 +1,80 @@
-<section class="draft" [class.my-turn]="myTurn() !== null">
-  <header class="draft-head">
-    <div class="phase">
-      <span class="phase-name">{{ phaseLabel() }}</span>
-      @if (myTurn(); as turn) {
-        <span class="turn">{{ turn === 'ban' ? 'Sua vez de banir' : 'Sua vez de escolher' }}</span>
-      }
-    </div>
-    @if (secondsLeft() !== null) {
-      <span class="clock num" [class.urgent]="secondsLeft()! <= 10" [title]="'Tempo restante da fase'">{{ secondsLeft() }}</span>
-    }
-  </header>
-
-  <div class="sides" [class.row]="aram()">
-    @for (side of sides(); track side.key) {
-      <div class="side" [attr.data-side]="side.key">
-        <h5 class="side-title">{{ side.title }}</h5>
-        <ol class="slots">
-          @for (s of side.slots; track s.member.cellId) {
-            <li
-              class="slot"
-              [class.me]="s.member.isMe"
-              [class.acting]="s.member.acting !== null"
-              [class.banning]="s.member.acting === 'ban'"
-              [class.tentative]="s.tentative"
-              [class.empty]="!s.champion"
-              [style.--art]="art(s.champion)"
-            >
-              <span class="portrait">
-                @if (icon(s.champion); as src) {
-                  <img [src]="src" [alt]="s.champion!.name" />
-                }
-              </span>
-              <span class="who">
-                <span class="champ-name">{{ s.status }}</span>
-                <span class="player">
-                  @if (position(s.member); as pos) {
-                    <span class="pos" [title]="pos.name">{{ pos.short }}</span>
-                  }
-                  {{ s.member.isMe ? 'Você' : (s.member.name ?? (side.key === 'ally' ? 'Aliado' : 'Inimigo')) }}
-                </span>
-              </span>
-              @if (side.key === 'ally') {
-                <span class="spells">
-                  @for (id of [s.member.spell1Id, s.member.spell2Id]; track $index) {
-                    @if (spellIcon(id); as src) {<img [src]="src" alt="" />}
-                  }
-                </span>
-              }
-            </li>
-          }
-        </ol>
-        @if (!aram() && side.bans.length) {
-          <div class="bans" [attr.aria-label]="'Banimentos de ' + side.title">
-            @for (champion of side.bans; track $index) {
-              <span class="ban" [title]="champion?.name ?? ''">
-                @if (icon(champion); as src) {<img [src]="src" alt="" />}
-              </span>
-            }
-          </div>
-        }
-      </div>
+<!-- Faixa de cima: fase, sua vez, tempo e os banimentos de cada time. -->
+<header class="strip" [class.my-turn]="myTurn() !== null">
+  <div class="bans ally" [attr.aria-label]="'Banimentos do seu time'">
+    @for (champion of bans().ally; track $index) {
+      <span class="ban" [title]="champion?.name ?? ''">
+        @if (icon(champion); as src) {<img [src]="src" alt="" />}
+      </span>
     }
   </div>
-</section>
+  <div class="phase">
+    <span class="phase-name">{{ phaseLabel() }}</span>
+    @if (myTurn(); as turn) {
+      <span class="turn">{{ turn === 'ban' ? 'Sua vez de banir' : 'Sua vez de escolher' }}</span>
+    }
+    @if (secondsLeft() !== null) {
+      <span class="clock num" [class.urgent]="secondsLeft()! <= 10" title="Tempo restante da fase">{{ secondsLeft() }}</span>
+    }
+  </div>
+  <div class="bans enemy" [attr.aria-label]="'Banimentos dos inimigos'">
+    @for (champion of bans().enemy; track $index) {
+      <span class="ban" [title]="champion?.name ?? ''">
+        @if (icon(champion); as src) {<img [src]="src" alt="" />}
+      </span>
+    }
+  </div>
+</header>
+
+<div class="arena" [class.aram]="aram()">
+  <ol class="team" data-side="ally" aria-label="Seu time">
+    <ng-container *ngTemplateOutlet="team; context: { $implicit: allies(), ally: true }" />
+  </ol>
+  <section class="center">
+    <ng-content />
+  </section>
+  @if (!aram()) {
+    <ol class="team" data-side="enemy" aria-label="Inimigos">
+      <ng-container *ngTemplateOutlet="team; context: { $implicit: enemies(), ally: false }" />
+    </ol>
+  }
+</div>
+
+<ng-template #team let-slots let-ally="ally">
+  @for (s of slots; track s.member.cellId) {
+    <li
+      class="slot"
+      [class.me]="s.member.isMe"
+      [class.acting]="s.member.acting !== null"
+      [class.banning]="s.member.acting === 'ban'"
+      [class.tentative]="s.tentative"
+      [class.empty]="!s.champion"
+      [style.--art]="art(s.champion)"
+    >
+      <span class="slot-top">
+        @if (position(s.member); as pos) {
+          <span class="pos" [title]="pos.name">{{ pos.short }}</span>
+        }
+        @if (s.member.isMe) {
+          <span class="you">Você</span>
+        }
+        @if (s.member.acting && s.champion) {
+          <span class="acting-tag">{{ s.member.acting === 'ban' ? 'Banindo' : 'Escolhendo' }}</span>
+        }
+      </span>
+      <span class="slot-bottom">
+        <span class="who">
+          <span class="champ-name">{{ s.status }}</span>
+          <span class="player">{{ s.member.isMe ? 'Você' : (s.member.name ?? (ally ? 'Aliado' : 'Inimigo')) }}</span>
+        </span>
+        @if (ally) {
+          <span class="spells">
+            @for (id of [s.member.spell1Id, s.member.spell2Id]; track $index) {
+              @if (spellIcon(id); as src) {<img [src]="src" alt="" />}
+            }
+          </span>
+        }
+      </span>
+    </li>
+  }
+</ng-template>
+

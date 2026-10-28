@@ -70,9 +70,6 @@ p {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   gap: 8px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .bench {
@@ -205,7 +202,7 @@ button {
 // ARAM novo: campeões sorteados em cards altos com a arte de carregamento.
 .offered {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 180px));
   gap: 10px;
 }
 
@@ -216,7 +213,6 @@ button {
   justify-content: flex-end;
   gap: 4px;
   aspect-ratio: 308 / 460;
-  max-height: 260px;
   padding: 10px;
   border: 1px solid var(--border-strong);
   border-radius: 12px;

@@ -1,4 +1,5 @@
 import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
 import type { ChampSelectState, TeamMember } from '../lcu/lcu.types';
 
@@ -23,6 +24,7 @@ interface Slot {
  */
 @Component({
   selector: 'app-draft-board',
+  imports: [NgTemplateOutlet],
   templateUrl: './draft-board.html',
   styleUrl: './draft-board.scss',
 })
@@ -69,14 +71,6 @@ export class DraftBoard {
 
   protected readonly allies = computed(() => this.session().team.map((m) => this.slot(m, true)));
   protected readonly enemies = computed(() => (this.session().enemies ?? []).map((m) => this.slot(m, false)));
-
-  /** No ARAM os inimigos só aparecem no jogo: fica só o seu time, numa linha. */
-  protected readonly sides = computed(() => {
-    const bans = this.bans();
-    const ally = { key: 'ally', title: 'Seu time', slots: this.allies(), bans: bans.ally };
-    if (this.aram()) return [ally];
-    return [ally, { key: 'enemy', title: 'Inimigos', slots: this.enemies(), bans: bans.enemy }];
-  });
 
   protected readonly bans = computed(() => {
     const bans = this.session().bans ?? { ally: [], enemy: [] };

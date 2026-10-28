@@ -1,12 +1,21 @@
+// A seleção inteira numa tela: faixa da fase em cima e, embaixo, seu time,
+// o painel do meio (projetado) e os inimigos, sem rolar a página.
 :host {
-  display: block;
-  container-type: inline-size;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
 }
 
-.draft {
+// Faixa: banimentos nas pontas, fase e tempo no meio.
+.strip {
   display: grid;
-  gap: 12px;
-  padding: 14px 16px 16px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 8px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -14,20 +23,14 @@
 
   &.my-turn {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent-soft), 0 10px 30px rgb(0 0 0 / 25%);
+    box-shadow: 0 0 0 1px var(--accent-soft), 0 10px 30px rgb(0 0 0 / 22%);
   }
-}
-
-.draft-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .phase {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
 }
@@ -50,8 +53,8 @@
 }
 
 .clock {
-  min-width: 52px;
-  padding: 4px 10px;
+  min-width: 46px;
+  padding: 2px 10px;
   border-radius: var(--radius-sm);
   background: var(--well);
   font-family: var(--font-display);
@@ -64,164 +67,22 @@
   }
 }
 
-.sides {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.side {
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  min-width: 0;
-  --side: var(--ally);
-
-  &[data-side='enemy'] {
-    --side: var(--enemy);
-  }
-}
-
-.side-title {
-  margin: 0;
-  color: var(--side);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.slots {
-  display: grid;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.slot {
-  position: relative;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 5px 10px 5px 5px;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--side);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background:
-    linear-gradient(90deg, var(--surface) 30%, color-mix(in srgb, var(--surface) 55%, transparent)),
-    var(--art, none) 70% 25% / cover no-repeat,
-    var(--well);
-
-  > * {
-    position: relative;
-  }
-
-  &.me {
-    border-color: var(--accent);
-    border-left-color: var(--accent);
-  }
-
-  &.empty {
-    background: var(--well);
-  }
-
-  &.tentative .portrait img {
-    opacity: 0.55;
-    filter: saturate(0.6);
-  }
-
-  &.acting {
-    border-color: var(--side);
-    animation: glow 1.6s var(--ease-out) infinite;
-  }
-
-  &.banning {
-    --side: var(--danger);
-  }
-}
-
-.portrait {
-  display: block;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-  background: var(--border);
-
-  img {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-}
-
-.who {
-  display: grid;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.champ-name {
-  overflow: hidden;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-
-  .tentative &,
-  .empty & {
-    color: var(--muted);
-    font-weight: 500;
-  }
-}
-
-.player {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.pos {
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--highlight);
-  color: var(--text);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.spells {
-  display: flex;
-  gap: 3px;
-
-  img {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-  }
-}
-
 .bans {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding-top: 2px;
+  min-width: 0;
+
+  &.enemy {
+    justify-content: flex-end;
+  }
 }
 
 .ban {
   position: relative;
   width: 30px;
   height: 30px;
-  border-radius: 5px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--border);
 
@@ -241,22 +102,207 @@
   }
 }
 
-// ARAM: um time só, os cinco lado a lado.
-.sides.row {
-  grid-template-columns: 1fr;
+// Três colunas: seu time | painel | inimigos. No ARAM, sem a coluna dos inimigos.
+.arena {
+  display: grid;
+  grid-template-columns: minmax(180px, 230px) minmax(0, 1fr) minmax(180px, 230px);
+  gap: 12px;
+  min-height: 0;
 
-  .slots {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .spells {
-    display: none;
+  &.aram {
+    grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
   }
 }
 
-@container (max-width: 760px) {
-  .sides.row .slots {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+.center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.team {
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  --side: var(--ally);
+
+  &[data-side='enemy'] {
+    --side: var(--enemy);
+  }
+}
+
+// Card de cada jogador: a splash do campeão ocupa o card todo.
+.slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--art, none) center 22% / cover no-repeat, var(--well);
+  box-shadow: inset 3px 0 0 var(--side);
+  transition: border-color var(--dur) var(--ease-out);
+
+  [data-side='enemy'] & {
+    box-shadow: inset -3px 0 0 var(--side);
+  }
+
+  // Escurece em baixo para o nome ficar legível sobre qualquer splash.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(5 7 12 / 92%), rgb(5 7 12 / 35%) 55%, rgb(5 7 12 / 10%));
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+  }
+
+  &.me {
+    border-color: var(--accent);
+    box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px var(--accent-soft);
+  }
+
+  &.empty {
+    background:
+      repeating-linear-gradient(135deg, transparent 0 10px, var(--highlight) 10px 20px),
+      var(--well);
+
+    &::before {
+      display: none;
+    }
+  }
+
+  // Só olhando (ainda não confirmou): splash sem cor.
+  &.tentative {
+    background-color: var(--well);
+    background-blend-mode: luminosity;
+
+    .champ-name {
+      color: var(--muted);
+    }
+  }
+
+  &.acting {
+    border-color: var(--side);
+    animation: glow 1.6s var(--ease-out) infinite;
+  }
+
+  &.banning {
+    --side: var(--danger);
+  }
+}
+
+.slot-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 18px;
+
+  [data-side='enemy'] & {
+    justify-content: flex-end;
+  }
+}
+
+.pos,
+.you,
+.acting-tag {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pos {
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+}
+
+.you {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.acting-tag {
+  background: var(--side);
+  color: #fff;
+}
+
+.slot-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+
+  [data-side='enemy'] & {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+}
+
+.who {
+  display: grid;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.champ-name {
+  overflow: hidden;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 60%);
+
+  .empty & {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: none;
+  }
+}
+
+.player {
+  overflow: hidden;
+  color: rgb(255 255 255 / 75%);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  .empty & {
+    color: var(--faint);
+  }
+}
+
+.spells {
+  display: flex;
+  flex: none;
+  gap: 3px;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 50%);
   }
 }
 
@@ -265,7 +311,7 @@
 }
 
 @keyframes glow {
-  50% { box-shadow: inset 0 0 0 1px var(--side); }
+  50% { border-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -275,8 +321,47 @@
   }
 }
 
-@media (max-width: 640px) {
-  .sides {
+// Janela estreita (e celular): os times viram faixas de cinco cards em cima e embaixo do painel.
+@media (max-width: 980px) {
+  :host {
+    height: auto;
+  }
+
+  .strip {
+    grid-template-columns: 1fr 1fr;
+
+    .phase {
+      grid-column: 1 / -1;
+      order: -1;
+    }
+  }
+
+  .arena,
+  .arena.aram {
     grid-template-columns: 1fr;
+  }
+
+  .team {
+    grid-template-rows: none;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .slot {
+    min-height: 84px;
+    padding: 6px 7px;
+  }
+
+  .champ-name {
+    font-size: 13px;
+  }
+
+  .player,
+  .spells {
+    display: none;
+  }
+
+  .center {
+    min-height: 420px;
   }
 }
