@@ -21,6 +21,7 @@ export class PreferencesService {
     autoRunes: false,
     minimizeToTray: true,
     startWithWindows: false,
+    showAsRiftUser: true,
     telegramReadyCheck: true,
     telegramChampion: true,
     telegramGameStart: true,

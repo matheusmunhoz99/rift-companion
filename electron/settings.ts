@@ -27,6 +27,8 @@ export interface Preferences {
   /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
   minimizeToTray: boolean;
   startWithWindows: boolean;
+  /** Outros usuários do Rift Companion veem um ícone no seu nick (só o hash do Riot ID vai ao servidor). */
+  showAsRiftUser: boolean;
   /** Avisos no Telegram (só valem com o Telegram conectado). */
   telegramReadyCheck: boolean;
   telegramChampion: boolean;
@@ -47,6 +49,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   autoRunes: false,
   minimizeToTray: true,
   startWithWindows: false,
+  showAsRiftUser: true,
   telegramReadyCheck: true,
   telegramChampion: true,
   telegramGameStart: true,
@@ -69,6 +72,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   autoRunes: isBoolean,
   minimizeToTray: isBoolean,
   startWithWindows: isBoolean,
+  showAsRiftUser: isBoolean,
   telegramReadyCheck: isBoolean,
   telegramChampion: isBoolean,
   telegramGameStart: isBoolean,

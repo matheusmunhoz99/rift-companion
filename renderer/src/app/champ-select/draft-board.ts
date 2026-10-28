@@ -1,5 +1,7 @@
-import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { RiftUsersService } from '../core/rift-users.service';
+import { RiftUserBadge } from '../ui/rift-user-badge';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
 import type { ChampSelectState, TeamMember } from '../lcu/lcu.types';
 
@@ -24,7 +26,7 @@ interface Slot {
  */
 @Component({
   selector: 'app-draft-board',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, RiftUserBadge],
   templateUrl: './draft-board.html',
   styleUrl: './draft-board.scss',
 })
@@ -32,12 +34,15 @@ export class DraftBoard {
   readonly session = input.required<ChampSelectState>();
 
   protected readonly ddragon = inject(DataDragonService);
+  protected readonly riftUsers = inject(RiftUsersService);
   private readonly now = signal(Date.now());
 
   constructor() {
     // Só o relógio da fase depende disso; 4 vezes por segundo deixa o número certinho.
     const timer = setInterval(() => this.now.set(Date.now()), 250);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    // Quem do seu time também usa o Rift Companion (os inimigos ficam escondidos na seleção).
+    effect(() => this.riftUsers.check(this.session().team.map((m) => m.riotId)));
   }
 
   /** ARAM: sem rotas nem banimentos; o campeão vem sorteado (ou dos oferecidos). */

@@ -212,6 +212,7 @@
                     [title]="'Ver histórico de ' + player.riotId"
                     (click)="$event.stopPropagation(); openPlayer(player)"
                   >{{ name(player.riotId).gameName }}</span>
+                  @if (riftUsers.has(player.riotId)) {<app-rift-user-badge />}
                   <span class="champ-name">{{ ddragon.champion(player.championId)?.name }}</span>
                 </span>
 

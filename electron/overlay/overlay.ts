@@ -3,6 +3,7 @@ import type { LcuConnector } from '../lcu/connector';
 import type { Preferences } from '../settings';
 import { fetchRawGameData, toOverlayData } from './live-client';
 import type { ObjectiveTimings } from './live-dashboard';
+import { appLog } from '../app-log';
 
 const POLL_MS = 2_000;
 export const OVERLAY_WIDTH = 980;
@@ -19,6 +20,8 @@ export class OverlayController {
   private window: BrowserWindow | null = null;
   private timer: NodeJS.Timeout | null = null;
   private hiddenByUser = false;
+  /** A página do overlay terminou de carregar: antes disso a janela seria só um retângulo preto. */
+  private ready = false;
 
   constructor(
     private readonly connector: LcuConnector,
@@ -36,8 +39,14 @@ export class OverlayController {
     const phase = this.connector.getState().gameflowPhase;
     const shouldRun = this.getPreferences().overlayEnabled && (phase === 'InProgress' || phase === 'Reconnect');
     if (this.window && !this.window.isDestroyed()) this.applyLayout(this.window);
-    if (shouldRun && !this.timer) this.start();
-    if (!shouldRun && this.timer) this.stop();
+    if (shouldRun && !this.timer) {
+      appLog(`overlay: ativo (fase ${phase})`);
+      this.start();
+    }
+    if (!shouldRun && this.timer) {
+      appLog(`overlay: parado (fase ${phase ?? '-'}, opção ${this.getPreferences().overlayEnabled ? 'ligada' : 'desligada'})`);
+      this.stop();
+    }
   }
 
   dispose(): void {
@@ -69,7 +78,7 @@ export class OverlayController {
     if (!this.timer) return;
     const window = this.ensureWindow();
     window.webContents.send('overlay:data', data);
-    if (this.hiddenByUser) return;
+    if (this.hiddenByUser || !this.ready) return;
     if (!window.isVisible()) window.showInactive();
     window.setAlwaysOnTop(true, 'pop-up-menu');
   }
@@ -108,12 +117,21 @@ export class OverlayController {
     window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     window.webContents.on('render-process-gone', (_event, details) => {
       if (details.reason !== 'clean-exit' && !window.isDestroyed()) {
+        appLog(`overlay: página caiu (${details.reason}), recarregando`);
+        this.ready = false;
         window.webContents.reload();
       }
+    });
+    // Só aparece com a página pronta; a próxima leitura (2 s) já mostra os dados.
+    this.ready = false;
+    window.webContents.on('did-finish-load', () => {
+      this.ready = true;
+      appLog('overlay: página carregada');
     });
     this.applyLayout(window);
     this.loadPage(window);
     this.window = window;
+    appLog('overlay: janela criada');
     return window;
   }
 

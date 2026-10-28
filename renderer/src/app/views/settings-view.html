@@ -232,6 +232,13 @@
       [checked]="prefs.preferences().startWithWindows"
       (toggled)="prefs.set({ startWithWindows: $event })"
     />
+    <div class="divider"></div>
+    <app-switch
+      label="Mostrar que eu uso o Rift Companion"
+      description="Outros usuários veem um ícone no seu nick na seleção e na partida ao vivo. Só um código do seu Riot ID vai ao servidor, nunca o nick."
+      [checked]="prefs.preferences().showAsRiftUser"
+      (toggled)="prefs.set({ showAsRiftUser: $event })"
+    />
   </section>
 
   <section class="card">

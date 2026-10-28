@@ -16,6 +16,8 @@ import { PARTY_COLORS, PARTY_NAMES, rememberParties } from '../match/parties';
 import { LiveDashboardPanel } from './live-dashboard';
 import { LiveDataService } from './live-data.service';
 import { ChampionDamageService } from '../stats/champion-damage.service';
+import { RiftUsersService } from '../core/rift-users.service';
+import { RiftUserBadge } from '../ui/rift-user-badge';
 
 interface CardTag {
   label: string;
@@ -78,7 +80,7 @@ interface EncounterSummary {
 
 @Component({
   selector: 'app-live-game-view',
-  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel],
+  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })
@@ -99,6 +101,7 @@ export class LiveGameView {
   );
 
   protected readonly game = signal<LiveGame | null>(null);
+  protected readonly riftUsers = inject(RiftUsersService);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly expanded = signal<string | null>(null);
@@ -367,6 +370,8 @@ export class LiveGameView {
   }
 
   constructor() {
+    // Quem da partida também usa o Rift Companion (ícone no nick).
+    effect(() => this.riftUsers.check(this.game()?.participants.map((p) => p.riotId) ?? []));
     // Carrega ao entrar em partida e limpa ao sair.
     effect(() => {
       const state = this.lcu.state();

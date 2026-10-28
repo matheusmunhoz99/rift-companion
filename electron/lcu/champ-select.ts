@@ -13,6 +13,8 @@ export interface TeamMember {
   spell2Id: number;
   /** Riot ID sem a tag; null quando a Riot esconde (inimigos, ranqueada). */
   name: string | null;
+  /** Riot ID completo ("Nick#TAG"), para o ícone de quem usa o Rift Companion; null se escondido. */
+  riotId: string | null;
   /** Vez dele agora: escolhendo ou banindo. */
   acting: 'pick' | 'ban' | null;
   /** Já confirmou o campeão. */
@@ -74,6 +76,7 @@ interface SessionPlayer {
   spell1Id?: number;
   spell2Id?: number;
   gameName?: string;
+  tagLine?: string;
   summonerName?: string;
   nameVisibilityType?: string;
 }
@@ -133,6 +136,7 @@ export function toChampSelect(
   const lockedPick = new Set(actions.filter((a) => a.type?.toLowerCase() === 'pick' && a.completed).map((a) => a.actorCellId));
   const member = (player: SessionPlayer, ally: boolean): TeamMember => {
     const isMe = ally && player.cellId === session.localPlayerCellId;
+    const hidden = player.nameVisibilityType === 'HIDDEN';
     // No ARAM o campeão vem sorteado: conta como confirmado assim que aparece.
     const locked = player.championId > 0 && (benchEnabled || lockedPick.has(player.cellId) || !ally);
     return {
@@ -143,7 +147,8 @@ export function toChampSelect(
       isMe,
       spell1Id: player.spell1Id ?? 0,
       spell2Id: player.spell2Id ?? 0,
-      name: player.nameVisibilityType === 'HIDDEN' ? null : (player.gameName || player.summonerName || null),
+      name: hidden ? null : (player.gameName || player.summonerName || null),
+      riotId: !hidden && player.gameName && player.tagLine ? `${player.gameName}#${player.tagLine}` : null,
       acting: acting.get(player.cellId) ?? null,
       locked,
     };

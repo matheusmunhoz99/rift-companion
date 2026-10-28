@@ -18,6 +18,7 @@ import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
 import { removeOldVersions, repointShortcuts, Updater } from './updater';
+import { RiftUsers } from './riot/rift-users';
 import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
@@ -235,8 +236,11 @@ void acquireInstance().then((acquired) => {
   app.whenReady().then(() => {
     startAppLog(app.getPath('userData'));
     appLog(`app aberto: versão ${app.getVersion()}${app.isPackaged ? '' : ' (desenvolvimento)'}`);
-    const gpu = app.getGPUFeatureStatus();
-    appLog(`gpu: rasterização=${gpu.rasterization} composição=${gpu.gpu_compositing}`);
+    // O estado da GPU só vale depois de 'gpu-info-update'; lido antes, sempre parece "software".
+    app.once('gpu-info-update', () => {
+      const gpu = app.getGPUFeatureStatus();
+      appLog(`gpu: rasterização=${gpu.rasterization} composição=${gpu.gpu_compositing}`);
+    });
     // Settings usa app.getPath, que só fica disponível após o ready.
     const prefs = new Settings();
     settings = prefs;
@@ -256,6 +260,7 @@ void acquireInstance().then((acquired) => {
       setTimeout(() => {
         try { overlay?.sync(); } catch (error) { appLog(`overlay.sync erro: ${error}`); }
       }, 50);
+      if ('showAsRiftUser' in changes) announceRiftUser();
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
       mainWindow?.webContents.send('prefs:changed', preferences);
@@ -452,6 +457,19 @@ void acquireInstance().then((acquired) => {
     });
 
     registerRiotHandlers(prefs, connector);
+
+    // Ícone de quem usa o Rift Companion: avisa ao conectar (ou some, se a opção estiver
+    // desligada) e responde à tela quais jogadores também usam.
+    const riftUsers = new RiftUsers();
+    function announceRiftUser(): void {
+      const summoner = connector.getState().summoner;
+      if (capturing || !summoner?.gameName || !summoner.tagLine) return;
+      const visible = prefs.getPreferences().showAsRiftUser;
+      void riftUsers.announce(`${summoner.gameName}#${summoner.tagLine}`, visible).catch(() => undefined);
+    }
+    connector.on('state', announceRiftUser);
+    ipcMain.handle('users:lookup', (_event, riotIds: unknown) =>
+      Array.isArray(riotIds) ? riftUsers.lookup(riotIds.filter((id): id is string => typeof id === 'string')) : []);
 
     // Fim de partida: placar completo do cliente, guardado para a tela "Partida ao vivo".
     const postGame = new PostGameService(connector, path.join(app.getPath('userData'), 'postgame'), devOnly('RIFT_DEMO_POSTGAME'));

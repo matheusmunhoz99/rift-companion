@@ -135,6 +135,7 @@ export function initializeAndroid(): void {
       getPostGame: async () => snapshot?.postgame ?? null, onPostGame: on('postgame:ready'),
     },
     stats: methods({ meta: 'stats:meta', tierList: 'stats:tierlist', champion: 'stats:champion', counters: 'stats:counters', damage: 'stats:damage' }),
+    riftUsers: methods({ lookup: 'users:lookup' }),
     builds: methods({ get: 'builds:get', applyRunes: 'builds:apply-runes', applyItems: 'builds:apply-items' }),
     telegram: { ...methods({ status: 'telegram:status' }), connect: localOnly, cancel: localOnly, disconnect: localOnly, test: localOnly },
   });

@@ -22,6 +22,7 @@ export interface TeamMember {
   spell2Id?: number;
   /** Riot ID sem a tag; null quando a Riot esconde. */
   name?: string | null;
+  riotId?: string | null;
   acting?: 'pick' | 'ban' | null;
   locked?: boolean;
 }

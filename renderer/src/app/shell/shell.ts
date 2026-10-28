@@ -17,6 +17,9 @@ import { isAndroid } from '../mobile/mobile-client';
 import { AndroidUpdate } from '../mobile/android-update';
 import { WhatsNew } from './whats-new';
 
+/** Já mostrou o aviso do ícone de usuário do Rift Companion. */
+const RIFT_USER_NOTICE = 'rift.riftUserNotice';
+
 interface NavItem {
   view: View;
   label: string;
@@ -170,6 +173,19 @@ export class Shell {
   private lastPhase: string | null = null;
 
   constructor() {
+    // Aviso único: o ícone de usuário do Rift Companion vem ligado; diz como desligar.
+    effect(() => {
+      if (!this.state().summoner || !this.prefs.preferences().showAsRiftUser || location.hash.includes('view=')) return;
+      untracked(() => {
+        try {
+          if (localStorage.getItem(RIFT_USER_NOTICE)) return;
+          localStorage.setItem(RIFT_USER_NOTICE, '1');
+        } catch {
+          return;
+        }
+        this.toast.show('Novo: quem usa o Rift Companion ganha um ícone no nick, e você também aparece para os outros. Dá para desligar em Configurações › Aplicativo.');
+      });
+    });
     // Abre a tela certa quando a fase muda (pode ser desligado nas configurações).
     effect(() => {
       const phase = this.state().gameflowPhase;

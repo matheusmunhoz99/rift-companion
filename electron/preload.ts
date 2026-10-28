@@ -96,6 +96,10 @@ contextBridge.exposeInMainWorld('stats', {
   damage: () => ipcRenderer.invoke('stats:damage'),
 });
 
+contextBridge.exposeInMainWorld('riftUsers', {
+  lookup: (riotIds: string[]) => ipcRenderer.invoke('users:lookup', riotIds),
+});
+
 contextBridge.exposeInMainWorld('builds', {
   get: (championId: number, position: string) =>
     ipcRenderer.invoke('builds:get', championId, position),

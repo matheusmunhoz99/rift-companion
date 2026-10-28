@@ -64,7 +64,10 @@
       <span class="slot-bottom">
         <span class="who">
           <span class="champ-name">{{ s.status }}</span>
-          <span class="player">{{ s.member.isMe ? 'Você' : (s.member.name ?? (ally ? 'Aliado' : 'Inimigo')) }}</span>
+          <span class="player">
+            @if (riftUsers.has(s.member.riotId)) {<app-rift-user-badge />}
+            {{ s.member.isMe ? 'Você' : (s.member.name ?? (ally ? 'Aliado' : 'Inimigo')) }}
+          </span>
         </span>
         @if (ally) {
           <span class="spells">
