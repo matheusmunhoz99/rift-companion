@@ -458,7 +458,8 @@ void acquireInstance().then((acquired) => {
     postGame.on('ready', (game) => mainWindow?.webContents.send('postgame:ready', game));
     ipcMain.handle('postgame:get', () => postGame.get());
     applyStartWithWindows(prefs.getPreferences().startWithWindows);
-    if (!app.isPackaged) connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));
+    // Última sessão de seleção (sem o token do chat), para entender modos novos da Riot.
+    connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));
 
     new AutoAccept(
       connector,

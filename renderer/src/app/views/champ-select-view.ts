@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
 import { ChampSelectPanel } from '../champ-select/champ-select-panel';
 import { CounterPanel } from '../champ-select/counter-panel';
+import { DraftBoard } from '../champ-select/draft-board';
 import { TeamCompPanel } from '../champ-select/team-comp';
 import { ChampionStatsPanel } from '../stats/champion-stats';
 import { LcuService } from '../lcu/lcu.service';
@@ -9,9 +10,10 @@ import { Icon } from '../ui/icon';
 
 @Component({
   selector: 'app-champ-select-view',
-  imports: [ChampSelectPanel, CounterPanel, TeamCompPanel, BuildPanel, ChampionStatsPanel, Icon],
+  imports: [ChampSelectPanel, CounterPanel, DraftBoard, TeamCompPanel, BuildPanel, ChampionStatsPanel, Icon],
   template: `
     @if (state().champSelect; as session) {
+      <app-draft-board [session]="session" />
       <div class="layout">
         <section class="card left-col">
           <h3 class="section-title">Seu campeão</h3>
@@ -64,6 +66,10 @@ import { Icon } from '../ui/icon';
     }
   `,
   styles: `
+    :host {
+      display: grid;
+      gap: 18px;
+    }
     .layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);

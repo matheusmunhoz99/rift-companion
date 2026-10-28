@@ -3,8 +3,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { platformFromClientRegion } from '../riot/routing';
 import {
-  findMyPickAction,
   getPickableChampionIds,
+  getSubsetChampionIds,
   toChampSelect,
   type ChampSelectSession,
   type ChampSelectState,
@@ -49,6 +49,8 @@ export interface LcuState {
 
 const POLL_INTERVAL_MS = 2_000;
 const SNAPSHOT_INTERVAL_MS = 5_000;
+/** O ARAM novo oferece poucos campeões; mais que isso é a lista de todos. */
+const MAX_SUBSET = 12;
 
 /**
  * Mantém a conexão com o cliente do LoL: procura as credenciais, abre o WebSocket,
@@ -265,19 +267,25 @@ export class LcuConnector extends EventEmitter {
     void this.saveSnapshot(session);
 
     // Mostra a sessão na hora; os campeões escolhíveis chegam em seguida.
-    // No ARAM (modo com banco) não há grade de escolha, então nem busca a lista.
+    // No ARAM (modo com banco) a escolha só existe no ARAM novo, entre os campeões oferecidos.
     const benchMode =
       session.benchEnabled ?? (session.benchChampions?.length ?? session.benchChampionIds?.length ?? 0) > 0;
-    const actionId = benchMode ? null : findMyPickAction(session);
+    const preview = toChampSelect(session, this.pickable?.championIds ?? []);
+    const actionId = preview?.pickActionId ?? null;
     const known = actionId !== null && this.pickable?.actionId === actionId;
     this.setState({
       ...this.state,
-      champSelect: toChampSelect(session, known ? this.pickable!.championIds : []),
+      champSelect: known ? preview : toChampSelect(session, []),
     });
     if (actionId === null || known || !this.credentials) return;
 
     try {
-      const championIds = await getPickableChampionIds(this.credentials);
+      const credentials = this.credentials;
+      // ARAM novo: só os oferecidos. Sem essa lista, os escolhíveis servem só se forem
+      // poucos (o cliente limita aos oferecidos); a lista de todos os campeões não vale aqui.
+      const offered = benchMode ? await getSubsetChampionIds(credentials).catch(() => []) : [];
+      const pickable = offered.length ? offered : await getPickableChampionIds(credentials);
+      const championIds = benchMode && !offered.length && pickable.length > MAX_SUBSET ? [] : pickable;
       this.pickable = { actionId, championIds };
       const current = this.state.champSelect;
       if (current && current.pickActionId === actionId) {

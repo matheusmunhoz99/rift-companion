@@ -14,8 +14,16 @@ export interface Summoner {
 export interface TeamMember {
   cellId: number;
   championId: number;
+  /** Campeão que o jogador está olhando antes de escolher (0 = nenhum ou escondido). */
+  hoverChampionId?: number;
   assignedPosition: string;
   isMe: boolean;
+  spell1Id?: number;
+  spell2Id?: number;
+  /** Riot ID sem a tag; null quando a Riot esconde. */
+  name?: string | null;
+  acting?: 'pick' | 'ban' | null;
+  locked?: boolean;
 }
 
 export interface Trade {
@@ -39,6 +47,15 @@ export interface ChampSelectState {
   trades: Trade[];
   /** Campeões inimigos já revelados. */
   enemyChampionIds?: number[];
+  /** Time inimigo; os campeões aparecem conforme eles confirmam. */
+  enemies?: TeamMember[];
+  bans?: { ally: number[]; enemy: number[] };
+  /** PLANNING, BAN_PICK, FINALIZATION, GAME_STARTING. */
+  phase?: string;
+  /** Fim da fase atual (relógio do PC, ms). */
+  timerEndsAt?: number | null;
+  /** ARAM novo: escolha entre os campeões oferecidos. */
+  subsetPicks?: boolean;
 }
 
 export interface ChampSelectBridge {

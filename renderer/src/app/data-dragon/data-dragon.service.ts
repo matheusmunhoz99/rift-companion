@@ -103,6 +103,11 @@ export class DataDragonService {
     return `${BASE_URL}/cdn/img/champion/loading/${champion.id}_0.jpg`;
   }
 
+  /** Splash centralizada (horizontal), boa para faixas e cabeçalhos. */
+  championCenteredUrl(champion: ChampionInfo): string {
+    return `${BASE_URL}/cdn/img/champion/centered/${champion.id}_0.jpg`;
+  }
+
   profileIconUrl(iconId: number): string | null {
     const version = this.version();
     return version ? `${BASE_URL}/cdn/${version}/img/profileicon/${iconId}.png` : null;

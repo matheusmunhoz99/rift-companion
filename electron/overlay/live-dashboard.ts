@@ -111,6 +111,8 @@ export interface LiveEvent {
 export interface LiveDashboard {
   gameTime: number;
   gameMode: string;
+  /** 11 = Summoner's Rift, 12 = Abismo Uivante (ARAM); null quando o jogo não informa. */
+  mapNumber: number | null;
   players: LivePlayer[];
   me: {
     riotId: string;
@@ -449,6 +451,7 @@ export function toLiveDashboard(raw: RawDashboardData, timings: ObjectiveTimings
   return {
     gameTime,
     gameMode: raw.gameData.gameMode,
+    mapNumber: raw.gameData.mapNumber ?? null,
     players: raw.allPlayers.map((p) => {
       const items = Array.from({ length: 7 }, () => ({ id: 0, count: 0 }));
       for (const item of p.items ?? []) {

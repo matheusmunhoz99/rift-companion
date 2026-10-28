@@ -6,22 +6,14 @@
       <span class="kills">{{ game.teams.ally.kills }}</span>
     </div>
     <div class="objectives">
-      @for (row of [
-        { label: 'Torres', ally: game.teams.ally.towers, enemy: game.teams.enemy.towers },
-        { label: 'Inibidores', ally: game.teams.ally.inhibitors, enemy: game.teams.enemy.inhibitors },
-        { label: 'Barões', ally: game.teams.ally.barons, enemy: game.teams.enemy.barons },
-        { label: 'Arautos', ally: game.teams.ally.heralds, enemy: game.teams.enemy.heralds },
-        { label: 'Larvas', ally: game.teams.ally.grubs, enemy: game.teams.enemy.grubs },
-        { label: 'Atakhan', ally: game.teams.ally.atakhan, enemy: game.teams.enemy.atakhan }
-      ]; track row.label) {
-        @if (row.label !== 'Atakhan' || row.ally + row.enemy > 0) {
-          <div class="objective">
-            <span class="value ally" [class.lead]="row.ally > row.enemy">{{ row.ally }}</span>
-            <span class="label">{{ row.label }}</span>
-            <span class="value enemy" [class.lead]="row.enemy > row.ally">{{ row.enemy }}</span>
-          </div>
-        }
+      @for (row of scoreRows(); track row.label) {
+        <div class="objective">
+          <span class="value ally" [class.lead]="row.ally > row.enemy">{{ row.ally }}</span>
+          <span class="label">{{ row.label }}</span>
+          <span class="value enemy" [class.lead]="row.enemy > row.ally">{{ row.enemy }}</span>
+        </div>
       }
+      @if (!aram()) {
       <div class="objective dragons">
         <span class="drakes ally">
           @for (type of game.teams.ally.dragons; track $index) {
@@ -35,6 +27,7 @@
           } @empty {<span class="none">0</span>}
         </span>
       </div>
+      }
     </div>
 
     <div class="side enemy">
@@ -63,7 +56,11 @@
     <section class="lanes">
       <header class="lanes-head">
         <span class="ally">Seu time</span>
-        <span title="Diferença de ouro em itens e de CS entre os jogadores de cada rota">Rota a rota</span>
+        @if (aram()) {
+          <span title="No ARAM não há rotas: cada time em ordem de ouro em itens, do mais forte ao mais fraco">Por ouro</span>
+        } @else {
+          <span title="Diferença de ouro em itens e de CS entre os jogadores de cada rota">Rota a rota</span>
+        }
         <span class="enemy">Inimigos</span>
       </header>
       @for (m of matchups(); track $index) {
@@ -133,8 +130,8 @@
             }
             @if ($index === 0) {
               <div class="lane-center">
-                <span class="lane-tag">{{ m.lane || '—' }}</span>
-                @if (m.ally && m.enemy) {
+                <span class="lane-tag">{{ m.lane || (aram() ? 'vs' : '—') }}</span>
+                @if (m.ally && m.enemy && !aram()) {
                   @let diff = value(m.ally) - value(m.enemy);
                   <span class="lane-diff" [class.ahead]="diff > 0" [class.behind]="diff < 0" title="Diferença no valor dos itens">{{ signed(diff) }}</span>
                   @let csDiff = m.ally.cs - m.enemy.cs;

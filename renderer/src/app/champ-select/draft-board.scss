@@ -1,0 +1,282 @@
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.draft {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+
+  &.my-turn {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-soft), 0 10px 30px rgb(0 0 0 / 25%);
+  }
+}
+
+.draft-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.phase {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.phase-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.turn {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 700;
+  animation: pulse 1.6s var(--ease-out) infinite;
+}
+
+.clock {
+  min-width: 52px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+
+  &.urgent {
+    color: var(--danger);
+  }
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.side {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  --side: var(--ally);
+
+  &[data-side='enemy'] {
+    --side: var(--enemy);
+  }
+}
+
+.side-title {
+  margin: 0;
+  color: var(--side);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.slots {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--side);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, var(--surface) 30%, color-mix(in srgb, var(--surface) 55%, transparent)),
+    var(--art, none) 70% 25% / cover no-repeat,
+    var(--well);
+
+  > * {
+    position: relative;
+  }
+
+  &.me {
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  &.empty {
+    background: var(--well);
+  }
+
+  &.tentative .portrait img {
+    opacity: 0.55;
+    filter: saturate(0.6);
+  }
+
+  &.acting {
+    border-color: var(--side);
+    animation: glow 1.6s var(--ease-out) infinite;
+  }
+
+  &.banning {
+    --side: var(--danger);
+  }
+}
+
+.portrait {
+  display: block;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  background: var(--border);
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+.who {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.champ-name {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  .tentative &,
+  .empty & {
+    color: var(--muted);
+    font-weight: 500;
+  }
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pos {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--highlight);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.spells {
+  display: flex;
+  gap: 3px;
+
+  img {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+  }
+}
+
+.bans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+.ban {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--border);
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: grayscale(0.7);
+  }
+
+  // Risco diagonal de "banido".
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 46%, var(--danger) 46%, var(--danger) 54%, transparent 54%);
+  }
+}
+
+// ARAM: um time só, os cinco lado a lado.
+.sides.row {
+  grid-template-columns: 1fr;
+
+  .slots {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .spells {
+    display: none;
+  }
+}
+
+@container (max-width: 760px) {
+  .sides.row .slots {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@keyframes pulse {
+  50% { opacity: 0.7; }
+}
+
+@keyframes glow {
+  50% { box-shadow: inset 0 0 0 1px var(--side); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn,
+  .slot.acting {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .sides {
+    grid-template-columns: 1fr;
+  }
+}

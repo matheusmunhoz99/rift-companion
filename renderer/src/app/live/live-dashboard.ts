@@ -13,6 +13,11 @@ const DRAGONS: Record<string, { name: string; color: string }> = {
   Chemtech: { name: 'Quimtec', color: '#8bd450' },
   Elder: { name: 'Ancião', color: '#ecd27e' },
 };
+/** ARAM e ARAM: Desordem (Abismo Uivante): uma rota só, sem dragões, Barão, Arauto ou Larvas. */
+export function isAram(game: { gameMode: string; mapNumber?: number | null } | null): boolean {
+  return !!game && (game.mapNumber === 12 || game.mapNumber === 14 || /^(ARAM|KIWI)$/i.test(game.gameMode));
+}
+
 const LANE_SHORT: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' };
 
 /** Dimensões do gráfico de vantagem (SVG em unidades do viewBox). */
@@ -49,18 +54,44 @@ export class LiveDashboardPanel {
 
   protected readonly valueDiff = computed(() => this.live.teamValue().ally - this.live.teamValue().enemy);
 
-  /** Rota a rota: seu jogador x o inimigo da mesma rota (sem rotas, na ordem do jogo). */
+  protected readonly aram = computed(() => isAram(this.data()));
+
+  /** Placar de estruturas e monstros: no ARAM só existem torres e inibidores. */
+  protected readonly scoreRows = computed(() => {
+    const game = this.data();
+    if (!game) return [];
+    const { ally, enemy } = game.teams;
+    const rows = [
+      { label: 'Torres', ally: ally.towers, enemy: enemy.towers },
+      { label: 'Inibidores', ally: ally.inhibitors, enemy: enemy.inhibitors },
+    ];
+    if (this.aram()) return rows;
+    rows.push(
+      { label: 'Barões', ally: ally.barons, enemy: enemy.barons },
+      { label: 'Arautos', ally: ally.heralds, enemy: enemy.heralds },
+      { label: 'Larvas', ally: ally.grubs, enemy: enemy.grubs },
+    );
+    if (ally.atakhan + enemy.atakhan > 0) rows.push({ label: 'Atakhan', ally: ally.atakhan, enemy: enemy.atakhan });
+    return rows;
+  });
+
+  /**
+   * Rota a rota: seu jogador x o inimigo da mesma rota (sem rotas, na ordem do jogo).
+   * No ARAM não há rotas: cada time em ordem de ouro em itens, do mais forte ao mais fraco.
+   */
   protected readonly matchups = computed<Matchup[]>(() => {
     const players = this.data()?.players ?? [];
+    const aram = this.aram();
     const byLane = (ally: boolean) =>
-      players.filter((p) => p.ally === ally).sort((a, b) => positionOrder(a.position) - positionOrder(b.position));
+      players.filter((p) => p.ally === ally).sort((a, b) =>
+        aram ? this.value(b) - this.value(a) : positionOrder(a.position) - positionOrder(b.position));
     const allies = byLane(true);
     const enemies = byLane(false);
     const rows: Matchup[] = [];
     for (let i = 0; i < Math.max(allies.length, enemies.length); i++) {
       const ally = allies[i] ?? null;
       const enemy = enemies[i] ?? null;
-      rows.push({ lane: LANE_SHORT[ally?.position || enemy?.position || ''] ?? '', ally, enemy });
+      rows.push({ lane: aram ? '' : LANE_SHORT[ally?.position || enemy?.position || ''] ?? '', ally, enemy });
     }
     return rows;
   });

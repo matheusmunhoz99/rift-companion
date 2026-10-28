@@ -201,3 +201,67 @@ button {
 .muted {
   color: var(--muted);
 }
+
+// ARAM novo: campeões sorteados em cards altos com a arte de carregamento.
+.offered {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.offer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  aspect-ratio: 308 / 460;
+  max-height: 260px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--art) center top / cover no-repeat, var(--well);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 85%), rgb(0 0 0 / 10%) 55%, transparent);
+  }
+
+  > span {
+    position: relative;
+  }
+
+  .offer-name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .offer-cta {
+    justify-self: start;
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+}

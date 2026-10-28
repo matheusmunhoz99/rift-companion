@@ -13,7 +13,7 @@
       }
     </p>
   </div>
-  @if (session().allowRerolling) {
+  @if (session().allowRerolling && !session().subsetPicks) {
     <button
       type="button"
       class="reroll"
@@ -32,16 +32,34 @@
 @if (session().pickActionId !== null || session().banActionId != null) {
   <section class="block">
     <header class="block-header">
-      <h4>{{ session().banActionId != null ? 'Escolha quem banir' : 'Escolha seu campeão' }}</h4>
+      <h4>{{ session().banActionId != null ? 'Escolha quem banir' : session().subsetPicks ? 'Escolha um dos campeões sorteados' : 'Escolha seu campeão' }}</h4>
+      @if (!session().subsetPicks) {
       <input
         type="search"
         placeholder="Buscar campeão"
         [value]="search()"
         (input)="search.set($any($event.target).value)"
       />
+      }
     </header>
     @if (session().pickableChampionIds.length === 0 && session().banActionId == null) {
-      <p class="muted">Carregando opções…</p>
+      <p class="muted">{{ session().subsetPicks ? 'Carregando os campeões sorteados…' : 'Carregando opções…' }}</p>
+    } @else if (session().subsetPicks) {
+      <!-- ARAM novo: poucos campeões sorteados, em cards grandes; um clique escolhe e confirma. -->
+      <div class="offered">
+        @for (champion of pickable(); track champion.key) {
+          <button
+            type="button"
+            class="offer"
+            [disabled]="busy() !== null"
+            [style.--art]="'url(' + ddragon.championLoadingUrl(champion) + ')'"
+            (click)="pick(champion)"
+          >
+            <span class="offer-name">{{ champion.name }}</span>
+            <span class="offer-cta">{{ busy() === 'pick:' + champion.key ? 'Escolhendo…' : 'Escolher' }}</span>
+          </button>
+        }
+      </div>
     } @else {
       <div class="grid">
         @for (champion of pickable(); track champion.key) {
@@ -63,7 +81,7 @@
   </section>
 }
 
-@if (session().benchEnabled) {
+@if (session().benchEnabled && !session().subsetPicks) {
   <section class="block">
     <header class="block-header">
       <h4>Campeões disponíveis</h4>
@@ -88,13 +106,14 @@
   </section>
 }
 
-@if (teammates().length > 0) {
+<!-- O quadro de cima já mostra o time; aqui só as trocas possíveis. -->
+@if (tradeable().length > 0) {
   <section class="block">
     <header class="block-header">
-      <h4>Seu time</h4>
+      <h4>Trocas com o time</h4>
     </header>
     <ul class="team">
-      @for (member of teammates(); track member.cellId) {
+      @for (member of tradeable(); track member.cellId) {
         <li>
           @if (iconUrl(member.championId); as icon) {
             <img [src]="icon" [alt]="champion(member.championId)?.name ?? ''" />

@@ -1,0 +1,65 @@
+<section class="draft" [class.my-turn]="myTurn() !== null">
+  <header class="draft-head">
+    <div class="phase">
+      <span class="phase-name">{{ phaseLabel() }}</span>
+      @if (myTurn(); as turn) {
+        <span class="turn">{{ turn === 'ban' ? 'Sua vez de banir' : 'Sua vez de escolher' }}</span>
+      }
+    </div>
+    @if (secondsLeft() !== null) {
+      <span class="clock num" [class.urgent]="secondsLeft()! <= 10" [title]="'Tempo restante da fase'">{{ secondsLeft() }}</span>
+    }
+  </header>
+
+  <div class="sides" [class.row]="aram()">
+    @for (side of sides(); track side.key) {
+      <div class="side" [attr.data-side]="side.key">
+        <h5 class="side-title">{{ side.title }}</h5>
+        <ol class="slots">
+          @for (s of side.slots; track s.member.cellId) {
+            <li
+              class="slot"
+              [class.me]="s.member.isMe"
+              [class.acting]="s.member.acting !== null"
+              [class.banning]="s.member.acting === 'ban'"
+              [class.tentative]="s.tentative"
+              [class.empty]="!s.champion"
+              [style.--art]="art(s.champion)"
+            >
+              <span class="portrait">
+                @if (icon(s.champion); as src) {
+                  <img [src]="src" [alt]="s.champion!.name" />
+                }
+              </span>
+              <span class="who">
+                <span class="champ-name">{{ s.status }}</span>
+                <span class="player">
+                  @if (position(s.member); as pos) {
+                    <span class="pos" [title]="pos.name">{{ pos.short }}</span>
+                  }
+                  {{ s.member.isMe ? 'Você' : (s.member.name ?? (side.key === 'ally' ? 'Aliado' : 'Inimigo')) }}
+                </span>
+              </span>
+              @if (side.key === 'ally') {
+                <span class="spells">
+                  @for (id of [s.member.spell1Id, s.member.spell2Id]; track $index) {
+                    @if (spellIcon(id); as src) {<img [src]="src" alt="" />}
+                  }
+                </span>
+              }
+            </li>
+          }
+        </ol>
+        @if (!aram() && side.bans.length) {
+          <div class="bans" [attr.aria-label]="'Banimentos de ' + side.title">
+            @for (champion of side.bans; track $index) {
+              <span class="ban" [title]="champion?.name ?? ''">
+                @if (icon(champion); as src) {<img [src]="src" alt="" />}
+              </span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -147,6 +147,8 @@ export interface LiveEvent {
 export interface LiveDashboard {
   gameTime: number;
   gameMode: string;
+  /** 11 = Summoner's Rift, 12 = Abismo Uivante (ARAM); null quando o jogo não informa. */
+  mapNumber?: number | null;
   players: LivePlayer[];
   me: {
     riotId: string;

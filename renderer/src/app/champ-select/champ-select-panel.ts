@@ -52,6 +52,10 @@ export class ChampSelectPanel {
 
   protected readonly teammates = computed(() => this.session().team.filter((member) => !member.isMe));
 
+  /** Aliados com troca possível (ou em andamento) com você. */
+  protected readonly tradeable = computed(() =>
+    this.teammates().filter((member) => ['AVAILABLE', 'SENT', 'RECEIVED'].includes(this.tradeFor(member)?.state ?? '')));
+
   protected champion(id: number): ChampionInfo | null {
     return id ? this.ddragon.champion(id) : null;
   }
