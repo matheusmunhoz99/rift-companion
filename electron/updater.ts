@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
@@ -172,6 +172,37 @@ export async function removeOldVersions(
     pending = still;
   }
   return removed;
+}
+
+/**
+ * Atalhos "Rift Companion" (área de trabalho e menu Iniciar) que abriam uma versão
+ * publicada mais antiga passam a abrir esta; sem isso, a limpeza deixaria o atalho quebrado.
+ * Atalhos para outros arquivos (cópias renomeadas, outra pasta escolhida à mão) ficam como estão.
+ */
+export function repointShortcuts(
+  currentExe = process.env.PORTABLE_EXECUTABLE_FILE,
+  currentVersion = app.getVersion(),
+): string[] {
+  if (process.platform !== 'win32' || !currentExe) return [];
+  const folders = [
+    app.getPath('desktop'),
+    path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
+  ];
+  const updated: string[] = [];
+  for (const folder of folders) {
+    const link = path.join(folder, 'Rift Companion.lnk');
+    try {
+      const { target } = shell.readShortcutLink(link);
+      const version = RELEASE_FILE.exec(path.basename(target))?.[1];
+      if (!version || path.resolve(target) === path.resolve(currentExe) || compareVersions(version, currentVersion) >= 0) continue;
+      if (shell.writeShortcutLink(link, 'update', { target: currentExe, cwd: path.dirname(currentExe), icon: currentExe, iconIndex: 0 })) {
+        updated.push(link);
+      }
+    } catch {
+      // Sem atalho nessa pasta: nada a fazer.
+    }
+  }
+  return updated;
 }
 
 function parseRelease(raw: unknown): ReleaseInfo | null {

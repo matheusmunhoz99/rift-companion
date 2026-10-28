@@ -17,7 +17,7 @@ import { registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
-import { removeOldVersions, Updater } from './updater';
+import { removeOldVersions, repointShortcuts, Updater } from './updater';
 import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
 import { InvisibleModeProxy } from './invisible/proxy';
@@ -501,6 +501,9 @@ void acquireInstance().then((acquired) => {
     if (!capturing) updater.start();
     // Versão nova aberta pela atualização: apaga o .exe antigo da mesma pasta.
     if (app.isPackaged && !capturing) {
+      // Antes de apagar o .exe antigo, o atalho da área de trabalho passa a abrir esta versão.
+      const shortcuts = repointShortcuts();
+      if (shortcuts.length) appLog(`atalhos atualizados para esta versão: ${shortcuts.length}`);
       void removeOldVersions().then((removed) => {
         if (removed.length) console.log('[updater] Versões antigas removidas:', removed.join(', '));
       });
