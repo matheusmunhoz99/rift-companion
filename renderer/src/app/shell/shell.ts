@@ -15,6 +15,7 @@ import { SettingsView } from '../views/settings-view';
 import { TierListView } from '../views/tierlist-view';
 import { isAndroid } from '../mobile/mobile-client';
 import { AndroidUpdate } from '../mobile/android-update';
+import { WhatsNew } from './whats-new';
 
 interface NavItem {
   view: View;
@@ -66,6 +67,7 @@ function clock(seconds: number): string {
 @Component({
   selector: 'app-shell',
   imports: [
+    WhatsNew,
     Icon,
     HomeView,
     PlayView,

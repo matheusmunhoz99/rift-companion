@@ -20,7 +20,7 @@
   <img alt="Sem anúncios" src="https://img.shields.io/badge/an%C3%BAncios-zero-2fbf71?style=flat-square" />
   <img alt="Sem injeção" src="https://img.shields.io/badge/inje%C3%A7%C3%A3o-nenhuma-2fbf71?style=flat-square" />
   <img alt="Dados Mestre+" src="https://img.shields.io/badge/dados-Mestre%2B%20BR%20%C2%B7%20EUW%20%C2%B7%20KR-e84057?style=flat-square" />
-  <img alt="Beta" src="https://img.shields.io/badge/status-beta-ffb35c?style=flat-square" />
+  <img alt="Versão 1.0" src="https://img.shields.io/badge/vers%C3%A3o-1.0-2fbf71?style=flat-square" />
   <a href="LICENSE"><img alt="Todos os direitos reservados" src="https://img.shields.io/badge/c%C3%B3digo-todos%20os%20direitos%20reservados-8b93a7?style=flat-square" /></a>
 </p>
 

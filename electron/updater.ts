@@ -128,8 +128,11 @@ export class Updater {
   }
 }
 
-/** Só os .exe publicados pelo release ("RiftCompanion-Beta-0.5.0-beta.7.exe"), nunca cópias renomeadas. */
-const RELEASE_FILE = /^RiftCompanion-Beta-(\d+\.\d+\.\d+(?:-beta\.\d+)?)\.exe$/;
+/**
+ * Só os .exe publicados pelo release, nunca cópias renomeadas: "RiftCompanion-1.0.0.exe"
+ * e os do beta ("RiftCompanion-Beta-0.5.0-beta.7.exe").
+ */
+const RELEASE_FILE = /^RiftCompanion-(?:Beta-)?(\d+\.\d+\.\d+(?:-beta\.\d+)?)\.exe$/;
 const CLEANUP_ATTEMPTS = 24;
 const CLEANUP_RETRY_MS = 5_000;
 

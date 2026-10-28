@@ -246,7 +246,7 @@
   <section class="card">
     <h3 class="section-title">Sobre</h3>
     <div class="about-row">
-      <p><strong>Rift Companion</strong> · versão beta {{ prefs.info()?.version }}</p>
+      <p><strong>Rift Companion</strong> · versão {{ prefs.info()?.version }}</p>
       @if (!android) {
       <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
         {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}

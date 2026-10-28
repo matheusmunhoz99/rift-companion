@@ -179,13 +179,13 @@ Janela transparente, sempre por cima e que ignora cliques (`electron/overlay/`),
 Live Client Data API do jogo (`https://127.0.0.1:2999`). Não injeta nada no processo do jogo.
 Funciona com o jogo em modo sem bordas; atalho `Ctrl+Shift+O` para mostrar/ocultar.
 
-## Gerar o .exe (beta)
+## Gerar o .exe
 
 ```bash
 npm run dist
 ```
 
-Gera `release/RiftCompanion-Beta-<versão>.exe` (portátil, Windows x64, sem instalação).
+Gera `release/RiftCompanion-<versão>.exe` (portátil, Windows x64, sem instalação).
 O executável não é assinado: o SmartScreen avisa na primeira execução. `npm run icon` regenera
 `build/icon.png`.
 

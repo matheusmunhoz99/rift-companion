@@ -57,7 +57,7 @@
         <app-icon name="settings" />
         <span class="label">Configurações</span>
       </button>
-      <span class="version">Beta {{ prefs.info()?.version ?? '' }}</span>
+      <span class="version">v{{ prefs.info()?.version ?? '' }}</span>
     </div>
   </aside>
   }
@@ -188,7 +188,7 @@
             </button>
           }
         </div>
-        <span class="more-version">Rift Companion · Beta {{ prefs.info()?.version ?? '' }}</span>
+        <span class="more-version">Rift Companion · v{{ prefs.info()?.version ?? '' }}</span>
       </div>
     }
   }
@@ -222,6 +222,8 @@
     </div>
   </div>
 }
+
+<app-whats-new />
 
 <div class="toasts" aria-live="polite">
   @for (item of toast.toasts(); track item.id) {

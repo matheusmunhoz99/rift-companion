@@ -45,3 +45,13 @@ test('depois de atualizar, apaga só os .exe publicados de versões anteriores',
   ]);
   assert.deepEqual(await removeOldVersions(undefined), [], 'fora do .exe portátil não faz nada');
 });
+
+test('a 1.0 apaga os .exe do beta e as versões oficiais antigas', async (t) => {
+  const { removeOldVersions } = loadUpdater();
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'rift-updater-test-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  for (const name of ['RiftCompanion-Beta-0.5.0-beta.20.exe', 'RiftCompanion-1.0.0.exe', 'RiftCompanion-1.1.0.exe']) {
+    await fs.writeFile(path.join(dir, name), 'x');
+  }
+  assert.deepEqual(await removeOldVersions(dir, '1.1.0', 1), ['RiftCompanion-Beta-0.5.0-beta.20.exe', 'RiftCompanion-1.0.0.exe'].sort());
+});

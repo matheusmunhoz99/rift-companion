@@ -13,7 +13,7 @@ const KEEP = 2;
 
 const root = path.join(__dirname, '..');
 const { version } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const file = `RiftCompanion-Beta-${version}.exe`;
+const file = `RiftCompanion-${version}.exe`;
 const exe = path.join(root, 'release', file);
 if (!fs.existsSync(exe)) throw new Error(`Não encontrei ${exe}. Rode npm run dist antes.`);
 
@@ -43,6 +43,6 @@ run('scp', ['-o', 'BatchMode=yes', path.join(__dirname, 'timers.json'), `${HOST}
 // Publica o manifesto, aponta o link fixo de download (RiftCompanion.exe) para a
 // versão nova e mantém só as últimas versões.
 run('ssh', ['-o', 'BatchMode=yes', HOST,
-  `cd ${REMOTE_DIR} && mv latest.json.part latest.json && ln -sfn ${file} RiftCompanion.exe && chmod 644 *.exe latest.json && ls -1t RiftCompanion-Beta-*.exe | tail -n +${KEEP + 1} | xargs -r rm -f`]);
+  `cd ${REMOTE_DIR} && mv latest.json.part latest.json && ln -sfn ${file} RiftCompanion.exe && chmod 644 *.exe latest.json && ls -1t RiftCompanion-*.exe | tail -n +${KEEP + 1} | xargs -r rm -f`]);
 
 console.log(`Publicado ${file} (${(manifest.size / 1e6).toFixed(1)} MB, sha256 ${manifest.sha256.slice(0, 12)}…)`);
