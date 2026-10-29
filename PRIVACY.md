@@ -43,6 +43,15 @@ If you connect Telegram in the app's settings, our server stores:
 
 Messages you type to the bot are deleted from the chat after they are read. Send `/parar` to the bot or click "Desconectar" in the app to remove the link. The bot token is kept only on our server.
 
+## Error reports (optional)
+
+If something crashes, the app sends an anonymous error report to our server: the
+error message, the stack trace (with personal paths such as your Windows user
+folder removed), the app version and your operating system and architecture. It
+never includes your name, Riot ID, Telegram chat or any account data. Reports are
+grouped by message and version so we can fix recurring bugs, and are deleted after
+30 days. You can turn this off in the app under Settings.
+
 ## Updates
 
 The app checks our server for new versions. This request does not include any personal data.
