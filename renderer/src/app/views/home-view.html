@@ -30,7 +30,7 @@
           <h2>{{ summoner.gameName }}<span class="tag">#{{ summoner.tagLine }}</span></h2>
           <p class="muted">{{ summoner.platformId }} · {{ offline() ? 'LoL fechado' : phaseLabel() }}</p>
         </div>
-        @if (offline()) {
+        @if (offline() && !pcOffline()) {
           <button type="button" class="btn open-league" [disabled]="openingLeague()" (click)="openLeague()">
             {{ openingLeague() ? 'Abrindo…' : prefs.preferences().appearOffline ? 'Abrir LoL invisível' : 'Abrir LoL' }}
           </button>

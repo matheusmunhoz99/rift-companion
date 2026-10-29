@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core';
-import type { LcuState } from '../lcu/lcu.types';
+import type { LcuState, SavedAccount } from '../lcu/lcu.types';
+import { DIRECT_CHANNELS } from './direct-server';
 import type { Preferences, AppInfo } from '../core/app.types';
 
 export const isAndroid = Capacitor.getPlatform() === 'android';
@@ -16,6 +17,29 @@ const emptyState: LcuState = { status: 'waiting-client', summoner: null, gameflo
   platformId: null, lobby: null, search: null, readyCheck: null };
 type Snapshot = { lcu: LcuState; prefs: Preferences; info: AppInfo; postgame: unknown };
 let snapshot: Snapshot | null = null;
+
+const ACCOUNT_KEY = 'rift.phoneAccount';
+/**
+ * Sua conta, lembrada no celular: com o PC desligado o app ainda abre seu perfil e
+ * histórico (direto do servidor do Rift Companion, sem passar pelo PC).
+ */
+export const savedAccount = signal<SavedAccount | null>(readAccount());
+function readAccount(): SavedAccount | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(ACCOUNT_KEY) ?? 'null') as SavedAccount | null;
+    return value?.gameName && value.tagLine && value.platformId ? value : null;
+  } catch {
+    return null;
+  }
+}
+function rememberAccount(lcu: LcuState): void {
+  const account = lcu.account;
+  if (!account || JSON.stringify(account) === JSON.stringify(savedAccount())) return;
+  savedAccount.set(account);
+  try { localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account)); } catch { /* só não lembra */ }
+}
+/** PC desligado: o estado do LoL fica vazio, mas com a sua conta. */
+const offlineState = (): LcuState => ({ ...emptyState, account: savedAccount() });
 
 function subscribe(event: string, callback: (value: any) => void): () => void {
   const set = listeners.get(event) ?? new Set();
@@ -66,6 +90,9 @@ export async function unlinkPhone(): Promise<void> {
   if (token) await api('unlink', {});
   await credentials.remove();
   token = null; snapshot = null; generation++;
+  // Desvincular também esquece a conta lembrada neste celular.
+  savedAccount.set(null);
+  try { localStorage.removeItem(ACCOUNT_KEY); } catch { /* nada lembrado */ }
   phoneStatus.set('unlinked'); phoneError.set('');
   emit('lcu:state', emptyState);
 }
@@ -80,17 +107,18 @@ async function poll(): Promise<void> {
         const state = await api<{ approved: boolean; online: boolean; data: Snapshot | null }>('state');
         if (generation !== requestGeneration) continue;
         if (!state.approved) phoneStatus.set('waiting');
-        else if (!state.online || !state.data) { phoneStatus.set('offline'); snapshot = null; emit('lcu:state', emptyState); }
+        else if (!state.online || !state.data) { phoneStatus.set('offline'); snapshot = null; emit('lcu:state', offlineState()); }
         else {
           const previous = snapshot;
           snapshot = state.data;
+          rememberAccount(snapshot.lcu);
           phoneStatus.set('online'); phoneError.set('');
           emit('lcu:state', snapshot.lcu);
           if (JSON.stringify(previous?.prefs) !== JSON.stringify(snapshot.prefs)) emit('prefs:changed', snapshot.prefs);
           if (JSON.stringify(previous?.postgame) !== JSON.stringify(snapshot.postgame)) emit('postgame:ready', snapshot.postgame);
         }
       } catch (error) {
-        if (token) { phoneStatus.set('offline'); snapshot = null; emit('lcu:state', emptyState); }
+        if (token) { phoneStatus.set('offline'); snapshot = null; emit('lcu:state', offlineState()); }
         phoneError.set(error instanceof Error ? error.message : 'Sem conexão.');
       }
       await new Promise(resolve => setTimeout(resolve, document.hidden ? 5_000 : 1_000));
@@ -99,6 +127,8 @@ async function poll(): Promise<void> {
 }
 
 async function call(channel: string, ...args: unknown[]): Promise<any> {
+  // PC desligado: perfil, histórico e estatísticas vêm direto do servidor; o resto precisa do PC.
+  if (phoneStatus() !== 'online' && DIRECT_CHANNELS[channel]) return DIRECT_CHANNELS[channel](savedAccount(), ...args);
   if (!token || phoneStatus() !== 'online') throw new Error('Abra o Rift Companion no PC e confira a conexão.');
   const current = generation;
   const result = await api<{ value?: unknown; error?: string }>('call', { channel, args, phase: snapshot?.lcu.gameflowPhase ?? null });

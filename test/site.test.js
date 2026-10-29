@@ -17,7 +17,7 @@ test('site: all local assets and navigation targets exist', () => {
     if (reference.startsWith('#')) {
       if (reference !== '#') assert.ok(ids.includes(reference.slice(1)), reference);
     } else {
-      assert.ok(fs.existsSync(path.join(root, reference)), reference);
+      assert.ok(fs.existsSync(path.join(root, reference.split('?')[0])), reference);
     }
   }
   for (const [, reference] of css.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
@@ -68,15 +68,15 @@ test('site: tabs update the image and accessible selection, including keyboard w
   };
   vm.runInNewContext(script, { document, window: { matchMedia: () => ({ matches: true }) } });
   tabs[1].handlers.click();
-  assert.equal(elements['#stage-image'].src, 'docs/screenshots/live.png');
+  assert.equal(elements['#stage-image'].src, 'docs/screenshots/players.png?v=1.2');
   assert.equal(elements['#stage-panel'].attributes['aria-labelledby'], 'tab-live');
   assert.equal(tabs[1].attributes['aria-selected'], 'true');
   assert.equal(tabs[0].tabIndex, -1);
   tabs[1].handlers.keydown({ key: 'ArrowRight', preventDefault() {} });
-  assert.equal(elements['#stage-image'].src, 'docs/screenshots/postgame.png');
+  assert.equal(elements['#stage-image'].src, 'docs/screenshots/postgame.png?v=1.2');
   assert.equal(tabs[2].focused, true);
   tabs[2].handlers.keydown({ key: 'ArrowRight', preventDefault() {} });
-  assert.equal(elements['#stage-image'].src, 'docs/screenshots/champselect.png');
+  assert.equal(elements['#stage-image'].src, 'docs/screenshots/champselect.png?v=1.2');
   assert.equal(elements['#stage-image'].parentElement.href, elements['#stage-image'].src);
   tabs[0].handlers.keydown({ key: 'End', preventDefault() {} });
   assert.equal(tabs[2].tabIndex, 0);

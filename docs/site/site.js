@@ -3,27 +3,27 @@
 // The page and download links remain usable without JavaScript.
 const stages = {
   select: {
-    title: "A build muda. O confronto também.",
+    title: "Os dois times. Tudo numa tela só.",
     description:
-      "Veja o seu oponente, a composição dos times e sugestões de itens. Importe runas e feitiços direto no cliente, sem ficar copiando de outra aba.",
+      "Cada jogador num card com a arte do campeão, a rota e os feitiços. Os inimigos aparecem conforme travam, com banimentos e o tempo da fase. Ao lado, build, estatísticas e counters do confronto, com runas importadas direto no cliente.",
     tag: "SELEÇÃO DE CAMPEÕES",
-    image: "docs/screenshots/champselect.png",
-    alt: "Seleção de campeões com composição dos times, counters e build do confronto",
+    image: "docs/screenshots/champselect.png?v=1.2",
+    alt: "Seleção de campeões com os dois times em cards, banimentos, tempo e estatísticas do campeão",
   },
   live: {
     title: "Dez jogadores. Uma visão da partida.",
     description:
-      "Acompanhe placar, itens, ouro e objetivos. Compare as rotas e consulte os jogadores sem perder o contexto do jogo.",
+      "Elo, runas, campeão mais jogado, duo e o dano físico e mágico de cada um, num card por jogador. No Ao vivo, placar, itens, ouro e objetivos rota a rota.",
     tag: "PARTIDA AO VIVO",
-    image: "docs/screenshots/live.png",
-    alt: "Placar ao vivo com os dez jogadores, itens, ouro e objetivos",
+    image: "docs/screenshots/players.png?v=1.2",
+    alt: "Cards dos dez jogadores com elo, runas, maestria e dano físico e mágico",
   },
   post: {
     title: "Acabou o jogo. Ficaram os números.",
     description:
-      "Veja notas, destaques e o desempenho dos jogadores. Dano, ouro, farm e visão ajudam a contar o que o resultado sozinho não mostra.",
+      "Sua nota num anel, os três melhores da partida e o ranking dos dez com o porquê de cada nota. Dano, ouro, farm e visão contam o que o resultado sozinho não mostra.",
     tag: "FIM DE PARTIDA",
-    image: "docs/screenshots/postgame.png",
+    image: "docs/screenshots/postgame.png?v=1.2",
     alt: "Resumo pós-partida com notas dos jogadores, pódio e estatísticas",
   },
 };

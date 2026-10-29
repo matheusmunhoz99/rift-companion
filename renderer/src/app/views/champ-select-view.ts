@@ -146,7 +146,7 @@ export class ChampSelectView {
   private readonly lcu = inject(LcuService);
   protected readonly state = this.lcu.state;
   // Aba inicial pelo hash (#...&tab=stats), usada na revisão visual e nos prints do site.
-  private readonly initialTab = (/[#&]tab=(pick|build|stats|counters|comp)/.exec(location.hash)?.[1] ?? null) as Tab | null;
+  private readonly initialTab = (/[#&]tab=(pick|build|stats|counters|comp)\b/.exec(location.hash)?.[1] ?? null) as Tab | null;
   protected readonly tab = signal<Tab>(this.initialTab ?? 'pick');
 
   /** Igualdade por conteúdo: o estado do cliente chega a cada evento, mas os inimigos mudam pouco. */
@@ -193,12 +193,14 @@ export class ChampSelectView {
     // Sua vez de escolher ou banir: volta para a aba de escolha. Depois de confirmar
     // o campeão, vai para a build (o que mais se usa até a partida começar).
     let wasActing = false;
-    // Com aba pedida pelo hash, a troca automática só vale nas próximas mudanças.
-    let hadChampion = this.initialTab !== null;
+    let hadChampion = false;
+    // Aba pedida pelo hash (revisão visual e prints): fica fixa, sem troca automática.
+    const automatic = this.initialTab === null;
     effect(() => {
       const acting = this.needsAction();
       const locked = (this.state().champSelect?.championId ?? 0) > 0;
       untracked(() => {
+        if (!automatic) return;
         if (acting && !wasActing) this.tab.set('pick');
         else if (locked && !hadChampion && !acting && !this.state().champSelect?.benchEnabled) this.tab.set('build');
         if (!this.tabs().some((t) => t.key === this.tab())) this.tab.set('pick');

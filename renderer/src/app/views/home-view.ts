@@ -9,6 +9,7 @@ import { queueName, rankQueueLabel, rankText, winRate } from '../riot/labels';
 import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
 import { ToastService, errorText } from '../core/toast.service';
+import { isAndroid, phoneStatus } from '../mobile/mobile-client';
 
 const INVISIBLE_LABELS: Record<InvisibleStatus, string> = { offline: 'offline', mobile: 'celular', online: 'online' };
 
@@ -60,6 +61,8 @@ export class HomeView {
     return account ?? null;
   });
   protected readonly offline = computed(() => this.state().status !== 'connected');
+  /** No celular com o PC desligado não dá para abrir o LoL. */
+  protected readonly pcOffline = computed(() => isAndroid && phoneStatus() !== 'online');
 
   protected readonly phaseLabel = computed(() => {
     const phase = this.state().gameflowPhase;
