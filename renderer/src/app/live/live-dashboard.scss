@@ -204,7 +204,7 @@ h4 {
 
 .middle {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
+  grid-template-columns: minmax(0, 1fr) 236px;
   align-items: start;
   gap: 12px;
 
@@ -876,91 +876,155 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
-/* Objetivos com surgimento fixo: uma linha por objetivo, na ordem em que nascem. */
+/* Objetivos: um card por objetivo, com a contagem grande e a barra até nascer. */
 .objectives-card {
+  display: grid;
   gap: 6px;
 
   .timer-title {
-    grid-column: 1 / -1;
+    padding: 0 2px;
   }
 }
 
-.objective-row {
+.objective-tile {
   --objective: var(--muted);
+  --progress: 0;
 
-  display: flex;
-  grid-column: 1 / -1;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 3px 0;
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 10px;
+  padding: 9px 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--objective) 10%, transparent), transparent 70%),
+    var(--surface);
+  box-shadow: inset 3px 0 0 var(--objective);
+  transition: border-color var(--dur) var(--ease-out), background var(--dur) var(--ease-out);
 
-  strong {
-    margin-left: auto;
-    color: var(--text);
-    font-size: 15px;
-    font-variant-numeric: tabular-nums;
-  }
+  &[data-key='dragon'] { --objective: #ff7a45; }
+  &[data-key='grubs'] { --objective: #b38cff; }
+  &[data-key='herald'] { --objective: #8e7cff; }
+  &[data-key='atakhan'] { --objective: #e5435a; }
+  &[data-key='baron'] { --objective: #b673f2; }
 
-  &[data-key='dragon'] {
-    --objective: #ff7a45;
-  }
+  // Último minuto: o card acende e pulsa na cor do objetivo.
+  &.soon {
+    border-color: var(--objective);
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--objective) 26%, transparent), transparent 85%),
+      var(--surface);
+    animation: objective-soon 1.4s ease-in-out infinite;
 
-  &[data-key='grubs'] {
-    --objective: #b38cff;
-  }
-
-  &[data-key='herald'] {
-    --objective: #8e7cff;
-  }
-
-  &[data-key='atakhan'] {
-    --objective: #e5435a;
-  }
-
-  &[data-key='baron'] {
-    --objective: #b673f2;
-  }
-
-  // No mapa: destaque em âmbar para chamar a atenção.
-  &.alive {
-    .objective-name {
-      color: var(--text);
+    .objective-clock {
+      color: var(--objective);
     }
+  }
 
-    strong {
-      color: var(--warning);
+  // No mapa: cor cheia e selo grande.
+  &.alive {
+    border-color: var(--objective);
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--objective) 34%, transparent), color-mix(in srgb, var(--objective) 8%, transparent)),
+      var(--surface);
+
+    .objective-emblem {
+      animation: objective-pulse 1.6s ease-in-out infinite;
     }
   }
 }
 
-.objective-dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--objective);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--objective) 60%, transparent);
+.objective-emblem {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--objective) 22%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--objective) 35%, transparent);
 
-  .alive & {
-    animation: objective-pulse 1.6s ease-in-out infinite;
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: var(--objective);
   }
+}
+
+.objective-info {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
 }
 
 .objective-name {
-  color: var(--muted);
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.alive-tag {
-  font-family: var(--font-ui);
-  font-size: 12px !important;
-  text-transform: none;
+.objective-when {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.objective-clock {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.objective-live {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--objective);
+  color: #0b0d12;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+// Barra fina embaixo: enche nos últimos 3 min antes de nascer.
+.objective-bar {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--objective) 15%, transparent);
+
+  i {
+    display: block;
+    width: calc(var(--progress) * 100%);
+    height: 100%;
+    background: var(--objective);
+    transition: width 1s linear;
+  }
+}
+
+@keyframes objective-soon {
+  50% {
+    box-shadow: inset 3px 0 0 var(--objective), 0 0 0 3px color-mix(in srgb, var(--objective) 22%, transparent);
+  }
 }
 
 @keyframes objective-pulse {
   50% {
-    opacity: 0.35;
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .objective-tile.soon,
+  .objective-tile.alive .objective-emblem {
+    animation: none;
   }
 }
 

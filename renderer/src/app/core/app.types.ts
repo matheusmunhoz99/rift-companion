@@ -18,6 +18,7 @@ export interface Preferences {
   minimizeToTray: boolean;
   startWithWindows: boolean;
   showAsRiftUser: boolean;
+  chatObjectiveAlerts: boolean;
   telegramReadyCheck: boolean;
   telegramChampion: boolean;
   telegramGameStart: boolean;

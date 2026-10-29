@@ -18,6 +18,15 @@ export function isAram(game: { gameMode: string; mapNumber?: number | null } | n
   return !!game && (game.mapNumber === 12 || game.mapNumber === 14 || /^(ARAM|KIWI)$/i.test(game.gameMode));
 }
 
+/** Formas dos ícones dos objetivos (viewBox 24x24). */
+const OBJECTIVE_ICONS: Record<string, string> = {
+  dragon: 'M12 2c.6 3.4 4.8 5.2 4.8 10.2a4.8 4.8 0 0 1-9.6 0c0-2.9 1.8-4.1 2-6.6 1 1 1.6 2 2.7 1.7C10.9 5.6 11 3.8 12 2Z',
+  baron: 'M3 7.5 7.2 11 12 4l4.8 7L21 7.5 19.2 19H4.8L3 7.5Z',
+  herald: 'M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Zm10 3.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z',
+  grubs: 'M6 9.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm12 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM12 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 8a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z',
+  atakhan: 'M4 3c.2 6.3 3.4 9.4 8 9.4S19.8 9.3 20 3c-2 3-4.4 4.4-8 4.4S6 6 4 3Zm8 11.2c-3 0-5.2 2.2-5.2 5.3h10.4c0-3.1-2.2-5.3-5.2-5.3Z',
+};
+
 const LANE_SHORT: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' };
 
 /** Dimensões do gráfico de vantagem (SVG em unidades do viewBox). */
@@ -155,6 +164,21 @@ export class LiveDashboardPanel {
 
   protected toggleSpell(player: LivePlayer, slot: number, cooldown: number): void {
     this.live.toggleSpell(`${player.riotId}|${slot}`, cooldown);
+  }
+
+  /** Segundos até um tempo de jogo (negativo depois que passou), pelo relógio local entre leituras. */
+  protected secondsLeft(at: number): number {
+    return Math.ceil(at - this.clock());
+  }
+
+  /** Barra dos objetivos: enche nos últimos 3 min antes de nascer; cheia no mapa. */
+  protected spawnProgress(left: number): number {
+    return left <= 0 ? 1 : Math.max(0, Math.min(1, 1 - left / 180));
+  }
+
+  /** Ícone simples (24x24) de cada objetivo. */
+  protected objectiveIcon(key: string): string {
+    return OBJECTIVE_ICONS[key] ?? OBJECTIVE_ICONS['dragon'];
   }
 
   /** Contagem regressiva até um tempo de jogo; null quando já passou. */

@@ -13,6 +13,7 @@ import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
 import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
+import { ObjectiveAnnouncer } from './overlay/objective-announcer';
 import { registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { Settings, type Preferences } from './settings';
@@ -501,6 +502,13 @@ void acquireInstance().then((acquired) => {
       () => prefs.getPreferences(),
       (window) => loadRenderer(window, 'overlay'),
       path.join(__dirname, 'preload.js'),
+      createTimingsSource(connector, app.isPackaged),
+    );
+    // Avisos de objetivos no chat do LoL, pelo contato Rift Companion (precisa do modo invisível).
+    if (!capturing) new ObjectiveAnnouncer(
+      connector,
+      invisible,
+      () => prefs.getPreferences().chatObjectiveAlerts,
       createTimingsSource(connector, app.isPackaged),
     );
 

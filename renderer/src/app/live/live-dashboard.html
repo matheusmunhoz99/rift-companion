@@ -148,19 +148,33 @@
     <section class="timers">
       @if (game.objectives.length) {
         <!-- Surgimentos fixos da temporada: conta até o primeiro e, depois de cada abate, até o próximo. -->
-        <div class="timer objectives-card">
+        <div class="objectives-card">
           <span class="timer-title">Objetivos</span>
           @for (o of game.objectives; track o.key) {
             @if (o.state !== 'done') {
-              <span class="objective-row" [attr.data-key]="o.key" [class.alive]="o.state === 'alive' || !countdown(o.at)">
-                <span class="objective-dot"></span>
-                <span class="objective-name">{{ o.name }}</span>
-                @if (countdown(o.at); as left) {
-                  <strong class="num" [title]="'Nasce aos ' + time(o.at)">{{ left }}</strong>
+              @let left = secondsLeft(o.at);
+              <div
+                class="objective-tile"
+                [attr.data-key]="o.key"
+                [class.alive]="left <= 0"
+                [class.soon]="left > 0 && left <= 60"
+                [style.--progress]="spawnProgress(left)"
+                [title]="left > 0 ? o.name + ' nasce aos ' + time(o.at) : o.name + ' no mapa'"
+              >
+                <span class="objective-emblem" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path [attr.d]="objectiveIcon(o.key)" /></svg>
+                </span>
+                <span class="objective-info">
+                  <span class="objective-name">{{ o.name }}</span>
+                  <span class="objective-when">{{ left > 0 ? 'aos ' + time(o.at) : 'no mapa agora' }}</span>
+                </span>
+                @if (left > 0) {
+                  <strong class="objective-clock num">{{ time(left) }}</strong>
                 } @else {
-                  <strong class="alive-tag">no mapa</strong>
+                  <strong class="objective-live">NO MAPA</strong>
                 }
-              </span>
+                <span class="objective-bar" aria-hidden="true"><i></i></span>
+              </div>
             }
           }
         </div>
