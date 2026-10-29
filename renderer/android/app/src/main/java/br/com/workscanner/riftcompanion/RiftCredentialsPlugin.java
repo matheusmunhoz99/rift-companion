@@ -19,7 +19,7 @@ import javax.crypto.spec.GCMParameterSpec;
 @CapacitorPlugin(name = "RiftCredentials")
 public class RiftCredentialsPlugin extends Plugin {
     private static final String ALIAS = "rift.mobile.v1";
-    private SecretKey key() throws Exception {
+    private static SecretKey key() throws Exception {
         KeyStore store = KeyStore.getInstance("AndroidKeyStore");
         store.load(null);
         if (!store.containsAlias(ALIAS)) {
@@ -45,16 +45,21 @@ public class RiftCredentialsPlugin extends Plugin {
     }
     @PluginMethod public void get(PluginCall call) {
         try {
-            var prefs = getContext().getSharedPreferences(ALIAS, Context.MODE_PRIVATE);
-            String value = prefs.getString("value", null);
             JSObject result = new JSObject();
-            if (value != null) {
-                Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-                cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(prefs.getString("iv", ""), Base64.NO_WRAP)));
-                result.put("token", new String(cipher.doFinal(Base64.decode(value, Base64.NO_WRAP)), java.nio.charset.StandardCharsets.UTF_8));
-            }
+            String token = readToken(getContext());
+            if (token != null) result.put("token", token);
             call.resolve(result);
         } catch (Exception e) { call.reject("Vínculo indisponível. Conecte novamente."); }
+    }
+
+    /** Token do vínculo (null sem vínculo); também usado pelo aviso de partida em segundo plano. */
+    static String readToken(Context context) throws Exception {
+        var prefs = context.getSharedPreferences(ALIAS, Context.MODE_PRIVATE);
+        String value = prefs.getString("value", null);
+        if (value == null) return null;
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(prefs.getString("iv", ""), Base64.NO_WRAP)));
+        return new String(cipher.doFinal(Base64.decode(value, Base64.NO_WRAP)), java.nio.charset.StandardCharsets.UTF_8);
     }
     @PluginMethod public void remove(PluginCall call) {
         getContext().getSharedPreferences(ALIAS, Context.MODE_PRIVATE).edit().clear().commit();

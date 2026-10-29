@@ -2,8 +2,11 @@ import { signal } from '@angular/core';
 import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core';
 import type { LcuState, SavedAccount } from '../lcu/lcu.types';
 import { DIRECT_CHANNELS } from './direct-server';
+import { syncGameWatch } from './game-watch';
 import type { Preferences, AppInfo } from '../core/app.types';
 
+/** Celular vinculado a um PC (há vínculo salvo). */
+export const isLinked = (): boolean => token !== null;
 export const isAndroid = Capacitor.getPlatform() === 'android';
 export const phoneStatus = signal<'unlinked' | 'waiting' | 'offline' | 'online'>('unlinked');
 export const phoneError = signal('');
@@ -82,6 +85,7 @@ export async function pairPhone(text: string, name: string): Promise<void> {
   await credentials.set({ token: result.token });
   token = result.token; generation++;
   phoneStatus.set('waiting'); phoneError.set('');
+  void syncGameWatch(true);
   void poll();
 }
 
@@ -91,6 +95,7 @@ export async function unlinkPhone(): Promise<void> {
   await credentials.remove();
   token = null; snapshot = null; generation++;
   // Desvincular também esquece a conta lembrada neste celular.
+  void syncGameWatch(false);
   savedAccount.set(null);
   try { localStorage.removeItem(ACCOUNT_KEY); } catch { /* nada lembrado */ }
   phoneStatus.set('unlinked'); phoneError.set('');
@@ -170,7 +175,7 @@ export function initializeAndroid(): void {
     telegram: { ...methods({ status: 'telegram:status' }), connect: localOnly, cancel: localOnly, disconnect: localOnly, test: localOnly },
   });
   void credentials.get().then(result => {
-    if (result.token) { token = result.token; phoneStatus.set('offline'); void poll(); }
+    if (result.token) { token = result.token; phoneStatus.set('offline'); void syncGameWatch(true); void poll(); }
   }).catch(() => phoneError.set('Não foi possível abrir o vínculo seguro. Vincule novamente.'));
 
   // Procura uma versão nova do APK (import tardio para não pesar o início).

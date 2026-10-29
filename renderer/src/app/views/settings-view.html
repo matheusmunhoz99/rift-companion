@@ -93,6 +93,21 @@
     />
   </section>
 
+  @if (android) {
+  <section class="card">
+    <h3 class="section-title">Avisos no celular</h3>
+    <app-switch
+      label="Avisar quando a partida carregar e começar"
+      description="Chega uma notificação na tela de carregamento e outra quando o jogo começa, mesmo com o app fechado. Fica uma notificação discreta enquanto o aviso está ligado."
+      [checked]="gameWatch()"
+      (toggled)="toggleGameWatch($event)"
+    />
+    @if (gameWatchError(); as message) {
+      <p class="notice warning">{{ message }}</p>
+    }
+  </section>
+  }
+
   @if (!android) {
   <section class="card">
     <h3 class="section-title">Avisos no Telegram</h3>

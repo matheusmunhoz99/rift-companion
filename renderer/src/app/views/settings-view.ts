@@ -5,7 +5,8 @@ import { ToastService, errorText } from '../core/toast.service';
 import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
 import { MobileLink } from '../mobile/mobile-link';
-import { isAndroid } from '../mobile/mobile-client';
+import { isAndroid, isLinked } from '../mobile/mobile-client';
+import { gameWatchEnabled, gameWatchError, setGameWatch } from '../mobile/game-watch';
 
 interface TelegramBridge {
   status(): Promise<{ connected: boolean }>;
@@ -49,6 +50,12 @@ const STARTUP_STATUSES: Array<{ value: InvisibleStartupStatus; label: string }> 
 })
 export class SettingsView {
   protected readonly android = isAndroid;
+  protected readonly gameWatch = gameWatchEnabled;
+  protected readonly gameWatchError = gameWatchError;
+
+  protected toggleGameWatch(enabled: boolean): void {
+    void setGameWatch(enabled, isLinked());
+  }
   protected readonly prefs = inject(PreferencesService);
   protected readonly positions = POSITIONS;
   protected readonly statuses = STATUSES;

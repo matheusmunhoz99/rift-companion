@@ -4,6 +4,7 @@ import path from 'node:path';
 import QRCode from 'qrcode';
 import type { LcuConnector } from '../lcu/connector';
 import { ipcMain, invokeMobile, readMobile } from './rpc';
+import { fetchRawGameData } from '../overlay/live-client';
 
 const BASE = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
 interface Device { id: string; name: string; approved: number; created: number }
@@ -65,7 +66,8 @@ export class AndroidLink {
     while (!this.stopped) {
       try {
         const [prefs, postgame, info] = await Promise.all([readMobile('prefs:get'), readMobile('postgame:get'), readMobile('app:info')]);
-        await this.api('pc/state', { data: { lcu: this.connector.getState(), prefs, postgame, info } });
+        const lcu = this.connector.getState();
+        await this.api('pc/state', { data: { lcu, prefs, postgame, info, game: await gameClock(lcu.gameflowPhase) } });
         this.error = null;
       } catch (error) { this.error = error instanceof Error ? error.message : 'PC sem conexão com o servidor.'; }
       await delay(this.error ? 5_000 : 2_000);
@@ -111,3 +113,13 @@ export class AndroidLink {
   }
 }
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Relógio da partida (segundos de jogo), lido do próprio jogo: o celular avisa
+ * "a partida começou" quando ele passa a andar, depois da tela de carregamento.
+ */
+async function gameClock(phase: string | null): Promise<{ time: number } | null> {
+  if (phase !== 'InProgress' && phase !== 'Reconnect') return null;
+  const raw = await fetchRawGameData().catch(() => null);
+  return raw?.gameData ? { time: Math.floor(raw.gameData.gameTime) } : null;
+}

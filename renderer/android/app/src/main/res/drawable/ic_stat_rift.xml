@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone da barra de notificações: o hexágono do logo, em uma cor só (o Android pinta). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M16,1.8L28.3,8.9V23.1L16,30.2L3.7,23.1V8.9Z M16,6.5L9,16L16,25.5L23,16Z" />
+</vector>
