@@ -168,8 +168,8 @@
     <app-switch
       label="Avisar dos objetivos no chat do LoL"
       [description]="prefs.preferences().appearOffline
-        ? 'O contato Rift Companion manda uma mensagem só para você 1 min antes de dragão, Barão, Arauto e Larvas nascerem.'
-        : 'O contato Rift Companion manda uma mensagem só para você 1 min antes de cada objetivo. Precisa do modo invisível ligado (é ele que cria o contato no chat).'"
+        ? 'O contato Rift Companion manda uma mensagem só para você 1 min 30 s e 30 s antes de dragão, Barão, Arauto e Larvas nascerem, e quando nascem.'
+        : 'O contato Rift Companion manda uma mensagem só para você 1 min 30 s e 30 s antes de cada objetivo. Precisa do modo invisível ligado (é ele que cria o contato no chat).'"
       [checked]="prefs.preferences().chatObjectiveAlerts"
       (toggled)="prefs.set({ chatObjectiveAlerts: $event })"
     />

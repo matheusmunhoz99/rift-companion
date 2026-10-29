@@ -29,7 +29,7 @@ export interface Preferences {
   startWithWindows: boolean;
   /** Outros usuários do Rift Companion veem um ícone no seu nick (só o hash do Riot ID vai ao servidor). */
   showAsRiftUser: boolean;
-  /** Avisos de objetivos (1 min antes de nascer) pelo contato Rift Companion no chat do LoL. */
+  /** Avisos de objetivos (1 min 30 s e 30 s antes de nascer) pelo contato Rift Companion no chat do LoL. */
   chatObjectiveAlerts: boolean;
   /** Avisos no Telegram (só valem com o Telegram conectado). */
   telegramReadyCheck: boolean;

@@ -49,7 +49,7 @@ export class ObjectiveAnnouncer {
     const lines: string[] = [];
     if (!this.greeted) {
       this.greeted = true;
-      lines.push('Partida começou: aviso aqui 1 min antes de cada objetivo nascer. Dá para desligar em Configurações › Overlay.');
+      lines.push('Partida começou: aviso aqui 1 min 30 s e 30 s antes de cada objetivo nascer, e quando ele nasce. Dá para desligar em Configurações › Overlay.');
     }
     for (const alert of objectiveAlerts(dashboard, this.sent)) {
       this.sent.add(alert.id);

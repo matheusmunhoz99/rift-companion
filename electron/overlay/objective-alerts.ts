@@ -1,9 +1,11 @@
 import type { LiveDashboard } from './live-dashboard';
 
-/** Avisa este tempo antes do objetivo nascer. */
-const SPAWN_WARNING_S = 60;
-/** Perto demais para avisar "em 1 min" (o próximo aviso, "nasceu", já vem). */
-const TOO_CLOSE_S = 8;
+/**
+ * Avisos antes do objetivo nascer (segundos). Cada um vale numa janela curta: ao abrir o
+ * app no meio da contagem, não manda de uma vez avisos que já passaram.
+ */
+const SPAWN_WARNINGS_S = [90, 30];
+const WARNING_WINDOW_S = 22;
 /** Só anuncia "nasceu" logo depois (ao abrir o app no meio da partida, não repete o que já está no mapa). */
 const JUST_SPAWNED_S = 20;
 const INHIBITOR_WARNING_S = 30;
@@ -16,7 +18,7 @@ export interface ObjectiveAlert {
 
 /**
  * Avisos de objetivos para o chat do LoL (contato Rift Companion, só você vê):
- * 1 min antes de cada objetivo nascer, quando ele nasce e antes de um inibidor voltar.
+ * 1 min 30 s e 30 s antes de cada objetivo nascer, quando ele nasce e antes de um inibidor voltar.
  * Função pura; quem chama guarda os ids já enviados.
  */
 export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<string>): ObjectiveAlert[] {
@@ -29,8 +31,10 @@ export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<stri
   for (const objective of dashboard.objectives) {
     if (objective.state === 'done') continue;
     const left = objective.at - now;
-    if (objective.state === 'upcoming' && left > TOO_CLOSE_S && left <= SPAWN_WARNING_S) {
-      add(`${objective.key}:${objective.at}:soon`, `${objective.name} nasce em ${duration(left)} (aos ${clock(objective.at)}).`);
+    for (const warning of objective.state === 'upcoming' ? SPAWN_WARNINGS_S : []) {
+      if (left <= warning && left > warning - WARNING_WINDOW_S) {
+        add(`${objective.key}:${objective.at}:${warning}`, `${objective.name} nasce em ${duration(warning)} (aos ${clock(objective.at)}).`);
+      }
     }
     if (objective.state === 'alive' && now - objective.at <= JUST_SPAWNED_S) {
       add(`${objective.key}:${objective.at}:up`, `${objective.name} nasceu: está no mapa agora.`);
@@ -48,10 +52,13 @@ export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<stri
   return alerts;
 }
 
-/** "1 min", "45 s". */
+/** "1 min 30 s", "1 min", "30 s". */
 function duration(seconds: number): string {
   const s = Math.round(seconds);
-  return s >= 55 ? '1 min' : `${s} s`;
+  const minutes = Math.floor(s / 60);
+  const rest = s % 60;
+  if (!minutes) return `${rest} s`;
+  return rest ? `${minutes} min ${rest} s` : `${minutes} min`;
 }
 
 /** Relógio de jogo: "15:00". */
