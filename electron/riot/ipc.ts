@@ -28,11 +28,20 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
 
   ipcMain.handle(
     'riot:find-player',
-    (_event, gameName: string, tagLine: string, platformId: string) =>
-      apiGet(
+    (_event, gameName: string, tagLine: string, platformId: string) => {
+      // Só no desenvolvimento: perfis fictícios (por nome) para revisar os cards dos aliados.
+      const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_PLAYERS;
+      if (demo) {
+        const byName = JSON.parse(readFileSync(demo, 'utf8')) as Record<string, unknown>;
+        const profile = byName[gameName.toLowerCase()];
+        if (profile) return profile;
+        throw new Error(`Jogador ${gameName}#${tagLine} não encontrado.`);
+      }
+      return apiGet(
         `/v1/players/${enc(platformId)}/${enc(gameName.trim())}/${enc(tagLine.trim().replace(/^#/, ''))}`,
         `Jogador ${gameName}#${tagLine} não encontrado.`,
-      ),
+      );
+    },
   );
 
   ipcMain.handle(

@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { BuildPanel } from '../builds/build-panel';
+import { AllyBoard } from '../champ-select/ally-board';
 import { ChampSelectPanel } from '../champ-select/champ-select-panel';
 import { CounterPanel } from '../champ-select/counter-panel';
 import { DraftBoard } from '../champ-select/draft-board';
@@ -8,11 +9,11 @@ import { ChampionStatsPanel } from '../stats/champion-stats';
 import { LcuService } from '../lcu/lcu.service';
 import { Icon } from '../ui/icon';
 
-type Tab = 'pick' | 'build' | 'stats' | 'counters' | 'comp';
+type Tab = 'pick' | 'build' | 'stats' | 'team' | 'counters' | 'comp';
 
 @Component({
   selector: 'app-champ-select-view',
-  imports: [ChampSelectPanel, CounterPanel, DraftBoard, TeamCompPanel, BuildPanel, ChampionStatsPanel, Icon],
+  imports: [AllyBoard, ChampSelectPanel, CounterPanel, DraftBoard, TeamCompPanel, BuildPanel, ChampionStatsPanel, Icon],
   template: `
     @if (state().champSelect; as session) {
       <app-draft-board [session]="session">
@@ -54,6 +55,9 @@ type Tab = 'pick' | 'build' | 'stats' | 'counters' | 'comp';
               } @else {
                 <p class="muted empty">Escolha um campeão para ver vitórias, escolhas e o oponente de rota.</p>
               }
+            }
+            @case ('team') {
+              <app-ally-board [allies]="session.team" />
             }
             @case ('counters') {
               <app-counter-panel [enemyChampionIds]="enemyIds()" [assignedPosition]="session.assignedPosition" />
@@ -146,7 +150,7 @@ export class ChampSelectView {
   private readonly lcu = inject(LcuService);
   protected readonly state = this.lcu.state;
   // Aba inicial pelo hash (#...&tab=stats), usada na revisão visual e nos prints do site.
-  private readonly initialTab = (/[#&]tab=(pick|build|stats|counters|comp)\b/.exec(location.hash)?.[1] ?? null) as Tab | null;
+  private readonly initialTab = (/[#&]tab=(pick|build|stats|team|counters|comp)\b/.exec(location.hash)?.[1] ?? null) as Tab | null;
   protected readonly tab = signal<Tab>(this.initialTab ?? 'pick');
 
   /** Igualdade por conteúdo: o estado do cliente chega a cada evento, mas os inimigos mudam pouco. */
@@ -183,7 +187,8 @@ export class ChampSelectView {
       { key: 'build', label: 'Build' },
       { key: 'stats', label: 'Estatísticas' },
     ];
-    // Counters de rota não fazem sentido no ARAM; a composição vale em todos os modos.
+    // Time (elo dos aliados) e counters de rota não fazem sentido no ARAM; a composição vale em todos os modos.
+    if (!aram) list.push({ key: 'team', label: 'Time' });
     if (!aram) list.push({ key: 'counters', label: 'Counters' });
     list.push({ key: 'comp', label: 'Composição' });
     return list;

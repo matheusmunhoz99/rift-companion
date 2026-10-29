@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.note {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+
+.allies {
+  display: grid;
+  gap: 8px;
+}
+
+.ally {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+
+  &.me {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  }
+}
+
+.champ {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  object-fit: cover;
+
+  &.placeholder {
+    background: var(--surface-2);
+  }
+}
+
+.main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lane {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.nick {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+}
+
+.badge {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &.warn {
+    background: color-mix(in srgb, var(--warning, #ffb35c) 18%, transparent);
+    color: var(--warning, #ffb35c);
+  }
+}
+
+.small {
+  font-size: 12px;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.rank {
+  font-weight: 700;
+}
+
+.wl {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.good {
+  color: var(--good, #3ecf8e);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+.champs {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+  }
+}
