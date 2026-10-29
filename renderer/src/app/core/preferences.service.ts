@@ -23,6 +23,7 @@ export class PreferencesService {
     startWithWindows: false,
     showAsRiftUser: true,
     chatObjectiveAlerts: true,
+    sendErrorReports: true,
     telegramReadyCheck: true,
     telegramChampion: true,
     telegramGameStart: true,

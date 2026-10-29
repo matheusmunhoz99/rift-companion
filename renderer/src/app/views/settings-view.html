@@ -263,6 +263,13 @@
       [checked]="prefs.preferences().showAsRiftUser"
       (toggled)="prefs.set({ showAsRiftUser: $event })"
     />
+    <div class="divider"></div>
+    <app-switch
+      label="Enviar relatórios de erro anônimos"
+      description="Quando algo quebra, o app manda só a mensagem do erro, a versão e o sistema para eu corrigir. Nunca vai nick, Riot ID nem nada da sua conta."
+      [checked]="prefs.preferences().sendErrorReports"
+      (toggled)="prefs.set({ sendErrorReports: $event })"
+    />
   </section>
 
   <section class="card">

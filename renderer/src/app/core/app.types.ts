@@ -19,6 +19,7 @@ export interface Preferences {
   startWithWindows: boolean;
   showAsRiftUser: boolean;
   chatObjectiveAlerts: boolean;
+  sendErrorReports: boolean;
   telegramReadyCheck: boolean;
   telegramChampion: boolean;
   telegramGameStart: boolean;
@@ -82,6 +83,8 @@ export interface AppBridge {
   getPreferences(): Promise<Preferences>;
   setPreferences(changes: Partial<Preferences>): Promise<Preferences>;
   openBuildsFolder(): Promise<void>;
+  /** Envia um erro ao servidor (anônimo), respeitando a preferência da pessoa. */
+  report(context: string, message: string, stack?: string): Promise<void>;
   launchLeague(): Promise<
     'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
   >;

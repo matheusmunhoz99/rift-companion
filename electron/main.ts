@@ -16,6 +16,7 @@ import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
 import { registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
+import { ErrorReporter } from './report';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
 import { removeOldVersions, repointShortcuts, Updater } from './updater';
@@ -247,6 +248,12 @@ void acquireInstance().then((acquired) => {
     // Última conta do LoL neste PC: o perfil e o histórico funcionam com o cliente fechado.
     if (!capturing) connector.setAccountFile(path.join(app.getPath('userData'), 'account.json'));
     settings = prefs;
+    const reporter = new ErrorReporter(prefs);
+    reporter.install();
+    // Erros do renderer chegam por IPC e passam pela mesma limpeza e envio.
+    ipcMain.handle('app:report', (_event, context: unknown, message: unknown, stack: unknown) =>
+      reporter.report(typeof context === 'string' ? context : 'renderer', buildError(message, stack)),
+    );
     const invisible = new InvisibleModeProxy(path.join(app.getPath('userData'), 'invisible'));
     invisibleMode = invisible;
     invisible.configure(invisibleState(prefs.getPreferences()));
@@ -657,4 +664,11 @@ function applyStartWithWindows(enabled: boolean): void {
     openAtLogin: enabled,
     path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,
   });
+}
+
+/** Recria um Error com o que o renderer mandou, para reusar a limpeza do reporter. */
+function buildError(message: unknown, stack: unknown): Error {
+  const error = new Error(typeof message === 'string' ? message : String(message));
+  if (typeof stack === 'string') error.stack = stack;
+  return error;
 }

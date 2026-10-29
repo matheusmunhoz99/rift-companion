@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('app', {
   setPreferences: (changes: unknown) => ipcRenderer.invoke('prefs:set', changes),
   openBuildsFolder: () => ipcRenderer.invoke('app:open-builds-folder'),
   launchLeague: () => ipcRenderer.invoke('app:launch-league'),
+  report: (context: string, message: string, stack?: string) => ipcRenderer.invoke('app:report', context, message, stack),
   onAutoAccepted: (callback: (timestamp: number) => void) =>
     subscribe('auto-accept:accepted', callback),
   onOverlayData: (callback: (data: unknown) => void) => subscribe('overlay:data', callback),
