@@ -53,6 +53,14 @@ export class HomeView {
   protected readonly profileError = signal<string | null>(null);
   protected readonly openingLeague = signal(false);
 
+  /** Você: a conta logada no LoL ou, com o cliente fechado, a última salva neste PC. */
+  protected readonly me = computed(() => {
+    const { summoner, platformId, account } = this.state();
+    if (summoner) return { gameName: summoner.gameName, tagLine: summoner.tagLine, profileIconId: summoner.profileIconId, summonerLevel: summoner.summonerLevel, platformId: platformId ?? account?.platformId ?? 'BR1' };
+    return account ?? null;
+  });
+  protected readonly offline = computed(() => this.state().status !== 'connected');
+
   protected readonly phaseLabel = computed(() => {
     const phase = this.state().gameflowPhase;
     return phase ? (PHASE_LABELS[phase] ?? phase) : '—';
@@ -83,8 +91,8 @@ export class HomeView {
   constructor() {
     // Recarrega o perfil quando a conta logada muda.
     effect(() => {
-      const summoner = this.state().summoner;
-      const key = summoner ? `${summoner.gameName}#${summoner.tagLine}` : null;
+      const me = this.me();
+      const key = me ? `${me.gameName}#${me.tagLine}` : null;
       untracked(() => {
         if (key === this.loadedFor) return;
         this.loadedFor = key;
@@ -142,12 +150,11 @@ export class HomeView {
   }
 
   private async loadProfile(): Promise<void> {
-    const state = this.state();
-    const summoner = state.summoner;
+    const summoner = this.me();
     if (!summoner || !window.riot) return;
     this.profileError.set(null);
     try {
-      const platformId = state.platformId ?? 'BR1';
+      const platformId = summoner.platformId;
       const profile = await window.riot.findPlayer(summoner.gameName, summoner.tagLine, platformId);
       this.profile.set(profile);
       const matches = await window.riot.getMatches(profile.puuid, platformId, 0, RECENT_COUNT);

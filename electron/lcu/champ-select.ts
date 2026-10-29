@@ -66,6 +66,11 @@ export interface ChampSelectState {
   timerEndsAt: number | null;
   /** ARAM novo: escolhe entre alguns campeões oferecidos antes de ir ao banco. */
   subsetPicks: boolean;
+  /**
+   * Campeões que você pode pegar (seus e os da rotação). No ARAM, o banco e os sorteados
+   * fora desta lista ficam travados no cliente. Vazio = ainda não sabemos (nada fica travado).
+   */
+  availableChampionIds: number[];
 }
 
 interface SessionPlayer {
@@ -175,6 +180,7 @@ export function toChampSelect(
     phase: timer?.phase ?? '',
     timerEndsAt,
     subsetPicks: subsetMode && pickActionId !== null,
+    availableChampionIds: [],
     pickActionId,
     banActionId,
     pickableChampionIds: pickActionId === null ? [] : pickableChampionIds,

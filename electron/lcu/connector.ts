@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { platformFromClientRegion } from '../riot/routing';
@@ -45,6 +46,19 @@ export interface LcuState {
   lobby: LobbyState | null;
   search: SearchState | null;
   readyCheck: ReadyCheckState | null;
+  /**
+   * Última conta que entrou no LoL neste PC (fica salva): com o cliente fechado,
+   * o app ainda sabe quem é você e mostra seu perfil e histórico.
+   */
+  account: SavedAccount | null;
+}
+
+export interface SavedAccount {
+  gameName: string;
+  tagLine: string;
+  platformId: string;
+  profileIconId: number;
+  summonerLevel: number;
 }
 
 const POLL_INTERVAL_MS = 2_000;
@@ -65,6 +79,10 @@ export class LcuConnector extends EventEmitter {
   /** Campeões escolhíveis, buscados uma vez por ação de escolha. */
   private pickable: { actionId: number; championIds: number[] } | null = null;
   private snapshotDirectory: string | null = null;
+  private accountFile: string | null = null;
+  /** Campeões que você pode pegar nesta seleção (só no ARAM); null = ainda não buscou. */
+  private available: number[] | null = null;
+  private account: SavedAccount | null = null;
   private readonly names = new Map<string, { gameName: string; tagLine: string }>();
   private lastSnapshotAt = 0;
 
@@ -157,6 +175,7 @@ export class LcuConnector extends EventEmitter {
       case '/lol-champ-select/v1/session':
         if (event.eventType === 'Delete') {
           this.pickable = null;
+          this.available = null;
           this.setState({ ...this.state, champSelect: null });
         } else {
           void this.applySession(event.data as ChampSelectSession);
@@ -270,13 +289,15 @@ export class LcuConnector extends EventEmitter {
     // No ARAM (modo com banco) a escolha só existe no ARAM novo, entre os campeões oferecidos.
     const benchMode =
       session.benchEnabled ?? (session.benchChampions?.length ?? session.benchChampionIds?.length ?? 0) > 0;
-    const preview = toChampSelect(session, this.pickable?.championIds ?? []);
+    const owned = (state: ChampSelectState | null) => state && { ...state, availableChampionIds: this.available ?? [] };
+    const preview = owned(toChampSelect(session, this.pickable?.championIds ?? []));
     const actionId = preview?.pickActionId ?? null;
     const known = actionId !== null && this.pickable?.actionId === actionId;
     this.setState({
       ...this.state,
-      champSelect: known ? preview : toChampSelect(session, []),
+      champSelect: known ? preview : owned(toChampSelect(session, [])),
     });
+    if (benchMode && this.available === null && this.credentials) void this.loadAvailable(this.credentials);
     if (actionId === null || known || !this.credentials) return;
 
     try {
@@ -293,6 +314,23 @@ export class LcuConnector extends EventEmitter {
       }
     } catch {
       // Sem a lista, a tela só não oferece a escolha pelo app.
+    }
+  }
+
+  /**
+   * ARAM: quais campeões você pode pegar, para travar no app o que o cliente trava
+   * (banco e sorteados que você não tem). Uma vez por seleção; se falhar, tenta na próxima mudança.
+   */
+  private async loadAvailable(credentials: LcuCredentials): Promise<void> {
+    this.available = [];
+    try {
+      const ids = await getPickableChampionIds(credentials);
+      if (this.available === null) return; // a seleção acabou enquanto buscava
+      this.available = ids;
+      const current = this.state.champSelect;
+      if (current) this.setState({ ...this.state, champSelect: { ...current, availableChampionIds: ids } });
+    } catch {
+      this.available = null;
     }
   }
 
@@ -323,9 +361,43 @@ export class LcuConnector extends EventEmitter {
     }
   }
 
+  /** Arquivo onde a última conta fica salva entre aberturas do app. */
+  setAccountFile(file: string): void {
+    this.accountFile = file;
+    try {
+      const saved = JSON.parse(readFileSync(file, 'utf8')) as Partial<SavedAccount>;
+      if (typeof saved.gameName === 'string' && typeof saved.tagLine === 'string' && typeof saved.platformId === 'string') {
+        this.account = {
+          gameName: saved.gameName,
+          tagLine: saved.tagLine,
+          platformId: saved.platformId,
+          profileIconId: Number(saved.profileIconId) || 0,
+          summonerLevel: Number(saved.summonerLevel) || 0,
+        };
+        this.setState(this.state);
+      }
+    } catch {
+      // Primeira vez (ou arquivo inválido): a conta aparece quando o LoL abrir.
+    }
+  }
+
   private setState(next: LcuState): void {
-    this.state = next;
-    this.emit('state', next);
+    const { summoner, platformId } = next;
+    if (summoner?.gameName && summoner.tagLine && platformId) {
+      const account: SavedAccount = {
+        gameName: summoner.gameName,
+        tagLine: summoner.tagLine,
+        platformId,
+        profileIconId: summoner.profileIconId,
+        summonerLevel: summoner.summonerLevel,
+      };
+      if (JSON.stringify(account) !== JSON.stringify(this.account)) {
+        this.account = account;
+        if (this.accountFile) void writeFile(this.accountFile, JSON.stringify(account)).catch(() => undefined);
+      }
+    }
+    this.state = { ...next, account: this.account };
+    this.emit('state', this.state);
   }
 }
 
@@ -339,6 +411,7 @@ function emptyState(status: ConnectionStatus): LcuState {
     lobby: null,
     search: null,
     readyCheck: null,
+    account: null,
   };
 }
 

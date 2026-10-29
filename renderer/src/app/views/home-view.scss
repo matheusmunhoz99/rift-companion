@@ -29,6 +29,11 @@ h2 {
   align-items: center;
   gap: 20px;
 
+  // LoL fechado: o botão de abrir fica na ponta da identidade.
+  .open-league {
+    margin-left: auto;
+  }
+
   h2 {
     font-size: 32px;
     line-height: 1.05;

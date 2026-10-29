@@ -1,4 +1,4 @@
-@if (state().status !== 'connected') {
+@if (offline() && !me()) {
   <section class="card">
     <div class="empty-state">
       <app-icon name="unlinked" [size]="36" />
@@ -18,7 +18,7 @@
   </section>
 } @else {
   <section class="hero card">
-    @if (state().summoner; as summoner) {
+    @if (me(); as summoner) {
       <div class="identity">
         <div class="avatar-wrap">
           @if (ddragon.profileIconUrl(summoner.profileIconId); as icon) {
@@ -28,8 +28,13 @@
         </div>
         <div>
           <h2>{{ summoner.gameName }}<span class="tag">#{{ summoner.tagLine }}</span></h2>
-          <p class="muted">{{ state().platformId ?? '—' }} · {{ phaseLabel() }}</p>
+          <p class="muted">{{ summoner.platformId }} · {{ offline() ? 'LoL fechado' : phaseLabel() }}</p>
         </div>
+        @if (offline()) {
+          <button type="button" class="btn open-league" [disabled]="openingLeague()" (click)="openLeague()">
+            {{ openingLeague() ? 'Abrindo…' : prefs.preferences().appearOffline ? 'Abrir LoL invisível' : 'Abrir LoL' }}
+          </button>
+        }
       </div>
 
       <div class="ranks">

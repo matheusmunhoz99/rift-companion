@@ -243,6 +243,8 @@ void acquireInstance().then((acquired) => {
     });
     // Settings usa app.getPath, que só fica disponível após o ready.
     const prefs = new Settings();
+    // Última conta do LoL neste PC: o perfil e o histórico funcionam com o cliente fechado.
+    if (!capturing) connector.setAccountFile(path.join(app.getPath('userData'), 'account.json'));
     settings = prefs;
     const invisible = new InvisibleModeProxy(path.join(app.getPath('userData'), 'invisible'));
     invisibleMode = invisible;

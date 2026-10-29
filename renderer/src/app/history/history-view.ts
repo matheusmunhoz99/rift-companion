@@ -41,9 +41,11 @@ export class HistoryView {
 
   protected readonly lcuDisconnected = computed(() => this.lcu.state().status !== 'connected');
 
+  /** Sua conta: a logada no LoL ou, com o cliente fechado, a última salva neste PC. */
   protected readonly ownRiotId = computed(() => {
-    const summoner = this.lcu.state().summoner;
-    return summoner ? `${summoner.gameName}#${summoner.tagLine}` : null;
+    const { summoner, account } = this.lcu.state();
+    const me = summoner ?? account;
+    return me ? `${me.gameName}#${me.tagLine}` : null;
   });
 
   constructor() {
@@ -78,7 +80,7 @@ export class HistoryView {
     const ownRiotId = this.ownRiotId();
     if (!ownRiotId) return;
     this.riotId.set(ownRiotId);
-    const platformId = this.lcu.state().platformId;
+    const platformId = this.lcu.state().platformId ?? this.lcu.state().account?.platformId;
     if (platformId) await this.changePlatform(platformId);
     await this.search();
   }

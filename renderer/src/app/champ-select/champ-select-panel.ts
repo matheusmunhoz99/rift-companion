@@ -60,6 +60,14 @@ export class ChampSelectPanel {
     return id ? this.ddragon.champion(id) : null;
   }
 
+  protected readonly anyLocked = computed(() => this.session().benchChampionIds.some((id) => this.locked(id)));
+
+  /** No ARAM, campeão que você não tem: o LoL trava, então o app também. */
+  protected locked(championId: number): boolean {
+    const available = this.session().availableChampionIds ?? [];
+    return this.session().benchEnabled && available.length > 0 && !available.includes(championId);
+  }
+
   protected iconUrl(id: number): string | null {
     const champion = this.champion(id);
     return champion ? this.ddragon.championIconUrl(champion) : null;

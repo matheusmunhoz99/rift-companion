@@ -57,6 +57,8 @@ export interface ChampSelectState {
   timerEndsAt?: number | null;
   /** ARAM novo: escolha entre os campeões oferecidos. */
   subsetPicks?: boolean;
+  /** Campeões que você pode pegar (seus e da rotação); vazio = ainda não sabemos. */
+  availableChampionIds?: number[];
 }
 
 export interface ChampSelectBridge {
@@ -76,6 +78,16 @@ export interface LcuState {
   lobby: LobbyState | null;
   search: SearchState | null;
   readyCheck: ReadyCheckState | null;
+  /** Última conta que entrou no LoL neste PC (salva): vale com o cliente fechado. */
+  account?: SavedAccount | null;
+}
+
+export interface SavedAccount {
+  gameName: string;
+  tagLine: string;
+  platformId: string;
+  profileIconId: number;
+  summonerLevel: number;
 }
 
 // Espelha electron/lcu/lobby.ts.

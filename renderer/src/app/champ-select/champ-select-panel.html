@@ -51,12 +51,14 @@
           <button
             type="button"
             class="offer"
-            [disabled]="busy() !== null"
+            [class.locked]="locked(champion.key)"
+            [disabled]="busy() !== null || locked(champion.key)"
+            [title]="locked(champion.key) ? 'Você não tem ' + champion.name + ': o LoL não deixa pegar' : 'Escolher ' + champion.name"
             [style.--art]="'url(' + ddragon.championLoadingUrl(champion) + ')'"
             (click)="pick(champion)"
           >
             <span class="offer-name">{{ champion.name }}</span>
-            <span class="offer-cta">{{ busy() === 'pick:' + champion.key ? 'Escolhendo…' : 'Escolher' }}</span>
+            <span class="offer-cta">{{ locked(champion.key) ? 'Você não tem' : busy() === 'pick:' + champion.key ? 'Escolhendo…' : 'Escolher' }}</span>
           </button>
         }
       </div>
@@ -85,18 +87,22 @@
   <section class="block">
     <header class="block-header">
       <h4>Campeões disponíveis</h4>
-      <span class="muted">Clique para trocar pelo seu</span>
+      <span class="muted">Clique para trocar pelo seu{{ anyLocked() ? " · em cinza, os que você não tem" : "" }}</span>
     </header>
     <div class="bench">
       @for (championId of session().benchChampionIds; track championId) {
         <button
           type="button"
           class="champ"
-          [disabled]="busy() !== null"
-          [title]="champion(championId)?.name ?? ''"
+          [class.locked]="locked(championId)"
+          [disabled]="busy() !== null || locked(championId)"
+          [title]="locked(championId) ? 'Você não tem ' + (champion(championId)?.name ?? 'este campeão') + ': o LoL não deixa pegar' : (champion(championId)?.name ?? '')"
           (click)="swap(championId)"
         >
-          <img [src]="iconUrl(championId)" [alt]="champion(championId)?.name ?? ''" />
+          <span class="champ-icon">
+            <img [src]="iconUrl(championId)" [alt]="champion(championId)?.name ?? ''" />
+            @if (locked(championId)) {<span class="lock" aria-hidden="true"></span>}
+          </span>
           <span>{{ champion(championId)?.name }}</span>
         </button>
       } @empty {
