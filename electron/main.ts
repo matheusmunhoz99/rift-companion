@@ -29,6 +29,7 @@ import {
   type LeagueLaunchResult,
 } from './lcu/riot-client';
 import { PostGameService } from './lcu/postgame';
+import { RankTracker } from './lcu/rank-tracker';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
@@ -485,6 +486,15 @@ void acquireInstance().then((acquired) => {
     const postGame = new PostGameService(connector, path.join(app.getPath('userData'), 'postgame'), devOnly('RIFT_DEMO_POSTGAME'));
     postGame.on('ready', (game) => mainWindow?.webContents.send('postgame:ready', game));
     ipcMain.handle('postgame:get', () => postGame.get());
+
+    const rankTracker = new RankTracker(connector, postGame, path.join(app.getPath('userData'), 'rank'));
+    rankTracker.on('updated', () => mainWindow?.webContents.send('rank:updated'));
+    ipcMain.handle('rank:history', () => {
+      const demo = devOnly('RIFT_DEMO_RANK');
+      if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+      const puuid = connector.getState().summoner?.puuid;
+      return puuid ? rankTracker.history(puuid) : [];
+    });
     applyStartWithWindows(prefs.getPreferences().startWithWindows);
     // Última sessão de seleção (sem o token do chat), para entender modos novos da Riot.
     connector.setSnapshotDirectory(path.join(app.getPath('userData'), 'debug'));

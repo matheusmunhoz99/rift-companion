@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-export type View = 'home' | 'play' | 'champ-select' | 'live' | 'tierlist' | 'builds' | 'history' | 'settings';
+export type View = 'home' | 'play' | 'champ-select' | 'live' | 'tierlist' | 'builds' | 'history' | 'progress' | 'settings';
 
 export const VIEW_TITLES: Record<View, string> = {
   home: 'Início',
@@ -10,6 +10,7 @@ export const VIEW_TITLES: Record<View, string> = {
   tierlist: 'Tier list',
   builds: 'Builds e runas',
   history: 'Histórico de partidas',
+  progress: 'Progresso',
   settings: 'Configurações',
 };
 

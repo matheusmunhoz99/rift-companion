@@ -71,6 +71,12 @@ const ICONS: Record<string, Shape[]> = {
     { d: 'M20 13V16L17 19H7' },
     { d: 'M10 16 7 19 10 22' },
   ],
+  // Linha em ascensão: progresso de PDL.
+  progress: [
+    { d: 'M4.5 3.5V20.5H20.5' },
+    { d: 'M7 16 11 11 14 13.5 19.5 7' },
+    { d: 'M15 6.5H20V11.5Z', fill: true },
+  ],
   check: [{ d: 'M3.5 12.5 9.5 18.5 20.5 5.5' }],
   chat: [
     { d: 'M3.5 4.5H20.5V16.5H11L6.5 20.5V16.5H3.5Z' },

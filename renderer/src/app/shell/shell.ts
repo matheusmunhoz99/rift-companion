@@ -11,6 +11,7 @@ import { ChampSelectView } from '../views/champ-select-view';
 import { HomeView } from '../views/home-view';
 import { LiveView } from '../views/live-view';
 import { PlayView } from '../views/play-view';
+import { ProgressView } from '../views/progress-view';
 import { SettingsView } from '../views/settings-view';
 import { TierListView } from '../views/tierlist-view';
 import { isAndroid } from '../mobile/mobile-client';
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavItem[][] = [
     { view: 'tierlist', label: 'Tier list', icon: 'layers' },
     { view: 'builds', label: 'Builds', icon: 'book' },
     { view: 'history', label: 'Histórico', icon: 'history' },
+    { view: 'progress', label: 'Progresso', icon: 'progress' },
   ],
 ];
 
@@ -79,6 +81,7 @@ function clock(seconds: number): string {
     TierListView,
     BuildsView,
     HistoryView,
+    ProgressView,
     SettingsView,
     AndroidUpdate,
   ],

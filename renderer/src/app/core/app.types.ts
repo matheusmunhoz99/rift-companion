@@ -3,6 +3,20 @@ export type OverlayPosition = 'left' | 'center' | 'right';
 export type GameWindowMode = 'fullscreen' | 'windowed' | 'borderless' | 'unknown';
 export type InvisibleStatus = 'online' | 'offline' | 'mobile';
 export type InvisibleStartupStatus = InvisibleStatus | 'last';
+export type RankedQueue = 'solo' | 'flex';
+
+/** Espelha electron/lcu/rank-tracker.ts. */
+export interface RankEntry {
+  at: number;
+  queue: RankedQueue;
+  tier: string;
+  division: string;
+  lp: number;
+  lpChange: number;
+  win: boolean | null;
+  championId: number;
+  note: 'promo' | 'demote' | null;
+}
 
 export interface Preferences {
   autoAccept: boolean;
@@ -85,6 +99,9 @@ export interface AppBridge {
   openBuildsFolder(): Promise<void>;
   /** Envia um erro ao servidor (anônimo), respeitando a preferência da pessoa. */
   report(context: string, message: string, stack?: string): Promise<void>;
+  /** Histórico de PDL das partidas ranqueadas (registrado localmente). */
+  rankHistory(): Promise<RankEntry[]>;
+  onRankUpdated(callback: () => void): () => void;
   launchLeague(): Promise<
     'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
   >;

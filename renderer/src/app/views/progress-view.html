@@ -1,0 +1,125 @@
+<header class="head">
+  <div>
+    <h2>Progresso</h2>
+    <p class="sub">Seu PDL e a sessão de hoje, partida a partida.</p>
+  </div>
+  @if (availableQueues().length > 1) {
+    <div class="queue-tabs" role="tablist">
+      @for (q of availableQueues(); track q) {
+        <button
+          type="button"
+          role="tab"
+          [class.active]="queue() === q"
+          [attr.aria-selected]="queue() === q"
+          (click)="pick(q)"
+        >
+          {{ queueLabel(q) }}
+        </button>
+      }
+    </div>
+  }
+</header>
+
+@if (loading()) {
+  <p class="empty">Carregando…</p>
+} @else if ((entries() ?? []).length === 0) {
+  <section class="empty-card">
+    <app-icon name="layers" />
+    <h3>Ainda sem partidas ranqueadas</h3>
+    <p>
+      Jogue uma partida de Solo/Duo ou Flex com o Rift Companion aberto. A cada jogo eu registro
+      seu PDL e monto o histórico aqui — nada é enviado para fora do seu PC.
+    </p>
+  </section>
+} @else {
+  <div class="top">
+    <!-- Elo atual -->
+    @if (rank(); as r) {
+      <section class="rank" [attr.data-tier]="rankTier()">
+        <span class="rank-queue">{{ queueLabel(queue()) }}</span>
+        <span class="rank-tier">{{ rankText() }}</span>
+        <span class="rank-lp">{{ r.lp }} PDL</span>
+      </section>
+    }
+
+    <!-- Resumo do dia -->
+    <section class="session" [class.tilt]="today().tilt">
+      <span class="session-label">Hoje</span>
+      @if (today().games === 0) {
+        <p class="session-none">Nenhuma ranqueada ainda hoje.</p>
+      } @else {
+        <div class="session-line">
+          <strong class="wins">{{ today().wins }}V</strong>
+          <strong class="losses">{{ today().losses }}D</strong>
+          <strong class="net" [class.up]="today().netLp >= 0" [class.down]="today().netLp < 0">
+            {{ today().netLp >= 0 ? '+' : '' }}{{ today().netLp }} PDL
+          </strong>
+        </div>
+        @if (today().tilt) {
+          <p class="tilt-warn">
+            {{ today().lossStreak }} derrotas seguidas — considere uma pausa. 🧊
+          </p>
+        }
+      }
+    </section>
+  </div>
+
+  <!-- Gráfico de PDL da fila -->
+  @if (spark(); as s) {
+    <section class="chart">
+      <div class="chart-head">
+        <span>Evolução de PDL</span>
+        <strong [class.up]="s.net >= 0" [class.down]="s.net < 0">
+          {{ s.net >= 0 ? '+' : '' }}{{ s.net }} no período
+        </strong>
+      </div>
+      <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon [attr.points]="s.area" fill="url(#sparkFill)" />
+        <polyline
+          [attr.points]="s.line"
+          fill="none"
+          stroke="var(--accent)"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          vector-effect="non-scaling-stroke"
+        />
+        <circle [attr.cx]="s.last.x" [attr.cy]="s.last.y" r="2" fill="var(--accent)" />
+      </svg>
+    </section>
+  }
+
+  <!-- Lista de partidas -->
+  <section class="games">
+    <h3>Partidas recentes</h3>
+    <ul>
+      @for (e of recent(); track e.at) {
+        <li [class.win]="e.win === true" [class.loss]="e.win === false">
+          <span class="bar" aria-hidden="true"></span>
+          @if (iconUrl(e.championId); as url) {
+            <img class="champ" [src]="url" alt="" />
+          } @else {
+            <span class="champ ph" aria-hidden="true"></span>
+          }
+          <div class="game-main">
+            <span class="result">
+              {{ e.win === true ? 'Vitória' : e.win === false ? 'Derrota' : 'Partida' }}
+              @if (e.note === 'promo') { <em class="pin up">Subiu</em> }
+              @if (e.note === 'demote') { <em class="pin down">Desceu</em> }
+            </span>
+            <span class="when">{{ dayLabel(e.at) }} · {{ timeLabel(e.at) }}</span>
+          </div>
+          <span class="delta" [class.up]="e.lpChange >= 0" [class.down]="e.lpChange < 0">
+            {{ e.lpChange >= 0 ? '+' : '' }}{{ e.lpChange }}
+          </span>
+        </li>
+      }
+    </ul>
+  </section>
+}
