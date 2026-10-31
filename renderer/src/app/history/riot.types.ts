@@ -82,6 +82,33 @@ export interface LiveGame {
   participants: LiveParticipant[];
 }
 
+// Espelha server/src/riot/premades.ts.
+export interface PremadeGroup {
+  puuids: string[];
+  size: number;
+  /** Confiança (0-100) de que entraram juntos. Nunca 100: é inferência do histórico. */
+  confidence: number;
+}
+
+// Espelha server/src/riot/profile.ts.
+export interface LivePlayerProfile {
+  /** Ranqueadas analisadas; 0 = sem dado (modo streamer / conta nova). */
+  games: number;
+  mainRole: 'top' | 'jungle' | 'middle' | 'bottom' | 'utility' | null;
+  roleShare: number;
+  topChampions: Array<{ championId: number; games: number }>;
+  oneTrick: boolean;
+  oneTrickShare: number;
+  /** Jogando fora da rota principal nesta partida; null quando não dá para cravar. */
+  autofill: boolean | null;
+}
+
+export interface GameAnalysis {
+  groups: string[][];
+  premades?: PremadeGroup[];
+  profiles?: Record<string, LivePlayerProfile>;
+}
+
 /** Partida pelos dados locais do jogo (sem elo, maestria nem puuid). */
 export interface LocalGame {
   queueId: number;
@@ -230,8 +257,8 @@ export interface RiotBridge {
   getLiveDashboard(): Promise<LiveDashboard | null>;
   getPostGame(): Promise<PostGame | null>;
   onPostGame(callback: (game: PostGame) => void): () => void;
-  /** Grupos (duo, trio...) da partida em andamento, em puuids. */
-  getPremades(gameName: string, tagLine: string, platformId: string): Promise<{ groups: string[][] }>;
+  /** Grupos (duo, trio...) com confiança e perfil de cada jogador da partida em andamento. */
+  getPremades(gameName: string, tagLine: string, platformId: string): Promise<GameAnalysis>;
   getSettings(): Promise<RiotSettings>;
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;

@@ -37,7 +37,7 @@ const UNTIMED_SPELLS = new Set(['SummonerSmite']);
 
 /** O que a aba Jogadores sabe de cada um (por Riot ID em minúsculas): grupo e partidas com você. */
 export interface PlayerTag {
-  party: { color: string; label: string } | null;
+  party: { color: string; label: string; confidence: number } | null;
   met: { together: number; against: number } | null;
 }
 

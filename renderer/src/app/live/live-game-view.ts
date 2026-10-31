@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { LiveGame, LiveParticipant, LocalGame, MatchSummary } from '../history/riot.types';
+import type { LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PremadeGroup } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
@@ -24,6 +24,15 @@ interface CardTag {
   tone: 'party' | 'accent' | 'good' | 'warn' | 'bad' | 'muted';
   color?: string;
 }
+
+/** Nome das rotas em português, para o perfil do jogador. */
+const ROLE_NAMES: Record<string, string> = {
+  top: 'Topo',
+  jungle: 'Selva',
+  middle: 'Meio',
+  bottom: 'Atirador',
+  utility: 'Suporte',
+};
 
 /** Siglas de elo como no cliente em português (Prata P, Platina PL...). */
 const TIER_SHORT: Record<string, string> = {
@@ -199,8 +208,10 @@ export class LiveGameView {
     equal: (a, b) => a.length === b.length && a.every((id, i) => id === b[i]),
   });
 
-  /** Grupos deduzidos pelo histórico no servidor (puuids). */
-  private readonly premades = signal<string[][]>([]);
+  /** Grupos (com confiança) deduzidos pelo histórico no servidor. */
+  private readonly premades = signal<PremadeGroup[]>([]);
+  /** Perfil de cada jogador (rota, pool, autofill), por puuid. */
+  private readonly profiles = signal<Record<string, LivePlayerProfile>>({});
   private premadesFor = 0;
 
   /**
@@ -214,34 +225,44 @@ export class LiveGameView {
       game.participants.filter((p) => p.puuid).map((p) => [p.puuid, p.riotId.toLowerCase()]),
     );
     const inGame = new Set(game.participants.map((p) => p.riotId.toLowerCase()));
-    const groups: string[][] = this.premades().map((g) =>
-      g.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id),
-    );
+    // Grupos do histórico (com confiança) e, por cima, o seu grupo da sala, que é certeza.
+    const groups: Array<{ ids: string[]; confidence: number }> = this.premades().map((g) => ({
+      ids: g.puuids.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id),
+      confidence: g.confidence,
+    }));
     const party = this.lcu.party().filter((id) => inGame.has(id));
-    if (party.length > 1) groups.push(party);
+    if (party.length > 1) groups.push({ ids: party, confidence: 100 });
 
-    // Junta grupos que se sobrepõem (ex.: o histórico achou parte do seu grupo).
-    const merged: Array<Set<string>> = [];
+    // Junta grupos que se sobrepõem (ex.: o histórico achou parte do seu grupo); fica a maior confiança.
+    const merged: Array<{ ids: Set<string>; confidence: number }> = [];
     for (const group of groups) {
-      const touching = merged.filter((m) => group.some((id) => m.has(id)));
-      const union = new Set([...group, ...touching.flatMap((m) => [...m])]);
+      const touching = merged.filter((m) => group.ids.some((id) => m.ids.has(id)));
+      const ids = new Set([...group.ids, ...touching.flatMap((m) => [...m.ids])]);
+      const confidence = Math.max(group.confidence, ...touching.map((m) => m.confidence));
       for (const m of touching) merged.splice(merged.indexOf(m), 1);
-      if (union.size > 1) merged.push(union);
+      if (ids.size > 1) merged.push({ ids, confidence });
     }
     return merged;
   });
 
   protected readonly parties = computed(() => {
-    const result = new Map<string, { color: string; label: string }>();
+    const result = new Map<string, { color: string; label: string; confidence: number }>();
     this.partyGroups().forEach((group, index) => {
       const info = {
         color: PARTY_COLORS[index % PARTY_COLORS.length],
-        label: PARTY_NAMES[group.size] ?? `Grupo de ${group.size}`,
+        label: PARTY_NAMES[group.ids.size] ?? `Grupo de ${group.ids.size}`,
+        confidence: group.confidence,
       };
-      for (const id of group) result.set(id, info);
+      for (const id of group.ids) result.set(id, info);
     });
     return result;
   });
+
+  /** Perfil (rota, pool, autofill) de um jogador, ou null sem dado. */
+  protected profileOf(participant: LiveParticipant): LivePlayerProfile | null {
+    const profile = participant.puuid ? this.profiles()[participant.puuid] : null;
+    return profile && profile.games > 0 ? profile : null;
+  }
 
   /** Grupo e encontros de cada jogador, para a aba Ao vivo (por Riot ID em minúsculas). */
   protected readonly playerTags = computed(() => {
@@ -399,7 +420,7 @@ export class LiveGameView {
       if (game && game.gameId > 0 && groups.length)
         rememberParties(
           `${platformId}_${game.gameId}`,
-          groups.map((g) => [...g]),
+          groups.map((g) => [...g.ids]),
         );
     });
   }
@@ -542,8 +563,22 @@ export class LiveGameView {
    */
   protected cardTags(player: LiveParticipant): { tags: CardTag[]; more: number } {
     const tags: CardTag[] = [];
+    // Jogador escondido pelo modo streamer: a Riot não devolve identidade. Honesto, sem chutar.
+    if (!player.puuid) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
     const party = this.partyOf(player);
-    if (party) tags.push({ label: party.label, tone: 'party', color: party.color });
+    // Grupo com confiança: "Duo 92%". Certeza (seu grupo da sala) vai sem porcentagem.
+    if (party) {
+      const label = party.confidence >= 100 ? party.label : `${party.label} ${party.confidence}%`;
+      tags.push({ label, tone: 'party', color: party.color });
+    }
+    const profile = this.profileOf(player);
+    if (profile?.autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
+    if (profile?.oneTrick) {
+      const top = this.ddragon.champion(profile.topChampions[0]?.championId ?? 0)?.name;
+      tags.push({ label: top ? `OTP ${top}` : 'One-trick', tone: 'good' });
+    } else if (profile?.mainRole && profile.roleShare >= 0.65) {
+      tags.push({ label: `Main ${ROLE_NAMES[profile.mainRole]}`, tone: 'accent' });
+    }
     const met = this.encounterOf(player);
     if (met) tags.push({ label: `Já jogou ${met.encounters.length}x`, tone: 'accent' });
     const points = player.mastery?.points ?? 0;
@@ -556,7 +591,7 @@ export class LiveGameView {
     if (rate !== null && games >= 20 && rate >= 57) tags.push({ label: 'Em alta', tone: 'good' });
     if (rate !== null && games >= 20 && rate <= 44) tags.push({ label: 'Em baixa', tone: 'bad' });
     if (games > 0 && games < 15) tags.push({ label: 'Poucas ranqueadas', tone: 'muted' });
-    return { tags: tags.slice(0, 2), more: Math.max(0, tags.length - 2) };
+    return { tags: tags.slice(0, 3), more: Math.max(0, tags.length - 3) };
   }
 
   protected name(riotId: string): { gameName: string; tag: string } {
@@ -615,7 +650,12 @@ export class LiveGameView {
     if (!window.riot || this.premadesFor === game.gameId) return;
     this.premadesFor = game.gameId;
     try {
-      this.premades.set((await window.riot.getPremades(gameName, tagLine, platformId)).groups);
+      const analysis = await window.riot.getPremades(gameName, tagLine, platformId);
+      // Clientes contra um servidor antigo recebem só `groups`; aí derivo os grupos sem confiança.
+      this.premades.set(
+        analysis.premades ?? analysis.groups.map((puuids) => ({ puuids, size: puuids.length, confidence: 60 })),
+      );
+      this.profiles.set(analysis.profiles ?? {});
     } catch {
       this.premadesFor = 0;
     }
@@ -675,6 +715,7 @@ export class LiveGameView {
     this.openRecent.set(null);
     this.waitingRiot.set(false);
     this.premades.set([]);
+    this.profiles.set({});
     this.premadesFor = 0;
     this.knownPositions.set(new Map());
     this.failures = 0;

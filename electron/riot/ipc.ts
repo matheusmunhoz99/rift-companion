@@ -96,7 +96,11 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     // Só no desenvolvimento: grupos fictícios para revisar o visual.
     const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_PREMADES;
     if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
-    return apiGet<{ groups: string[][] }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
+    return apiGet<{
+      groups: string[][];
+      premades?: Array<{ puuids: string[]; size: number; confidence: number }>;
+      profiles?: Record<string, unknown>;
+    }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
   });
 
   ipcMain.handle('stats:meta', () => apiGet('/v1/stats/meta'));
