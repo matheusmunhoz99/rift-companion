@@ -71,8 +71,18 @@ export class App {
   protected readonly browseOffline = computed(() => this.status() === 'offline' && !!savedAccount() && !this.showLink());
 
   constructor() {
-    if (this.overlayMode) document.body.classList.add('overlay-mode');
-    // Os dados ao vivo acumulam desde o início da partida, mesmo antes de abrir a aba.
-    else if (!isAndroid) inject(LiveDataService);
+    if (this.overlayMode) {
+      // O overlay é uma barra transparente sobre o jogo: sem splash.
+      document.body.classList.add('overlay-mode', 'boot-done');
+    } else {
+      // Os dados ao vivo acumulam desde o início da partida, mesmo antes de abrir a aba.
+      if (!isAndroid) inject(LiveDataService);
+      // Tempo mínimo para a animação de abertura aparecer; depois do fade, remove o splash
+      // de vez (não depende só da transição de opacidade, que pausa com a aba em segundo plano).
+      setTimeout(() => {
+        document.body.classList.add('boot-done');
+        setTimeout(() => document.getElementById('boot')?.remove(), 600);
+      }, 850);
+    }
   }
 }

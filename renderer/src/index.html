@@ -8,8 +8,115 @@
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://ddragon.leagueoflegends.com; connect-src 'self' https://ddragon.leagueoflegends.com https://rift-api.workscanner.com.br ws://localhost:*">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    /* Splash de abertura — fundo escuro já evita o flash branco; a marca anima em hextech. */
+    #boot {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255, 106, 61, 0.14), transparent 60%),
+        #0b0e14;
+      opacity: 1;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    body.boot-done #boot {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .boot-core {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      animation: boot-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .boot-mark {
+      color: #ff6a3d;
+      filter: drop-shadow(0 0 14px rgba(255, 106, 61, 0.55));
+    }
+    .boot-mark .boot-ring {
+      transform-origin: 60px 60px;
+      animation: boot-spin 3.4s linear infinite;
+      opacity: 0.85;
+    }
+    .boot-mark .boot-ring2 {
+      transform-origin: 60px 60px;
+      animation: boot-spin 2.6s linear infinite reverse;
+      opacity: 0.5;
+    }
+    .boot-mark .boot-gem {
+      fill: #ff6a3d;
+      stroke: none;
+      transform-origin: 60px 60px;
+      animation: boot-pulse 1.5s ease-in-out infinite;
+    }
+    .boot-word {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.26em;
+      font-size: 15px;
+      color: #e8ebf2;
+      background: linear-gradient(100deg, #e8ebf2 30%, #ff6a3d 50%, #e8ebf2 70%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: boot-shimmer 2.2s linear infinite;
+    }
+    .boot-bar {
+      width: 128px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+    .boot-bar span {
+      display: block;
+      height: 100%;
+      width: 40%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, #ff6a3d, transparent);
+      animation: boot-scan 1.1s ease-in-out infinite;
+    }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @keyframes boot-pulse {
+      0%, 100% { opacity: 0.55; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    @keyframes boot-shimmer { to { background-position: -220% 0; } }
+    @keyframes boot-scan {
+      0% { transform: translateX(-140%); }
+      100% { transform: translateX(360%); }
+    }
+    @keyframes boot-rise {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .boot-mark .boot-ring, .boot-mark .boot-ring2, .boot-mark .boot-gem,
+      .boot-word, .boot-bar span, .boot-core { animation: none; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Splash de abertura (hextech): some assim que o app carrega. Sem script (CSP). -->
+  <div id="boot" aria-hidden="true">
+    <div class="boot-core">
+      <svg class="boot-mark" viewBox="0 0 120 120" width="112" height="112" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+          <polygon class="boot-ring" points="60,8 104,34 104,86 60,112 16,86 16,34" />
+          <polygon class="boot-ring2" points="60,24 90,42 90,78 60,96 30,78 30,42" />
+          <polygon class="boot-gem" points="60,40 76,60 60,80 44,60" />
+        </g>
+      </svg>
+      <div class="boot-word">RIFT&nbsp;COMPANION</div>
+      <div class="boot-bar"><span></span></div>
+    </div>
+  </div>
   <app-root></app-root>
 </body>
 </html>

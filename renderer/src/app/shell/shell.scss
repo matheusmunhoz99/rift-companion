@@ -276,16 +276,32 @@ $gutter: max(clamp(14px, 2.2vw, 36px), calc((100% - 1760px) / 2));
   /* Margens que crescem com a janela; em monitores muito largos o conteúdo fica centralizado. */
   padding: 4px $gutter clamp(14px, 2.2vw, 36px);
 
-  // Troca de tela: a nova entra subindo um pouco, sem atrasar a leitura.
+  // Troca de tela: a nova entra subindo com um leve foco, sem atrasar a leitura.
   > * {
-    animation: view-in var(--dur-slow) var(--ease-out);
+    animation: view-in 0.44s cubic-bezier(0.22, 0.9, 0.26, 1) both;
+    will-change: transform, opacity, filter;
   }
 }
 
 @keyframes view-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(14px) scale(0.985);
+    filter: blur(3px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content > * {
+    animation: none;
   }
 }
 
