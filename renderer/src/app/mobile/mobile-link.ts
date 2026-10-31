@@ -18,9 +18,11 @@ declare global {
   template: `
     <section class="card link-card">
       <span class="eyebrow">RIFT COMPANION · {{ android ? 'ANDROID' : 'DISPOSITIVOS' }}</span>
-      <h2>{{ android ? 'Seu LoL, na palma da mão.' : 'Conectar celular Android' }}</h2>
+      <h2>{{ android ? (status() === 'online' ? 'Conexão do celular' : 'Seu LoL, na palma da mão.') : 'Conectar celular Android' }}</h2>
       @if (android) {
-        <p>Mesmas builds, partidas e controle do cliente. Seu PC executa; você acompanha pelo celular.</p>
+        @if (status() !== 'online') {
+          <p>Mesmas builds, partidas e controle do cliente. Seu PC executa; você acompanha pelo celular.</p>
+        }
         @switch (status()) {
           @case ('unlinked') {
             <ol><li>Abra o Rift Companion no Windows.</li><li>Em Configurações, toque em Gerar QR Code.</li><li>Leia o código e confirme o aparelho no PC.</li></ol>

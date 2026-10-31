@@ -293,12 +293,37 @@ body.android-app {
   }
 
   /* --- Configurações: esconde o que é só do Windows e arruma os controles --- */
+  /* minmax(0, 1fr): a coluna não cresce além da tela (1fr sozinho esticava com o
+     conteúdo e cortava os cards pela direita). */
   app-settings-view .settings {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 16px;
+    min-width: 0;
+  }
+  app-settings-view .card,
+  app-settings-view app-mobile-link {
+    min-width: 0;
+  }
+  /* O cabeçalho do "Modo invisível" quebra quando o selo de status não cabe ao lado. */
+  app-settings-view .invisible-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  app-settings-view .presence-chip {
+    max-width: 100%;
   }
   app-settings-view .status-options {
     grid-template-columns: 1fr;
+  }
+  /* Card de vínculo embutido: título e espaçamento menores no celular. */
+  app-settings-view app-mobile-link .link-card {
+    padding: 18px;
+  }
+  app-settings-view app-mobile-link h2 {
+    font-size: 22px;
+  }
+  app-settings-view app-mobile-link .eyebrow {
+    overflow-wrap: anywhere;
   }
   /* "Ao abrir o LoL": rótulo em cima e os botões numa linha que rola de lado,
      em vez de espremer e quebrar "Lembrar o último" torto. */
