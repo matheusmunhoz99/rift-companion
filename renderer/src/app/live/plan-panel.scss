@@ -230,9 +230,10 @@
 }
 
 .extras-label {
-  margin-left: 6px;
+  min-width: 118px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .build-matchup {

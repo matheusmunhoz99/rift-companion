@@ -40,24 +40,27 @@
                 <span class="build-rate">{{ pct(core.winRate) }}%<small>{{ core.games }} partidas</small></span>
               </div>
             }
-            @if (b.boots.length || b.situational.length) {
-              <div class="build-row extras">
-                @for (boot of b.boots.slice(0, 1); track boot.itemId) {
-                  @if (ddragon.itemIconUrl(boot.itemId); as icon) {
-                    <img [src]="icon" [alt]="ddragon.itemName(boot.itemId)" [title]="ddragon.itemName(boot.itemId)" />
-                  }
-                }
-                @if (b.situational.length) {
-                  <span class="extras-label">contra o dano deles</span>
-                  @for (item of b.situational; track item.itemId) {
-                    @if (ddragon.itemIconUrl(item.itemId); as icon) {
-                      <img [src]="icon" [alt]="ddragon.itemName(item.itemId)" [title]="ddragon.itemName(item.itemId)" />
-                    }
-                  }
-                }
-              </div>
+            @if (b.boots.length) {
+        <div class="build-row extras">
+          <span class="extras-label">Botas</span>
+          @for (boot of b.boots.slice(0, 2); track boot.itemId) {
+            @if (ddragon.itemIconUrl(boot.itemId); as icon) {
+              <img [src]="icon" [alt]="ddragon.itemName(boot.itemId)" [title]="ddragon.itemName(boot.itemId) + ' · ' + pct(boot.winRate) + '% em ' + boot.games + ' partidas'" />
             }
-            @if (b.opponent; as opp) {
+          }
+        </div>
+      }
+      @if (b.situational.length) {
+        <div class="build-row extras">
+          <span class="extras-label">Contra o dano deles</span>
+          @for (item of b.situational; track item.itemId) {
+            @if (ddragon.itemIconUrl(item.itemId); as icon) {
+              <img [src]="icon" [alt]="ddragon.itemName(item.itemId)" [title]="ddragon.itemName(item.itemId) + ' · ' + pct(item.winRate) + '% de vitórias nesse cenário'" />
+            }
+          }
+        </div>
+      }
+      @if (b.opponent; as opp) {
               @if (opp.winRate !== null && opp.games > 0) {
                 <p class="build-matchup">Contra {{ opp.champion }}: <strong [class.good]="opp.winRate >= 0.52" [class.bad]="opp.winRate < 0.48">{{ pct(opp.winRate) }}%</strong> em {{ opp.games }} partidas</p>
               }
