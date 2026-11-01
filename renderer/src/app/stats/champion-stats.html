@@ -249,7 +249,9 @@
           <div class="row compact">
             <div class="icons">
               @for (id of spells(option); track $index) {
-                <img class="item" [src]="ddragon.spellIconUrl(id)" [alt]="ddragon.spellName(id)" [title]="ddragon.spellName(id)" />
+                @if (ddragon.spellIconUrl(id); as icon) {
+                  <img class="item" [src]="icon" [alt]="ddragon.spellName(id)" [title]="ddragon.spellName(id)" />
+                }
               }
             </div>
             <div class="rate">

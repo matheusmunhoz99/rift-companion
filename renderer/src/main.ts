@@ -13,5 +13,22 @@ const sendReport = (context: string, error: unknown) => {
 window.addEventListener('error', (event) => sendReport('window', event.error ?? event.message));
 window.addEventListener('unhandledrejection', (event) => sendReport('promise', event.reason));
 
+// Imagem que não carregou (ícone novo que o Data Dragon ainda não tem, modo especial,
+// internet instável) some em vez de mostrar o ícone de imagem quebrada.
+document.addEventListener(
+  'error',
+  (event) => {
+    if (event.target instanceof HTMLImageElement) event.target.classList.add('img-broken');
+  },
+  true,
+);
+document.addEventListener(
+  'load',
+  (event) => {
+    if (event.target instanceof HTMLImageElement) event.target.classList.remove('img-broken');
+  },
+  true,
+);
+
 bootstrapApplication(App, appConfig)
   .catch((err) => console.error(err));

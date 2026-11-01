@@ -205,10 +205,16 @@ button {
   gap: 2px;
 }
 
-img.small {
+img.small,
+.spell-slot {
   width: 23px;
   height: 23px;
   border-radius: 4px;
+}
+
+.spell-slot {
+  display: block;
+  background: var(--border);
 }
 
 .items {
@@ -235,9 +241,9 @@ img.small {
 // As duas equipes (op.gg-like): some em telas estreitas para não apertar o resto.
 .teams {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 118px));
+  grid-template-columns: repeat(2, minmax(0, 140px));
   justify-content: end;
-  gap: 10px;
+  gap: 12px;
 
   ul {
     display: grid;
@@ -272,6 +278,45 @@ img.small {
     &.me {
       color: var(--text);
       font-weight: 700;
+    }
+
+    // Grupo (duo, trio...): fio na cor do grupo à esquerda e selo no fim da linha.
+    &.in-party {
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 1px;
+        bottom: 1px;
+        left: -6px;
+        width: 2px;
+        border-radius: 2px;
+        background: var(--party);
+      }
+    }
+
+    .pt {
+      flex: none;
+      margin-left: auto;
+      padding: 0 5px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--party) 24%, transparent);
+      color: color-mix(in srgb, var(--party) 75%, white);
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      line-height: 13px;
+      text-transform: uppercase;
+
+      // Estimado (não visto ao vivo): contorno tracejado, sem preenchimento.
+      &.est {
+        border-color: color-mix(in srgb, var(--party) 70%, transparent);
+        border-style: dashed;
+        background: transparent;
+      }
     }
   }
 }

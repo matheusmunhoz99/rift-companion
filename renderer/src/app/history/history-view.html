@@ -74,7 +74,12 @@
             }
             <div class="stack">
               @for (spellId of p.summonerSpellIds; track $index) {
-                <img class="small" [src]="ddragon.spellIconUrl(spellId)" [alt]="ddragon.spellName(spellId)" />
+                @if (ddragon.spellIconUrl(spellId); as icon) {
+                  <img class="small" [src]="icon" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+                } @else {
+                  <!-- Feitiço só deste modo (ex.: ARAM: Desordem), sem ícone no Data Dragon. -->
+                  <span class="small spell-slot" title="Feitiço do modo"></span>
+                }
               }
             </div>
             <div class="stack">
@@ -104,11 +109,15 @@
             @for (team of teamsOf(match); track $index) {
               <ul>
                 @for (player of team; track player.puuid) {
-                  <li [class.me]="player.puuid === p.puuid">
+                  @let party = partyOf(match, player);
+                  <li [class.me]="player.puuid === p.puuid" [class.in-party]="!!party" [style.--party]="party?.color">
                     @if (ddragon.champion(player.championId); as champion) {
                       <img [src]="ddragon.championIconUrl(champion)" alt="" />
                     }
-                    <span>{{ name(player.riotId) }}</span>
+                    <span class="pname">{{ name(player.riotId) }}</span>
+                    @if (party) {
+                      <span class="pt" [class.est]="!party.confirmed" [title]="partyTitle(party)">{{ partyShort(party) }}</span>
+                    }
                   </li>
                 }
               </ul>

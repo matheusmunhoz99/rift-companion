@@ -29,10 +29,17 @@ export function pairKey(a: string, b: string): string {
   return x < y ? `${x}|${y}` : `${y}|${x}`;
 }
 
+/** Última leitura: o histórico consulta a memória várias vezes seguidas com o mesmo conteúdo. */
+let cache: { raw: string | null; memory: Memory } | null = null;
+
 function read(): Memory {
   try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as unknown;
-    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Memory) : {};
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (cache && cache.raw === raw) return { ...cache.memory };
+    const value = JSON.parse(raw ?? '{}') as unknown;
+    const memory = value && typeof value === 'object' && !Array.isArray(value) ? (value as Memory) : {};
+    cache = { raw, memory };
+    return { ...memory };
   } catch {
     return {};
   }

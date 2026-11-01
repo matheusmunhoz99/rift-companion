@@ -5,6 +5,7 @@ import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName, rankQueueLabel, tierName } from '../riot/labels';
 import { MatchDetails } from '../match/match-details';
+import { partiesOf, type PartyInfo } from '../match/parties';
 import { PlayerSummary } from './player-summary';
 import type { MatchParticipant, MatchSummary, PlayerProfile, RiotSettings } from './riot.types';
 
@@ -129,6 +130,31 @@ export class HistoryView {
     );
     this.teamCache.set(key, teams);
     return teams;
+  }
+
+  /**
+   * Grupos (duo, trio...) de cada partida da lista: os vistos ao vivo (confirmados) ou
+   * estimados pela memória de grupos e por quem esteve no mesmo time em outra partida da lista.
+   * Recalcula só quando a lista muda.
+   */
+  private readonly partyMap = computed(() => {
+    const list = this.matches();
+    return new Map(list.map((match) => [match.matchId, partiesOf(match, list)]));
+  });
+
+  protected partyOf(match: MatchSummary, player: MatchParticipant): PartyInfo | null {
+    return (player.riotId && this.partyMap().get(match.matchId)?.get(player.riotId.toLowerCase())) || null;
+  }
+
+  /** Selo curto na coluna das equipes. */
+  protected partyShort(party: PartyInfo): string {
+    return { Duo: 'Duo', Trio: 'Trio' }[party.label] ?? party.label.replace('Grupo de ', 'G');
+  }
+
+  protected partyTitle(party: PartyInfo): string {
+    return party.confirmed
+      ? `${party.label}: entraram juntos na fila (visto durante a partida).`
+      : `${party.label} estimado: já jogaram juntos em outras partidas.`;
   }
 
   /** Nome sem a tag, para caber na coluna das equipes. */

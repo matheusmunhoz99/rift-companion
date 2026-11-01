@@ -163,6 +163,11 @@ img {
   font-size: 0;
 }
 
+/* Marcada em main.ts quando a imagem falha: some sem deixar o ícone de imagem quebrada. */
+img.img-broken {
+  visibility: hidden;
+}
+
 /* Números de placar: largura fixa por dígito, para não "pularem" ao atualizar. */
 .num {
   font-family: var(--font-display);
