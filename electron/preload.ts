@@ -79,6 +79,7 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-premades', gameName, tagLine, platformId),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
+  getCoach: (request: unknown) => ipcRenderer.invoke('riot:get-coach', request),
 });
 
 contextBridge.exposeInMainWorld('telegram', {

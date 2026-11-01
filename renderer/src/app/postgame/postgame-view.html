@@ -53,6 +53,57 @@
     }
   </header>
 
+  <!-- Coach: como ESTA partida se compara com a SUA média recente. -->
+  @if (coach(); as c) {
+    <section class="panel coach-panel" [attr.data-overall]="c.overall.verdict">
+      <header class="panel-head">
+        <h3>Seu coach</h3>
+        <span class="coach-base">vs suas últimas {{ c.games }} partidas@if (c.role) { · {{ c.role }}}</span>
+      </header>
+
+      <!-- Fala do coach: narração por IA quando disponível; senão, o resumo do próprio app. -->
+      <p class="coach-say">{{ coachNarration() ?? c.overall.text }}</p>
+
+      <div class="coach-cols">
+        <div class="coach-col">
+          <h4 class="good-head">Mandou bem</h4>
+          @for (w of c.wins; track w.text) { <p class="coach-line good">{{ w.text }}</p> }
+        </div>
+        <div class="coach-col">
+          <h4 class="bad-head">Pra evoluir</h4>
+          @for (i of c.improve; track i.text) { <p class="coach-line bad">{{ i.text }}</p> }
+        </div>
+      </div>
+
+      @if (c.highlights.length) {
+        <div class="coach-tags">
+          @for (h of c.highlights; track h.text) { <span class="coach-tag">{{ h.text }}</span> }
+        </div>
+      }
+
+      @if (timelineNotes().length) {
+        <div class="coach-timeline">
+          <span class="coach-timeline-head">Início de jogo</span>
+          @for (note of timelineNotes(); track note) { <span class="coach-note">{{ note }}</span> }
+        </div>
+      }
+
+      <!-- Cada métrica: esta partida vs sua média, com a variação. -->
+      <div class="coach-metrics">
+        @for (m of c.metrics; track m.key) {
+          <div class="coach-metric" [class.good]="m.verdict === 'good'" [class.bad]="m.verdict === 'bad'">
+            <span class="cm-label">{{ m.label }}</span>
+            <span class="cm-value num">{{ metricValue(m) }}</span>
+            <span class="cm-avg num">média {{ metricAverage(m) }}</span>
+            <span class="cm-delta num">{{ deltaLabel(m) }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  } @else if (coachLoading()) {
+    <section class="panel coach-panel loading"><p class="coach-say muted">Analisando sua partida…</p></section>
+  }
+
   <div class="board">
     <!-- Ranking de 1 a 10 pela nota. -->
     <section class="panel ranking-panel">

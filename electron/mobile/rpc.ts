@@ -16,7 +16,7 @@ export const READ_CHANNELS = new Set([
   'lcu:get-state', 'prefs:get', 'app:info', 'app:game-window-mode', 'postgame:get',
   'lobby:queues', 'lobby:friends', 'lobby:champions', 'builds:get',
   'riot:get-settings', 'riot:find-player', 'riot:get-live-game', 'riot:get-local-game',
-  'riot:get-live-dashboard', 'riot:get-premades', 'riot:get-matches',
+  'riot:get-live-dashboard', 'riot:get-premades', 'riot:get-matches', 'riot:get-coach',
   'stats:meta', 'stats:tierlist', 'stats:champion', 'stats:counters', 'stats:damage', 'telegram:status', 'users:lookup',
 ]);
 const WRITE_CHANNELS = new Set([

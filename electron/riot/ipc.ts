@@ -103,6 +103,11 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
   });
 
+  // Fim de jogo: manda os fatos calculados no app e recebe timeline + narração por IA.
+  ipcMain.handle('riot:get-coach', (_event, request: unknown) =>
+    apiPost('/v1/coach', request).catch(() => ({ timeline: null, narration: null })),
+  );
+
   ipcMain.handle('stats:meta', () => apiGet('/v1/stats/meta'));
   ipcMain.handle('stats:tierlist', (_event, position: string | null) =>
     apiGet(`/v1/stats/tierlist${position ? `?position=${enc(position)}` : ''}`),
@@ -184,6 +189,23 @@ async function apiGet<T>(path: string, notFoundMessage?: string): Promise<T> {
   if (response.ok) return (await response.json()) as T;
   if (response.status === 404 && notFoundMessage) throw new Error(notFoundMessage);
 
+  const body = (await response.json().catch(() => null)) as { error?: string } | null;
+  throw new Error(body?.error ?? `O servidor de partidas respondeu com erro ${response.status}.`);
+}
+
+async function apiPost<T>(path: string, data: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(RIFT_API_URL + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch {
+    throw new Error('Não foi possível conectar ao servidor de partidas. Verifique sua internet.');
+  }
+  if (response.ok) return (await response.json()) as T;
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
   throw new Error(body?.error ?? `O servidor de partidas respondeu com erro ${response.status}.`);
 }

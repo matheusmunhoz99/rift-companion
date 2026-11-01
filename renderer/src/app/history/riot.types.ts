@@ -251,6 +251,53 @@ export interface PostGame {
   players: PostGamePlayer[];
 }
 
+// Espelha server/src/coach.ts.
+export interface CoachTimeline {
+  csDiff10: number | null;
+  goldDiff10: number | null;
+  csDiff14: number | null;
+  goldDiff14: number | null;
+  deathsBefore10: number;
+  firstDeathMin: number | null;
+  laneOpponentChampion: number | null;
+}
+
+export interface CoachNarrationResult {
+  timeline: CoachTimeline | null;
+  narration: string | null;
+}
+
+/** Fatos enviados ao servidor para a timeline e a narração por IA (só números). */
+export interface CoachNarrationRequest {
+  matchId: string;
+  platformId: string;
+  puuid: string;
+  report: {
+    games: number;
+    role: string | null;
+    queueId: number | null;
+    overall: { verdict: string; deltaPct: number; text: string };
+    metrics: Array<{
+      key: string;
+      label: string;
+      unit: string;
+      value: number;
+      average: number;
+      deltaPct: number;
+      verdict: 'good' | 'neutral' | 'bad';
+      lowerIsBetter: boolean;
+    }>;
+  };
+  context: {
+    champion: string;
+    result: 'win' | 'loss' | 'remake' | null;
+    kills: number;
+    deaths: number;
+    assists: number;
+    durationSeconds: number;
+  };
+}
+
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getLocalGame(): Promise<LocalGame | null>;
@@ -263,6 +310,8 @@ export interface RiotBridge {
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;
   getMatches(puuid: string, platformId: string, start: number, count: number): Promise<MatchSummary[]>;
+  /** Fim de jogo: timeline do early + narração por IA (ou null se indisponível). */
+  getCoach(request: CoachNarrationRequest): Promise<CoachNarrationResult>;
 }
 
 declare global {

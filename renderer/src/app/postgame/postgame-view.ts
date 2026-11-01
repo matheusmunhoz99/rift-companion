@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { PostGamePlayer } from '../history/riot.types';
+import type { CoachTimeline, PostGame, PostGamePlayer } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName } from '../riot/labels';
 import { PostGameService } from './postgame.service';
+import { BASELINE_SIZE, buildCoachReport, toCoachRequest, type CoachMetric, type CoachReport } from './coach';
 
 type MetricKey =
   | 'damageToChampions'
@@ -97,6 +98,58 @@ export class PostGameView {
   protected readonly metric = signal<MetricKey>('damageToChampions');
   protected readonly formula = FORMULA;
   protected readonly showFormula = signal(false);
+
+  // --- Coach: comparação com a sua média + narração por IA (opcional) ---
+  protected readonly coach = signal<CoachReport | null>(null);
+  protected readonly coachNarration = signal<string | null>(null);
+  protected readonly coachTimeline = signal<CoachTimeline | null>(null);
+  protected readonly coachLoading = signal(false);
+  private analyzedGame = 0;
+
+  constructor() {
+    // Quando o placar chega (ou muda de partida), monta a análise do coach.
+    effect(() => {
+      const game = this.game();
+      if (game) untracked(() => void this.analyze(game));
+    });
+  }
+
+  /** Busca histórico, monta o relatório e (se der) pede timeline + narração por IA. */
+  private async analyze(game: PostGame): Promise<void> {
+    if (game.gameId === this.analyzedGame) return;
+    this.analyzedGame = game.gameId;
+    this.coach.set(null);
+    this.coachNarration.set(null);
+    this.coachTimeline.set(null);
+
+    const me = game.players.find((p) => p.isMe);
+    const [gameName, tagLine] = (me?.riotId ?? '').split('#');
+    if (!me || !gameName || !tagLine || !window.riot) return;
+    const platformId = this.lcu.state().platformId ?? '';
+
+    this.coachLoading.set(true);
+    try {
+      // PUUID da Riot API (o do histórico), não o do cliente do LoL.
+      const profile = await window.riot.findPlayer(gameName, tagLine, platformId);
+      const recent = await window.riot.getMatches(profile.puuid, platformId, 0, BASELINE_SIZE);
+      const report = buildCoachReport(game, recent, profile.puuid);
+      this.coach.set(report);
+      if (!report) return;
+
+      // Enriquecimento opcional (timeline + IA); nunca trava a tela nem o resto.
+      const matchId = `${platformId}_${game.gameId}`;
+      const request = toCoachRequest(report, game, me, this.championName(me.championId), matchId, platformId, profile.puuid);
+      const result = await window.riot.getCoach(request).catch(() => null);
+      if (result) {
+        this.coachNarration.set(result.narration);
+        this.coachTimeline.set(result.timeline);
+      }
+    } catch {
+      // O coach é um extra: qualquer falha apenas o deixa de fora.
+    } finally {
+      this.coachLoading.set(false);
+    }
+  }
 
   /** Arte do seu campeão no fundo do resultado. */
   protected readonly heroArt = computed(() => {
@@ -282,6 +335,38 @@ export class PostGameView {
   /** Cor da nota: verde a partir de 8, âmbar de 6 a 8, cinza abaixo. */
   protected scoreTone(score: number): string {
     return score >= 8 ? 'high' : score >= 6 ? 'mid' : 'low';
+  }
+
+  /** Frases da timeline do early (só as que têm dado). */
+  protected readonly timelineNotes = computed<string[]>(() => {
+    const t = this.coachTimeline();
+    if (!t) return [];
+    const notes: string[] = [];
+    const s = (n: number) => (n > 0 ? `+${Math.round(n)}` : String(Math.round(n)));
+    if (t.csDiff10 !== null) notes.push(`${s(t.csDiff10)} de CS vs seu oponente de rota aos 10 min.`);
+    if (t.goldDiff10 !== null) notes.push(`${s(t.goldDiff10)} de ouro vs seu oponente aos 10 min.`);
+    notes.push(t.deathsBefore10 > 0 ? `${t.deathsBefore10} morte(s) antes dos 10 min.` : 'Nenhuma morte antes dos 10 min.');
+    if (t.firstDeathMin !== null) notes.push(`Primeira morte no minuto ${t.firstDeathMin}.`);
+    return notes;
+  });
+
+  protected metricValue(m: CoachMetric): string {
+    return this.fmtMetric(m.value, m.unit);
+  }
+  protected metricAverage(m: CoachMetric): string {
+    return this.fmtMetric(m.average, m.unit);
+  }
+  private fmtMetric(value: number, unit: string): string {
+    if (unit === 'percent') return `${Math.round(value * 100)}%`;
+    if (unit === 'count') return String(Math.round(value));
+    if (unit === 'ratio') return value.toFixed(2);
+    return value >= 100 ? this.thousands(value) : value.toFixed(1);
+  }
+  /** "+12%", "−8%" ou "≈" (dentro da média), do ponto de vista de "melhor". */
+  protected deltaLabel(m: CoachMetric): string {
+    const pct = Math.round(m.deltaPct * 100);
+    if (pct === 0) return '≈';
+    return `${pct > 0 ? '+' : '−'}${Math.abs(pct)}%`;
   }
 
   protected openPlayer(player: PostGamePlayer): void {
