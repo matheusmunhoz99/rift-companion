@@ -107,6 +107,8 @@ export interface GameAnalysis {
   groups: string[][];
   premades?: PremadeGroup[];
   profiles?: Record<string, LivePlayerProfile>;
+  /** false = a Riot falhou ou ainda está analisando: o app pede de novo. Ausente em servidor antigo. */
+  complete?: boolean;
 }
 
 /** Partida pelos dados locais do jogo (sem elo, maestria nem puuid). */

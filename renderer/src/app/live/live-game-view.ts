@@ -60,6 +60,9 @@ const ENCOUNTER_GAMES = 20;
 const RETRY_MS = 15_000;
 /** No começo (sem nada na tela ainda), tenta de novo bem mais rápido. */
 const FIRST_RETRY_MS = 4_000;
+/** Grupos (Duo/Trio): nova tentativa a cada 20 s, por até ~4 min da partida. */
+const PREMADE_RETRY_MS = 20_000;
+const PREMADE_MAX_ATTEMPTS = 12;
 
 interface RecentSummary {
   games: number;
@@ -213,6 +216,9 @@ export class LiveGameView {
   /** Perfil de cada jogador (rota, pool, autofill), por puuid. */
   private readonly profiles = signal<Record<string, LivePlayerProfile>>({});
   private premadesFor = 0;
+  /** Nova tentativa dos grupos quando a análise falha ou vem incompleta (limite da Riot, servidor ocupado). */
+  private premadeRetry: ReturnType<typeof setTimeout> | null = null;
+  private premadeAttempts = 0;
 
   /**
    * Grupo de cada jogador (por Riot ID): os do histórico mais o seu grupo da sala,
@@ -408,6 +414,7 @@ export class LiveGameView {
     const clock = setInterval(() => this.now.set(Date.now()), 1000);
     inject(DestroyRef).onDestroy(() => {
       this.clearRetry();
+      this.clearPremadeRetry();
       clearInterval(clock);
     });
     void allPositionsTierList().then((list) => this.tierList.set(list));
@@ -640,7 +647,11 @@ export class LiveGameView {
     }
   }
 
-  /** Grupos pelo histórico (uma vez por partida; o servidor guarda o resultado). */
+  /**
+   * Grupos pelo histórico (o servidor guarda o resultado). Se a análise falhar ou vier
+   * incompleta, tenta de novo a cada 20 s enquanto for a mesma partida: antes, uma falha
+   * deixava a partida inteira sem Duo/Trio, sem aviso.
+   */
   private async loadPremades(
     game: LiveGame,
     gameName: string,
@@ -649,16 +660,38 @@ export class LiveGameView {
   ): Promise<void> {
     if (!window.riot || this.premadesFor === game.gameId) return;
     this.premadesFor = game.gameId;
+    this.clearPremadeRetry();
+    let complete = false;
     try {
       const analysis = await window.riot.getPremades(gameName, tagLine, platformId);
+      if (this.game()?.gameId !== game.gameId) return;
       // Clientes contra um servidor antigo recebem só `groups`; aí derivo os grupos sem confiança.
-      this.premades.set(
-        analysis.premades ?? analysis.groups.map((puuids) => ({ puuids, size: puuids.length, confidence: 60 })),
-      );
-      this.profiles.set(analysis.profiles ?? {});
+      const premades =
+        analysis.premades ?? analysis.groups.map((puuids) => ({ puuids, size: puuids.length, confidence: 60 }));
+      // Resposta parcial não apaga o que uma tentativa anterior já achou.
+      if (premades.length || analysis.complete !== false) this.premades.set(premades);
+      const profiles = analysis.profiles ?? {};
+      if (Object.keys(profiles).length || analysis.complete !== false) this.profiles.set(profiles);
+      complete = analysis.complete !== false;
     } catch {
-      this.premadesFor = 0;
+      complete = false;
     }
+    if (complete) {
+      this.premadeAttempts = 0;
+      return;
+    }
+    if (this.game()?.gameId !== game.gameId || ++this.premadeAttempts > PREMADE_MAX_ATTEMPTS) return;
+    this.premadeRetry = setTimeout(() => {
+      this.premadeRetry = null;
+      if (this.game()?.gameId !== game.gameId) return;
+      this.premadesFor = 0;
+      void this.loadPremades(game, gameName, tagLine, platformId);
+    }, PREMADE_RETRY_MS);
+  }
+
+  private clearPremadeRetry(): void {
+    if (this.premadeRetry) clearTimeout(this.premadeRetry);
+    this.premadeRetry = null;
   }
 
   /** Monta a partida com os dados locais do jogo (sem elo, maestria nem puuid). */
@@ -717,6 +750,8 @@ export class LiveGameView {
     this.premades.set([]);
     this.profiles.set({});
     this.premadesFor = 0;
+    this.clearPremadeRetry();
+    this.premadeAttempts = 0;
     this.knownPositions.set(new Map());
     this.failures = 0;
   }
