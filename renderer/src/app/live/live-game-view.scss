@@ -552,6 +552,126 @@ button {
     border-color: color-mix(in srgb, var(--tier) 80%, var(--text));
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--tier) 80%, var(--text));
   }
+
+  // Grupo (duo, trio...): o card inteiro na cor do grupo, para ligar os parceiros de relance
+  // mesmo longe um do outro. Vem depois de .ranked/.me/:hover para ganhar deles.
+  &.in-party {
+    border-color: var(--party);
+    box-shadow:
+      0 0 0 1px var(--party),
+      0 0 24px color-mix(in srgb, var(--party) 26%, transparent);
+
+    // Faixa do grupo no topo (a do time continua embaixo).
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 3;
+      inset: 0 0 auto;
+      height: 3px;
+      background: var(--party);
+    }
+
+    &:hover {
+      border-color: var(--party);
+      box-shadow:
+        0 0 0 1px var(--party),
+        0 12px 30px color-mix(in srgb, var(--party) 30%, rgba(0, 0, 0, 0.35));
+    }
+
+    &.me {
+      box-shadow:
+        0 0 0 1px var(--party),
+        0 0 0 3px var(--accent),
+        0 0 24px color-mix(in srgb, var(--party) 26%, transparent);
+    }
+  }
+
+  // Confiança baixa: mesma cor, borda tracejada e sem brilho ("pode ser grupo").
+  &.in-party[data-party='possivel'] {
+    border-style: dashed;
+    box-shadow: none;
+
+    &::before {
+      opacity: 0.5;
+    }
+  }
+}
+
+// Selo do grupo no topo do card: a primeira coisa que o olho vê.
+.party-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px 0 7px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--party) 82%, white), var(--party));
+  color: #0b0d12;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--party) 55%, black),
+    0 4px 14px color-mix(in srgb, var(--party) 45%, transparent);
+
+  .party-conf {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.22);
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  &[data-level='possivel'] {
+    border: 1.5px dashed var(--party);
+    background: rgba(8, 10, 16, 0.78);
+    color: var(--party);
+    box-shadow: none;
+    backdrop-filter: blur(4px);
+
+    .party-conf {
+      background: color-mix(in srgb, var(--party) 18%, transparent);
+    }
+  }
+}
+
+// Resumo dos grupos no cabeçalho do time: "DUO  me Pegue3 + CoveiroDcachorro  95%".
+.party-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--party) 60%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--party) 13%, transparent);
+  color: var(--party);
+  font-size: 12px;
+
+  strong {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .party-names {
+    overflow: hidden;
+    max-width: 280px;
+    color: var(--text);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .party-conf {
+    color: var(--muted);
+    font-weight: 600;
+  }
 }
 
 .pcard-body {
@@ -592,11 +712,21 @@ button {
 
 .pcard-top {
   position: relative;
-  display: flex;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-self: stretch;
   align-items: center;
-  justify-content: space-between;
-  min-height: 18px;
+  gap: 6px;
+  min-height: 24px;
+
+  > :first-child {
+    justify-self: start;
+  }
+
+  > :last-child {
+    justify-self: end;
+  }
 
   .lane-pill {
     background: rgba(8, 10, 16, 0.6);
@@ -859,8 +989,12 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px 16px;
+  gap: 6px 10px;
+
+  // Dano do time sempre à direita, depois dos grupos.
+  .team-dmg {
+    margin-left: auto;
+  }
 }
 
 .team-dmg {

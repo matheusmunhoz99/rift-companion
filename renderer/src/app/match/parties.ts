@@ -1,7 +1,12 @@
 import type { MatchSummary } from '../history/riot.types';
 
 /** Cores das bolinhas de grupo (duo, trio...), uma por grupo. */
-export const PARTY_COLORS = ['#ffb35c', '#6f8cff', '#3ecf8e', '#c77dff', '#ff6fae'];
+/**
+ * Uma cor por grupo (duo, trio...). Vivas e longe do azul do seu time, do vermelho dos
+ * inimigos e do laranja do card "Você": turquesa, rosa, lavanda, lima, âmbar (por último,
+ * por ser a mais parecida com o laranja).
+ */
+export const PARTY_COLORS = ['#19d3c5', '#ff4fa3', '#b18cff', '#a3e635', '#ffb22e'];
 export const PARTY_NAMES: Record<number, string> = { 2: 'Duo', 3: 'Trio', 4: 'Grupo de 4', 5: 'Grupo de 5' };
 
 export interface PartyInfo {

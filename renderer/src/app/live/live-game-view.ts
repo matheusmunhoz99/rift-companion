@@ -1,3 +1,4 @@
+import { Icon } from '../ui/icon';
 import { diag, errorText } from '../core/diag';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
@@ -27,6 +28,24 @@ interface CardTag {
 }
 
 /** Nome das rotas em português, para o perfil do jogador. */
+/** Nome curto do grupo no selo do card. */
+const PARTY_SHORT: Record<number, string> = { 2: 'Duo', 3: 'Trio', 4: 'Grupo de 4', 5: 'Time fechado' };
+
+interface PartyBadge {
+  color: string;
+  text: string;
+  confidence: string | null;
+  level: 'certo' | 'provavel' | 'possivel';
+  title: string;
+}
+
+interface TeamParty {
+  color: string;
+  text: string;
+  confidence: string | null;
+  names: string[];
+}
+
 const ROLE_NAMES: Record<string, string> = {
   top: 'Topo',
   jungle: 'Selva',
@@ -93,7 +112,7 @@ interface EncounterSummary {
 
 @Component({
   selector: 'app-live-game-view',
-  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge],
+  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })
@@ -264,6 +283,46 @@ export class LiveGameView {
     });
     return result;
   });
+
+  /**
+   * Selo do grupo no topo do card. "certo" = seu grupo da sala; "provavel" = confiança
+   * alta pelo histórico (80%+); "possivel" = abaixo disso (fica com borda tracejada).
+   */
+  protected partyBadge(player: LiveParticipant): PartyBadge | null {
+    const party = this.partyOf(player);
+    if (!party) return null;
+    const size = this.partySize(player);
+    const sure = party.confidence >= 100;
+    return {
+      color: party.color,
+      text: PARTY_SHORT[size] ?? `Grupo de ${size}`,
+      confidence: sure ? null : `${party.confidence}%`,
+      level: sure ? 'certo' : party.confidence >= 80 ? 'provavel' : 'possivel',
+      title: sure
+        ? 'Seu grupo na sala: certeza.'
+        : `${PARTY_SHORT[size] ?? 'Grupo'} pelo histórico: jogaram juntos nas últimas partidas (${party.confidence}% de confiança).`,
+    };
+  }
+
+  /** Grupos de um time, para o resumo no cabeçalho ("Duo: A + B"). */
+  protected teamParties(team: LiveParticipant[]): TeamParty[] {
+    return this.partyGroups()
+      .map((group, index) => {
+        const members = team.filter((p) => group.ids.has(p.riotId.toLowerCase()));
+        return {
+          color: PARTY_COLORS[index % PARTY_COLORS.length],
+          text: PARTY_SHORT[group.ids.size] ?? `Grupo de ${group.ids.size}`,
+          confidence: group.confidence >= 100 ? null : `${group.confidence}%`,
+          names: members.map((p) => this.name(p.riotId).gameName),
+        };
+      })
+      .filter((party) => party.names.length > 1);
+  }
+
+  private partySize(player: LiveParticipant): number {
+    const id = player.riotId.toLowerCase();
+    return this.partyGroups().find((group) => group.ids.has(id))?.ids.size ?? 2;
+  }
 
   /** Perfil (rota, pool, autofill) de um jogador, ou null sem dado. */
   protected profileOf(participant: LiveParticipant): LivePlayerProfile | null {
@@ -588,12 +647,7 @@ export class LiveGameView {
     const tags: CardTag[] = [];
     // Jogador escondido pelo modo streamer: a Riot não devolve identidade. Honesto, sem chutar.
     if (!player.puuid) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
-    const party = this.partyOf(player);
-    // Grupo com confiança: "Duo 92%". Certeza (seu grupo da sala) vai sem porcentagem.
-    if (party) {
-      const label = party.confidence >= 100 ? party.label : `${party.label} ${party.confidence}%`;
-      tags.push({ label, tone: 'party', color: party.color });
-    }
+    // O grupo (duo, trio...) tem selo próprio no topo do card: não entra nas etiquetas.
     const profile = this.profileOf(player);
     if (profile?.autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
     if (profile?.oneTrick) {

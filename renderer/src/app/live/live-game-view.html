@@ -155,6 +155,16 @@
       <section class="team-row" [class.enemy-team]="$index === 1">
         <header class="team-head">
           <h4 class="team-title">{{ $index === 0 ? 'Seu time' : 'Inimigos' }}</h4>
+          @for (party of teamParties(team); track party.color) {
+            <span class="party-chip" [style.--party]="party.color" [title]="party.text + ': ' + party.names.join(' + ')">
+              <app-icon name="linked" [size]="14" />
+              <strong>{{ party.text }}</strong>
+              <span class="party-names">{{ party.names.join(' + ') }}</span>
+              @if (party.confidence) {
+                <span class="party-conf">{{ party.confidence }}</span>
+              }
+            </span>
+          }
           @if (teamDamage(team); as d) {
             <div
               class="team-dmg"
@@ -178,8 +188,12 @@
         </header>
         <div class="cards">
           @for (player of team; track player.puuid || $index) {
+            @let party = partyBadge(player);
             <article
               class="pcard"
+              [class.in-party]="!!party"
+              [attr.data-party]="party?.level ?? null"
+              [style.--party]="party?.color ?? null"
               [class.me]="player === me()"
               [class.open]="expanded() === player.puuid"
               [class.ranked]="!!mainRank(player.ranked)"
@@ -199,9 +213,24 @@
                 <span class="pcard-top">
                   @if (laneShort(player); as lane) {
                     <span class="lane-pill" [title]="positionLabel(player)">{{ lane }}</span>
+                  } @else {
+                    <span></span>
+                  }
+                  @if (party) {
+                    <span class="party-badge" [attr.data-level]="party.level" [title]="party.title">
+                      <app-icon name="linked" [size]="15" />
+                      <span class="party-text">{{ party.text }}</span>
+                      @if (party.confidence) {
+                        <span class="party-conf">{{ party.confidence }}</span>
+                      } @else {
+                        <app-icon name="check" [size]="13" />
+                      }
+                    </span>
                   }
                   @if (player === me()) {
                     <span class="you-pill">Você</span>
+                  } @else {
+                    <span></span>
                   }
                 </span>
 

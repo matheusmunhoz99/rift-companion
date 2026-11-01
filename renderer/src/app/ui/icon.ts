@@ -86,6 +86,13 @@ const ICONS: Record<string, Shape[]> = {
     { d: 'M2.5 4.5H9.5L11.5 7H21.5V19.5H2.5Z' },
     { d: 'M2.5 10.5H21.5' },
   ],
+  // Elo unido: jogadores no mesmo grupo (duo, trio...).
+  linked: [
+    { d: 'M9.5 7 12 4.5H19.5V12L17 14.5' },
+    { d: 'M14.5 17 12 19.5H4.5V12L7 9.5' },
+    { d: 'M9 15 15 9' },
+    { d: 'M12 9.5 14.5 12 12 14.5 9.5 12Z', fill: true },
+  ],
   // Elo partido: cliente desconectado.
   unlinked: [
     { d: 'M9.5 7 12 4.5H19.5V12L17 14.5' },
