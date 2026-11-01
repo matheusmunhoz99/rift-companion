@@ -10,6 +10,7 @@ import { toLiveDashboard, type RawDashboardData } from '../overlay/live-dashboar
 import { createTimingsSource } from '../overlay/timings-source';
 import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
+import { clientPartyQuery, readClientTeams, type ClientTeams } from './client-teams';
 import { LocalHistory, mergePage, toSummary as toLocalSummary, type MatchSummary } from './local-history';
 
 /** Servidor que guarda a chave da Riot (server/). Pode ser trocado em desenvolvimento. */
@@ -93,15 +94,27 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     return toLiveDashboard(raw as RawDashboardData, await timings());
   });
 
-  ipcMain.handle('riot:get-premades', (_event, gameName: string, tagLine: string, platformId: string) => {
+  // Times como o cliente do LoL conhece: grupo de cada jogador (duo/trio com certeza), rota
+  // e autofill. Não gasta a cota da Riot API.
+  const clientTeams = async (): Promise<ClientTeams | null> => {
+    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_CLIENT_TEAMS;
+    if (demo) return JSON.parse(readFileSync(demo, 'utf8')) as ClientTeams;
+    return readClientTeams(connector.getCredentials());
+  };
+  ipcMain.handle('riot:get-client-teams', () => clientTeams());
+
+  ipcMain.handle('riot:get-premades', async (_event, gameName: string, tagLine: string, platformId: string) => {
     // Só no desenvolvimento: grupos fictícios para revisar o visual.
     const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_PREMADES;
     if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+    // O que o cliente do LoL já sabe vai junto: o servidor pula a análise dos times que
+    // vierem completos (economiza ~20 requisições por partida) e guarda os grupos na memória.
+    const query = clientPartyQuery(await clientTeams().catch(() => null));
     return apiGet<{
       groups: string[][];
-      premades?: Array<{ puuids: string[]; size: number; confidence: number }>;
+      premades?: Array<{ puuids: string[]; size: number; confidence: number; source?: string }>;
       profiles?: Record<string, unknown>;
-    }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
+    }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}${query}`);
   });
 
   // Tela de carregamento: plano de jogo (IA + opções de build Mestre+). Falha -> null.

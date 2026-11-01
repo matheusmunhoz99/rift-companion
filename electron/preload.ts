@@ -73,6 +73,7 @@ contextBridge.exposeInMainWorld('riot', {
   getLiveGame: (gameName: string, tagLine: string, platformId: string) =>
     ipcRenderer.invoke('riot:get-live-game', gameName, tagLine, platformId),
   getLocalGame: () => ipcRenderer.invoke('riot:get-local-game'),
+  getClientTeams: () => ipcRenderer.invoke('riot:get-client-teams'),
   getLiveDashboard: () => ipcRenderer.invoke('riot:get-live-dashboard'),
   getPostGame: () => ipcRenderer.invoke('postgame:get'),
   onPostGame: (callback: (game: unknown) => void) => subscribe('postgame:ready', callback),

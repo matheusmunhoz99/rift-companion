@@ -165,7 +165,8 @@ export function initializeAndroid(): void {
     champSelect: methods({ pick: 'champ-select:pick', ban: 'champ-select:ban', benchSwap: 'champ-select:bench-swap', reroll: 'champ-select:reroll', trade: 'champ-select:trade' }),
     riot: {
       ...methods({ getSettings: 'riot:get-settings', setPlatform: 'riot:set-platform', findPlayer: 'riot:find-player',
-        getLiveGame: 'riot:get-live-game', getLocalGame: 'riot:get-local-game', getLiveDashboard: 'riot:get-live-dashboard',
+        getLiveGame: 'riot:get-live-game', getLocalGame: 'riot:get-local-game', getClientTeams: 'riot:get-client-teams',
+        getLiveDashboard: 'riot:get-live-dashboard',
         getPremades: 'riot:get-premades', getMatches: 'riot:get-matches', getCoach: 'riot:get-coach', getPlan: 'riot:get-plan' }),
       getPostGame: async () => snapshot?.postgame ?? null, onPostGame: on('postgame:ready'),
     },

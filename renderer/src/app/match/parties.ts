@@ -1,4 +1,5 @@
 import type { MatchSummary } from '../history/riot.types';
+import { rememberedGroups } from './group-memory';
 
 /** Cores das bolinhas de grupo (duo, trio...), uma por grupo. */
 /**
@@ -49,13 +50,14 @@ export function rememberParties(matchId: string, groups: string[][]): void {
 }
 
 /**
- * Grupos de uma partida terminada. Usa o que foi visto ao vivo; sem isso, estima
- * por quem esteve no mesmo time em outra partida da lista (`context`).
+ * Grupos de uma partida terminada. Usa o que foi visto ao vivo; sem isso, estima pela
+ * memória de grupos deste PC (quem já entrou junto antes) e por quem esteve no mesmo time
+ * em outra partida da lista (`context`).
  */
 export function partiesOf(match: MatchSummary, context: MatchSummary[] = []): Map<string, PartyInfo> {
   const stored = read()[match.matchId]?.groups;
   const confirmed = !!stored;
-  const groups = stored ?? inferGroups(match, context);
+  const groups = stored ?? mergeGroups([...memoryGroups(match), ...inferGroups(match, context)]);
   const result = new Map<string, PartyInfo>();
   groups.forEach((group, index) => {
     const info = {
@@ -66,6 +68,28 @@ export function partiesOf(match: MatchSummary, context: MatchSummary[] = []): Ma
     for (const id of group) result.set(id.toLowerCase(), info);
   });
   return result;
+}
+
+/** Pares que a memória de grupos conhece, por time. */
+function memoryGroups(match: MatchSummary): string[][] {
+  return [100, 200].flatMap((teamId) =>
+    rememberedGroups(match.participants.filter((p) => p.teamId === teamId && p.riotId).map((p) => p.riotId)).map((g) => g.ids),
+  );
+}
+
+/** Junta grupos que têm alguém em comum (A+B e B+C = A, B, C). */
+function mergeGroups(groups: string[][]): string[][] {
+  const merged: Array<Set<string>> = [];
+  for (const group of groups) {
+    const ids = new Set(group.map((id) => id.toLowerCase()));
+    const touching = merged.filter((m) => [...ids].some((id) => m.has(id)));
+    for (const m of touching) {
+      for (const id of m) ids.add(id);
+      merged.splice(merged.indexOf(m), 1);
+    }
+    merged.push(ids);
+  }
+  return merged.map((m) => [...m]).filter((g) => g.length > 1);
 }
 
 /** Jogadores do mesmo time que também estiveram juntos (mesmo time) em outra partida da lista. */

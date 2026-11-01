@@ -55,6 +55,22 @@ const premades = { groups: [], complete: true, profiles: {
   [P(4)]: { mainRole: 'BOTTOM', roleShare: 0.9, autofill: false, oneTrick: false, topChampions: [{ championId: 236, games: 4 }], games: 8 },
 }, premades: [{ puuids: [P(7), P(9)], size: 2, confidence: 95 }] };
 
+// Cliente do LoL: grupo de cada jogador (teamParticipantId) por time + campeão. Você + Meio
+// entraram juntos; Selva + Atirador inimigos também. O suporte inimigo sem grupo informado
+// deixa o time 200 "aberto", para a memória (Topo + Meio inimigos, 3x) aparecer.
+const clientTeams = { gameId: 777, queueId: 420, players: [
+  { puuid: 'l1', teamId: 100, championId: 39, partyId: 1, position: 'TOP', autofill: true },
+  { puuid: 'l2', teamId: 100, championId: 19, partyId: 11, position: 'JUNGLE', autofill: false },
+  { puuid: 'l3', teamId: 100, championId: 7, partyId: 11, position: 'MIDDLE', autofill: false },
+  { puuid: 'l4', teamId: 100, championId: 236, partyId: 4, position: 'BOTTOM', autofill: false },
+  { puuid: 'l5', teamId: 100, championId: 201, partyId: 5, position: 'UTILITY', autofill: false },
+  { puuid: 'l6', teamId: 200, championId: 86, partyId: 6, position: 'TOP', autofill: false },
+  { puuid: 'l7', teamId: 200, championId: 102, partyId: 22, position: 'JUNGLE', autofill: false },
+  { puuid: 'l8', teamId: 200, championId: 777, partyId: 8, position: 'MIDDLE', autofill: false },
+  { puuid: 'l9', teamId: 200, championId: 18, partyId: 22, position: 'BOTTOM', autofill: false },
+  { puuid: 'l10', teamId: 200, championId: 80, partyId: null, position: 'UTILITY', autofill: null },
+] };
+
 const plan = { plan: { resumo: 'Seu time tem mais controle de grupo e luta melhor no meio do jogo: com Braum e Irelia iniciando, vocês ganham as lutas em volta dos objetivos se chegarem juntos.',
   pontos: [
     { tipo: 'oportunidade', texto: 'Meio e atirador têm o melhor cenário de gank: Lucian e Braum dão controle, e Yone e Tristana têm pouca fuga no início.' },
@@ -138,7 +154,10 @@ async function postGame() {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text().slice(0, 300)); });
   await page.exposeFunction('__api', (path) => api(path));
-  await page.addInitScript(({ st, game, premades, plan, ranks, post, me }) => {
+  await page.addInitScript(({ st, game, premades, plan, ranks, post, me, clientTeams }) => {
+    try {
+      localStorage.setItem('rift.groupMemory.v1', JSON.stringify({ 'inimigo meio#br1|inimigo topo#br1': { n: 3, g: 'BR1_1', t: Date.now() } }));
+    } catch {}
     const empty = () => { const p = Promise.resolve([]); return Object.assign(() => {}, { then: p.then.bind(p), catch: p.catch.bind(p), finally: p.finally.bind(p) }); };
     const bridge = (impl) => new Proxy(impl, { get: (t, k) => (k in t ? t[k] : () => empty()) });
     const q = (o) => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
@@ -146,6 +165,7 @@ async function postGame() {
     window.riot = bridge({
       getLiveGame: async () => { if (st.gameflowPhase !== 'InProgress') throw new Error('Você não está em partida.'); return game; },
       getPremades: async () => premades, getLocalGame: async () => null, getLiveDashboard: async () => null,
+      getClientTeams: async () => (st.gameflowPhase === 'InProgress' ? clientTeams : null),
       getPlan: async () => plan, getPostGame: async () => post, onPostGame: () => () => {},
       getSettings: async () => ({ platformId: 'BR1' }),
       findPlayer: async (n, t) => { const r = await window.__api(`/v1/players/BR1/${encodeURIComponent(n)}/${encodeURIComponent(t)}`); if (!r) throw new Error('Jogador não encontrado.'); return r; },
@@ -169,7 +189,7 @@ async function postGame() {
     window.builds = bridge({ get: async () => ({ mapId: 11, runePages: [], itemBuilds: [], buildsDirectory: '' }) });
     for (const name of ['lobby', 'telegram', 'mobile', 'riftUsers', 'champSelect']) window[name] = bridge({});
     
-  }, { st, game: liveGame(), premades, plan, ranks: rankHistory(), post, me: ME });
+  }, { st, game: liveGame(), premades, plan, ranks: rankHistory(), post, me: ME, clientTeams });
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html#view=${view}`);
   await page.waitForTimeout(Number(process.env.WAIT ?? 7000));
   const target = selector ? await page.$(selector) : null;

@@ -86,8 +86,27 @@ export interface LiveGame {
 export interface PremadeGroup {
   puuids: string[];
   size: number;
-  /** Confiança (0-100) de que entraram juntos. Nunca 100: é inferência do histórico. */
+  /** Confiança (0-100) de que entraram juntos. 100 só quando o cliente do LoL disse. */
   confidence: number;
+  /** cliente = o LoL disse (certeza); memoria = já entraram juntos antes; historico = dedução. */
+  source?: 'cliente' | 'memoria' | 'historico';
+}
+
+// Espelha electron/riot/client-teams.ts.
+export interface ClientTeamPlayer {
+  puuid: string;
+  teamId: 100 | 200;
+  championId: number;
+  /** teamParticipantId do cliente do LoL: igual para quem entrou junto na fila. */
+  partyId: number | null;
+  position: string;
+  autofill: boolean | null;
+}
+
+export interface ClientTeams {
+  gameId: number;
+  queueId: number;
+  players: ClientTeamPlayer[];
 }
 
 // Espelha server/src/riot/profile.ts.
@@ -338,6 +357,8 @@ export interface CoachNarrationRequest {
 export interface RiotBridge {
   getLiveGame(gameName: string, tagLine: string, platformId: string): Promise<LiveGame>;
   getLocalGame(): Promise<LocalGame | null>;
+  /** Times pelo cliente do LoL (grupo de cada jogador, rota, autofill); app antigo não tem. */
+  getClientTeams?(): Promise<ClientTeams | null>;
   getLiveDashboard(): Promise<LiveDashboard | null>;
   getPostGame(): Promise<PostGame | null>;
   onPostGame(callback: (game: PostGame) => void): () => void;

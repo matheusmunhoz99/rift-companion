@@ -3,7 +3,7 @@ import { Icon } from '../ui/icon';
 import { diag, errorText } from '../core/diag';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PlanPlayer, PlanRequest, PlanResponse, PremadeGroup } from '../history/riot.types';
+import type { ClientTeams, LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PlanPlayer, PlanRequest, PlanResponse, PremadeGroup } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
@@ -16,6 +16,8 @@ import { allPositionsTierList, assignTeamPositions, positionOrder } from '../sta
 import { statsPositionLabel, type TierEntry } from '../stats/stats.types';
 import { MatchDetails } from '../match/match-details';
 import { PARTY_COLORS, PARTY_NAMES, rememberParties } from '../match/parties';
+import { clientParties } from '../match/client-groups';
+import { rememberGroups, rememberedGroups } from '../match/group-memory';
 import { LiveDashboardPanel } from './live-dashboard';
 import { LiveDataService } from './live-data.service';
 import { ChampionDamageService } from '../stats/champion-damage.service';
@@ -44,6 +46,21 @@ interface TeamParty {
   text: string;
   confidence: string | null;
   names: string[];
+}
+
+/**
+ * De onde veio o grupo, do mais certo ao menos: o cliente do LoL (teamParticipantId), a sua
+ * sala, a memória deste PC (já entraram juntos antes), o servidor (memória dele ou histórico).
+ */
+type PartySource = 'cliente' | 'sala' | 'memoria' | 'historico';
+const SOURCE_RANK: Record<PartySource, number> = { cliente: 4, sala: 3, memoria: 2, historico: 1 };
+
+interface PartyGroup {
+  ids: Set<string>;
+  confidence: number;
+  source: PartySource;
+  /** Memória: partidas em que já entraram juntos. */
+  times: number;
 }
 
 /** Nome das rotas em português, para o perfil do jogador. */
@@ -252,9 +269,30 @@ export class LiveGameView {
   protected readonly planLoading = signal(false);
   private planFor = 0;
 
+  /** Times da partida como o cliente do LoL conhece (grupo de cada um, autofill). */
+  private readonly clientTeams = signal<ClientTeams | null>(null);
+  private clientTeamsLogged = 0;
+
+  /** Grupos, times resolvidos e autofill que o cliente do LoL informa para esta partida. */
+  private readonly clientInfo = computed(() => {
+    const game = this.game();
+    return game ? clientParties(this.clientTeams(), game.participants, game.gameId) : null;
+  });
+
+  /** Grupos que a memória deste PC reconhece, por time (lida uma vez por partida carregada). */
+  private readonly memoryGroups = computed(() => {
+    const game = this.game();
+    if (!game) return [];
+    return [100, 200].flatMap((teamId) =>
+      rememberedGroups(game.participants.filter((p) => p.teamId === teamId).map((p) => p.riotId)),
+    );
+  });
+
   /**
-   * Grupo de cada jogador (por Riot ID): os do histórico mais o seu grupo da sala,
-   * que o app sabe com certeza. Cada grupo ganha uma cor.
+   * Grupo de cada jogador (por Riot ID). Do mais certo ao menos: cliente do LoL, sua sala,
+   * memória deste PC, servidor. Num time que o cliente resolveu inteiro, só vale o cliente:
+   * quem não está em grupo é solo com certeza, e nenhuma estimativa contradiz. Cada grupo
+   * ganha uma cor.
    */
   private readonly partyGroups = computed(() => {
     const game = this.game();
@@ -262,34 +300,51 @@ export class LiveGameView {
     const byPuuid = new Map(
       game.participants.filter((p) => p.puuid).map((p) => [p.puuid, p.riotId.toLowerCase()]),
     );
-    const inGame = new Set(game.participants.map((p) => p.riotId.toLowerCase()));
-    // Grupos do histórico (com confiança) e, por cima, o seu grupo da sala, que é certeza.
-    const groups: Array<{ ids: string[]; confidence: number }> = this.premades().map((g) => ({
-      ids: g.puuids.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id),
-      confidence: g.confidence,
-    }));
-    const party = this.lcu.party().filter((id) => inGame.has(id));
-    if (party.length > 1) groups.push({ ids: party, confidence: 100 });
+    const teamOf = new Map(game.participants.map((p) => [p.riotId.toLowerCase(), p.teamId]));
+    const client = this.clientInfo();
+    const covered = client?.covered ?? new Set<number>();
+    const open = (ids: string[]) => ids.length > 1 && ids.every((id) => teamOf.has(id) && !covered.has(teamOf.get(id)!));
 
-    // Junta grupos que se sobrepõem (ex.: o histórico achou parte do seu grupo); fica a maior confiança.
-    const merged: Array<{ ids: Set<string>; confidence: number }> = [];
+    const groups: Array<Omit<PartyGroup, 'ids'> & { ids: string[] }> = [];
+    for (const ids of client?.groups ?? []) groups.push({ ids, confidence: 100, source: 'cliente', times: 0 });
+    // Sua sala: só quem está no seu time (a sala guardada pode ser de horas atrás).
+    const myTeam = this.me()?.teamId;
+    const party = this.lcu.party().filter((id) => myTeam && teamOf.get(id) === myTeam);
+    if (open(party)) groups.push({ ids: party, confidence: 100, source: 'sala', times: 0 });
+    for (const memory of this.memoryGroups()) {
+      if (open(memory.ids)) groups.push({ ids: memory.ids, confidence: memory.times >= 3 ? 98 : 96, source: 'memoria', times: memory.times });
+    }
+    for (const g of this.premades()) {
+      const ids = g.puuids.map((puuid) => byPuuid.get(puuid)).filter((id): id is string => !!id);
+      const source: PartySource = g.source === 'cliente' ? 'cliente' : g.source === 'memoria' ? 'memoria' : 'historico';
+      if (source === 'cliente' ? ids.length > 1 : open(ids)) groups.push({ ids, confidence: g.confidence, source, times: 0 });
+    }
+
+    // Junta grupos que se sobrepõem (ex.: o histórico achou parte do seu grupo); fica a fonte mais certa.
+    const merged: PartyGroup[] = [];
     for (const group of groups) {
       const touching = merged.filter((m) => group.ids.some((id) => m.ids.has(id)));
+      const all = [group, ...touching];
+      const best = all.reduce((a, b) =>
+        b.confidence > a.confidence || (b.confidence === a.confidence && SOURCE_RANK[b.source] > SOURCE_RANK[a.source]) ? b : a,
+      );
       const ids = new Set([...group.ids, ...touching.flatMap((m) => [...m.ids])]);
-      const confidence = Math.max(group.confidence, ...touching.map((m) => m.confidence));
       for (const m of touching) merged.splice(merged.indexOf(m), 1);
-      if (ids.size > 1) merged.push({ ids, confidence });
+      if (ids.size > 1)
+        merged.push({ ids, confidence: best.confidence, source: best.source, times: Math.max(...all.map((g) => g.times)) });
     }
     return merged;
   });
 
   protected readonly parties = computed(() => {
-    const result = new Map<string, { color: string; label: string; confidence: number }>();
+    const result = new Map<string, { color: string; label: string; confidence: number; source: PartySource; times: number }>();
     this.partyGroups().forEach((group, index) => {
       const info = {
         color: PARTY_COLORS[index % PARTY_COLORS.length],
         label: PARTY_NAMES[group.ids.size] ?? `Grupo de ${group.ids.size}`,
         confidence: group.confidence,
+        source: group.source,
+        times: group.times,
       };
       for (const id of group.ids) result.set(id, info);
     });
@@ -297,22 +352,31 @@ export class LiveGameView {
   });
 
   /**
-   * Selo do grupo no topo do card. "certo" = seu grupo da sala; "provavel" = confiança
-   * alta pelo histórico (80%+); "possivel" = abaixo disso (fica com borda tracejada).
+   * Selo do grupo no topo do card. "certo" = o cliente do LoL ou a sua sala disseram;
+   * "provavel" = memória ou histórico com confiança alta (80%+); "possivel" = abaixo disso
+   * (fica com borda tracejada).
    */
   protected partyBadge(player: LiveParticipant): PartyBadge | null {
     const party = this.partyOf(player);
     if (!party) return null;
     const size = this.partySize(player);
     const sure = party.confidence >= 100;
+    const name = PARTY_SHORT[size] ?? 'Grupo';
     return {
       color: party.color,
       text: PARTY_SHORT[size] ?? `Grupo de ${size}`,
-      confidence: sure ? null : `${party.confidence}%`,
+      confidence: partyMark(party),
       level: sure ? 'certo' : party.confidence >= 80 ? 'provavel' : 'possivel',
-      title: sure
-        ? 'Seu grupo na sala: certeza.'
-        : `${PARTY_SHORT[size] ?? 'Grupo'} pelo histórico: jogaram juntos nas últimas partidas (${party.confidence}% de confiança).`,
+      title:
+        party.source === 'cliente'
+          ? `${name}: entraram juntos na fila (informado pelo cliente do LoL).`
+          : party.source === 'sala'
+            ? 'Seu grupo na sala: certeza.'
+            : party.source === 'memoria' && party.times > 0
+              ? `${name}: já entraram juntos na fila ${party.times === 1 ? '1 vez' : `${party.times} vezes`} (memória deste PC).`
+              : party.source === 'memoria'
+                ? `${name}: já entraram juntos em partidas anteriores (${party.confidence}% de confiança).`
+                : `${name} pelo histórico: jogaram juntos nas últimas partidas (${party.confidence}% de confiança).`,
     };
   }
 
@@ -324,7 +388,7 @@ export class LiveGameView {
         return {
           color: PARTY_COLORS[index % PARTY_COLORS.length],
           text: PARTY_SHORT[group.ids.size] ?? `Grupo de ${group.ids.size}`,
-          confidence: group.confidence >= 100 ? null : `${group.confidence}%`,
+          confidence: partyMark(group),
           names: members.map((p) => this.name(p.riotId).gameName),
         };
       })
@@ -497,15 +561,20 @@ export class LiveGameView {
     void allPositionsTierList().then((list) => this.tierList.set(list));
 
     // A Riot não informa grupos depois da partida: guarda os vistos aqui para o histórico.
+    // Os certos (cliente do LoL, sua sala) também vão para a memória de grupos deste PC.
     effect(() => {
       const game = this.game();
       const groups = this.partyGroups();
       const platformId = untracked(() => this.lcu.state().platformId) ?? 'BR1';
-      if (game && game.gameId > 0 && groups.length)
+      const gameId = game?.gameId || untracked(() => this.clientTeams()?.gameId) || 0;
+      if (!game || !gameId || !groups.length) return;
+      if (game.gameId > 0)
         rememberParties(
           `${platformId}_${game.gameId}`,
           groups.map((g) => [...g.ids]),
         );
+      const certain = groups.filter((g) => g.source === 'cliente' || g.source === 'sala').map((g) => [...g.ids]);
+      if (certain.length) rememberGroups(`${platformId}_${gameId}`, certain);
     });
   }
 
@@ -541,6 +610,7 @@ export class LiveGameView {
         (local) => local && this.rememberPositions(local),
         () => undefined,
       );
+      void this.loadClientTeams(game);
       void this.loadEncounters(game, platformId);
       void this.loadPremades(game, summoner.gameName, summoner.tagLine, platformId);
     } catch (error) {
@@ -571,6 +641,7 @@ export class LiveGameView {
       this.waitingRiot.set(true);
       this.error.set(null);
       this.failures = 0;
+      void this.loadClientTeams(game);
       void this.loadEncounters(game, platformId);
     } else if (!this.game()) {
       // Sem nada ainda: mensagem calma nas primeiras tentativas; o erro real só se insistir.
@@ -674,7 +745,9 @@ export class LiveGameView {
     if (!player.puuid) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
     // O grupo (duo, trio...) tem selo próprio no topo do card: não entra nas etiquetas.
     const profile = this.profileOf(player);
-    if (profile?.autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
+    // O cliente do LoL sabe com certeza quem caiu fora da rota; o histórico só estima.
+    const autofill = this.clientInfo()?.autofill.get(player.riotId.toLowerCase()) ?? profile?.autofill;
+    if (autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
     if (profile?.oneTrick) {
       const top = this.ddragon.champion(profile.topChampions[0]?.championId ?? 0)?.name;
       tags.push({ label: top ? `OTP ${top}` : 'One-trick', tone: 'good' });
@@ -740,6 +813,34 @@ export class LiveGameView {
     } catch {
       this.encounters.set(null);
     }
+  }
+
+  /**
+   * Grupos direto do cliente do LoL (teamParticipantId): certeza, nos dois times, sem gastar
+   * a cota da Riot. Busca de novo enquanto não vier (o cliente preenche os times no início).
+   */
+  private async loadClientTeams(game: LiveGame): Promise<void> {
+    if (!window.riot?.getClientTeams) return;
+    const current = this.clientTeams();
+    if (current?.players.some((p) => p.partyId) && (!game.gameId || current.gameId === game.gameId)) return;
+    const teams = await window.riot.getClientTeams().catch(() => null);
+    const now = this.game();
+    // Partida trocou enquanto esperava: descarta.
+    if (!teams || !now || (now.gameId > 0 && teams.gameId > 0 && now.gameId !== teams.gameId)) return;
+    this.clientTeams.set(teams);
+    if (this.clientTeamsLogged === teams.gameId) return;
+    this.clientTeamsLogged = teams.gameId;
+    const info = this.clientInfo();
+    diag('grupos-cliente', {
+      gameId: teams.gameId || game.gameId,
+      detail: {
+        jogadores: teams.players.length,
+        comGrupo: teams.players.filter((p) => p.partyId).length,
+        timesCobertos: [...(info?.covered ?? [])],
+        grupos: (info?.groups ?? []).map((ids) => ids.length),
+        autofill: teams.players.filter((p) => p.autofill).length,
+      },
+    });
   }
 
   /**
@@ -916,6 +1017,8 @@ export class LiveGameView {
     this.waitingAttempts = 0;
     this.premades.set([]);
     this.profiles.set({});
+    this.clientTeams.set(null);
+    this.clientTeamsLogged = 0;
     this.premadesFor = 0;
     this.clearPremadeRetry();
     this.premadeAttempts = 0;
@@ -978,4 +1081,11 @@ function summarize(matches: MatchSummary[], participant: LiveParticipant): Recen
 function cleanError(error: unknown): string {
   const text = error instanceof Error ? error.message : String(error);
   return text.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, '');
+}
+
+/** Marca ao lado do selo: nada quando é certeza, "3x" da memória, "%" da estimativa. */
+function partyMark(group: { confidence: number; source: PartySource; times: number }): string | null {
+  if (group.confidence >= 100) return null;
+  if (group.source === 'memoria' && group.times > 0) return `${group.times}x`;
+  return `${group.confidence}%`;
 }

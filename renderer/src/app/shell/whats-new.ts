@@ -2,19 +2,19 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.12';
+const RELEASE = '1.13';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
+    icon: 'linked',
+    title: 'Duo e Trio com certeza',
+    text: 'O app lê do próprio cliente do LoL quem entrou junto na fila, nos dois times, e lembra de quem já jogou junto. Selo com ✓ é certeza; "3x" é quem já entrou junto 3 vezes.',
+  },
+  {
     icon: 'plan',
     title: 'Plano de jogo',
     text: 'Na tela de carregamento, a IA analisa as duas composições: como seu time vence, quem merece cuidado e opções de build com partidas Mestre+.',
-  },
-  {
-    icon: 'linked',
-    title: 'Duo e Trio à vista',
-    text: 'Selo no topo do card e o card inteiro na cor do grupo. Os parceiros aparecem ligados de relance, nos dois times.',
   },
   {
     icon: 'home',
@@ -50,7 +50,7 @@ const HIGHLIGHTS = [
         <article class="sheet" (click)="$event.stopPropagation()">
           <header class="hero">
             <span class="badge">Novidades</span>
-            <h2 id="whats-new-title">Rift Companion <span class="num">1.12</span></h2>
+            <h2 id="whats-new-title">Rift Companion <span class="num">1.13</span></h2>
             <p>Mais leitura de jogo, mais clareza e mais velocidade: veja o que mudou.</p>
           </header>
           <ul class="highlights">
