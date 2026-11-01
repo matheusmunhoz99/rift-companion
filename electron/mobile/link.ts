@@ -62,12 +62,30 @@ export class AndroidLink {
     void this.commandLoop();
   }
 
+  /**
+   * Publica o estado para o celular. Confere a cada 2 s, mas só envia quando algo mudou,
+   * mais um sinal de vida a cada 10 s (o servidor considera o PC desligado após 15 s).
+   * Sem nenhum celular com o app aberto (o servidor diz em "viewers"), o relógio do jogo
+   * correndo não conta como mudança: fases (início da partida etc.) continuam saindo na hora.
+   * Antes mandava tudo a cada 2 s, sempre: ~300 mil pedidos por semana por PC.
+   */
   private async publishLoop(): Promise<void> {
+    let lastKey = '';
+    let lastSent = 0;
+    let watched = true;
     while (!this.stopped) {
       try {
         const [prefs, postgame, info] = await Promise.all([readMobile('prefs:get'), readMobile('postgame:get'), readMobile('app:info')]);
         const lcu = this.connector.getState();
-        await this.api('pc/state', { data: { lcu, prefs, postgame, info, game: await gameClock(lcu.gameflowPhase) } });
+        const data = { lcu, prefs, postgame, info, game: await gameClock(lcu.gameflowPhase) };
+        const key = publishKey(data, watched);
+        if (key !== lastKey || Date.now() - lastSent >= HEARTBEAT_MS) {
+          const reply = await this.api<{ viewers?: number }>('pc/state', { data });
+          // Servidor antigo não manda "viewers": trata como se houvesse alguém olhando.
+          watched = reply?.viewers === undefined || reply.viewers > 0;
+          lastKey = publishKey(data, watched);
+          lastSent = Date.now();
+        }
         this.error = null;
       } catch (error) { this.error = error instanceof Error ? error.message : 'PC sem conexão com o servidor.'; }
       await delay(this.error ? 5_000 : 2_000);
@@ -113,6 +131,13 @@ export class AndroidLink {
   }
 }
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+/** Sinal de vida para o celular: abaixo dos 15 s em que o servidor considera o PC desligado. */
+const HEARTBEAT_MS = 10_000;
+
+/** O que conta como "mudou" para publicar. Sem ninguém olhando, o relógio do jogo não conta. */
+export function publishKey(data: { game: { time: number } | null } & Record<string, unknown>, watched: boolean): string {
+  return JSON.stringify(watched ? data : { ...data, game: data.game ? { running: true } : null });
+}
 
 /**
  * Relógio da partida (segundos de jogo), lido do próprio jogo: o celular avisa
