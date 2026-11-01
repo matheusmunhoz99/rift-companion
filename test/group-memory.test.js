@@ -79,6 +79,11 @@ test('cliente do LoL: grupos pelo time + campeão, autofill e times cobertos', (
   assert.equal(clientParties(teams, participants, 556), null, 'outra partida não vale');
   assert.ok(clientParties(teams, participants, 0), 'partida pelos dados locais (sem gameId) vale');
 
+  // Com os dados da Riot: o jogador sem grupo informado está em modo streamer (sem puuid),
+  // então o time 200 continua resolvido.
+  const withPuuids = participants.map((p, i) => ({ ...p, puuid: i === 4 ? '' : `api-${i}` }));
+  assert.deepEqual([...clientParties(teams, withPuuids, 555).covered], [100, 200]);
+
   const query = new URLSearchParams(clientPartyQuery(teams).slice(1));
   assert.equal(query.get('gameId'), '555');
   assert.equal(query.get('client'), '100.19.7,100.64.7,100.1.9,200.22.3', 'sem o jogador sem grupo');

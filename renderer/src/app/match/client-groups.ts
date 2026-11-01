@@ -5,6 +5,8 @@ interface Participant {
   riotId: string;
   teamId: number;
   championId: number;
+  /** Vazio no modo streamer (e em toda a partida pelos dados locais). */
+  puuid?: string;
 }
 
 export interface ClientParties {
@@ -42,6 +44,9 @@ export function clientParties(
   const covered = new Set<number>();
   const groups: string[][] = [];
   const autofill = new Map<string, boolean>();
+  // Com os dados da Riot, quem está em modo streamer (sem puuid) não conta para cobrir o time:
+  // o cliente do LoL às vezes nem o lista, e nenhuma estimativa conseguiria analisá-lo.
+  const hasPuuids = participants.some((p) => p.puuid);
   for (const teamId of [100, 200]) {
     const team = participants.filter((p) => p.teamId === teamId);
     if (!team.length) continue;
@@ -52,7 +57,7 @@ export function clientParties(
       const id = player.riotId.toLowerCase();
       if (client && client.autofill !== null && id) autofill.set(id, client.autofill);
       if (!client?.partyId) {
-        complete = false;
+        if (!hasPuuids || player.puuid) complete = false;
         continue;
       }
       if (id) parties.set(client.partyId, [...(parties.get(client.partyId) ?? []), id]);
