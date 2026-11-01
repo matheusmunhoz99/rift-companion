@@ -80,6 +80,8 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     );
     return {
       queueId: session?.gameData?.queue?.id ?? 0,
+      // Mapa do próprio jogo (11 Rift, 12 Abismo Uivante...): sem ele o ARAM ganhava rotas.
+      mapId: Number(raw.gameData?.mapNumber) || null,
       gameStartTime: Date.now() - Math.round((raw.gameData?.gameTime ?? 0) * 1000),
       players: toLocalPlayers(raw),
       championPositions,

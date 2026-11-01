@@ -45,6 +45,14 @@
   } @else if (tab() === 'build') {
     @if (me(); as mine) {
       <section class="match-build">
+        @if (mode(); as m) {
+          @if (!m.riftStats) {
+            <p class="mode-note">
+              Estatísticas da Ranqueada Solo/Duo no Summoner's Rift. Em {{ m.name }} as builds mudam: use como referência
+              de itens, não como regra.
+            </p>
+          }
+        }
         <app-champion-stats [championId]="mine.championId" [enemyIds]="enemyIds()" [allyIds]="allyIds()" [wide]="true" />
       </section>
     }
@@ -151,7 +159,7 @@
   }
 
   @if (planLoading() || plan()?.plan || plan()?.build) {
-    <app-plan-panel [plan]="plan()" [loading]="planLoading()" [elapsed]="elapsedSeconds()" />
+    <app-plan-panel [plan]="plan()" [loading]="planLoading()" [elapsed]="elapsedSeconds()" [mode]="mode()" />
   }
 
   <div class="teams-cards">

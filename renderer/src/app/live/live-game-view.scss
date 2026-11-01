@@ -1188,6 +1188,17 @@ button {
   background: var(--surface);
 }
 
+/* Modo sem estatísticas Mestre+ (ARAM, URF...): aviso curto acima da build. */
+.mode-note {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  color: var(--text);
+  font-size: 12.5px;
+}
+
 .hint {
   font-size: 12px;
 }

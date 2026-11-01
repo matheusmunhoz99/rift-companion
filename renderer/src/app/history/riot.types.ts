@@ -139,6 +139,7 @@ export interface PlanRequest {
   gameId: number;
   platformId: string;
   queueId: number;
+  mapId: number;
   enemyDamage: 'ad' | 'ap' | 'mixed' | null;
   allies: PlanPlayer[];
   enemies: PlanPlayer[];
@@ -168,6 +169,8 @@ export interface GameAnalysis {
 /** Partida pelos dados locais do jogo (sem elo, maestria nem puuid). */
 export interface LocalGame {
   queueId: number;
+  /** Mapa pelo próprio jogo; ausente em app antigo. */
+  mapId?: number | null;
   gameStartTime: number;
   players: Array<{
     riotId: string;

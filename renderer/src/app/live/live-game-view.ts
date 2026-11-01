@@ -7,6 +7,7 @@ import type { ClientTeams, LiveGame, LiveParticipant, LivePlayerProfile, LocalGa
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
+import { ARAM_QUEUES, modeOf } from '../riot/modes';
 import type { RankedEntry } from '../history/riot.types';
 import { findEncounters, type PlayerEncounters } from './encounters';
 import type { PlayerTag } from './live-dashboard';
@@ -179,6 +180,12 @@ export class LiveGameView {
 
   protected readonly allyTeamId = computed(() => this.me()?.teamId ?? 100);
 
+  /** Modo de jogo (ARAM, URF, Arena...): decide rotas, etiquetas de função e estatísticas. */
+  protected readonly mode = computed(() => {
+    const game = this.game();
+    return game ? modeOf(game.queueId, game.mapId) : null;
+  });
+
   /** Distribuição de rotas por campeão (coleta), usada quando o jogo não informa a rota. */
   private readonly tierList = signal<TierEntry[]>([]);
   /**
@@ -191,7 +198,7 @@ export class LiveGameView {
   protected readonly positions = computed(() => {
     const game = this.game();
     const result = new Map<LiveParticipant, string>();
-    if (!game || game.mapId !== SUMMONERS_RIFT) return result;
+    if (!game || game.mapId !== SUMMONERS_RIFT || this.mode()?.lanes === false) return result;
     const known = this.knownPositions();
     for (const teamId of new Set(game.participants.map((p) => p.teamId))) {
       const team = game.participants.filter((p) => p.teamId === teamId);
@@ -746,12 +753,14 @@ export class LiveGameView {
     // O grupo (duo, trio...) tem selo próprio no topo do card: não entra nas etiquetas.
     const profile = this.profileOf(player);
     // O cliente do LoL sabe com certeza quem caiu fora da rota; o histórico só estima.
+    // "Autofill" e "Main <rota>" só em fila com função (no ARAM, URF, Arena... não existem).
+    const roles = this.mode()?.roles ?? true;
     const autofill = this.clientInfo()?.autofill.get(player.riotId.toLowerCase()) ?? profile?.autofill;
-    if (autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
+    if (roles && autofill === true) tags.push({ label: 'Autofill', tone: 'warn' });
     if (profile?.oneTrick) {
       const top = this.ddragon.champion(profile.topChampions[0]?.championId ?? 0)?.name;
       tags.push({ label: top ? `OTP ${top}` : 'One-trick', tone: 'good' });
-    } else if (profile?.mainRole && profile.roleShare >= 0.65 && ROLE_NAMES[profile.mainRole.toLowerCase()]) {
+    } else if (roles && profile?.mainRole && profile.roleShare >= 0.65 && ROLE_NAMES[profile.mainRole.toLowerCase()]) {
       tags.push({ label: `Main ${ROLE_NAMES[profile.mainRole.toLowerCase()]}`, tone: 'accent' });
     }
     const met = this.encounterOf(player);
@@ -950,6 +959,7 @@ export class LiveGameView {
       gameId: game.gameId,
       platformId,
       queueId: game.queueId,
+      mapId: game.mapId,
       enemyDamage,
       allies: this.allies().map(toPlayer),
       enemies: this.enemies().map(toPlayer),
@@ -966,7 +976,7 @@ export class LiveGameView {
     return {
       gameId: 0,
       queueId: local.queueId,
-      mapId: 11,
+      mapId: local.mapId || (ARAM_QUEUES.has(local.queueId) ? 12 : SUMMONERS_RIFT),
       gameStartTime: local.gameStartTime,
       participants: local.players.map((p) => ({
         puuid: '',

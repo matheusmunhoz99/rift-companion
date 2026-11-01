@@ -1,4 +1,5 @@
 import type { CoachNarrationRequest, MatchSummary, PostGame, PostGamePlayer } from '../history/riot.types';
+import { modeOf, type ModeInfo } from '../riot/modes';
 
 /**
  * O "coach" do fim de jogo: compara a sua partida com a SUA média recente e
@@ -121,6 +122,13 @@ interface Sample {
 
 const ORDER: MetricKey[] = ['csPerMin', 'kda', 'killParticipation', 'damagePerMin', 'goldPerMin', 'visionPerMin', 'deaths'];
 
+/** Modo da partida terminada: pela fila; fila desconhecida, pelo modo que o cliente informa. */
+export function postGameMode(game: Pick<PostGame, 'queueId' | 'gameMode'>): ModeInfo {
+  const mode = game.gameMode?.toUpperCase() ?? '';
+  const mapId = /^(ARAM|KIWI)$/.test(mode) ? 12 : mode === 'CHERRY' ? 30 : mode === 'CLASSIC' ? 11 : null;
+  return modeOf(game.queueId, mapId);
+}
+
 /** Minutos de uma partida (mínimo 1 para não dividir por zero). */
 function minutes(seconds: number): number {
   return Math.max(1, seconds / 60);
@@ -208,7 +216,10 @@ export function buildCoachReport(game: PostGame, recent: MatchSummary[], puuid: 
   const current = sampleFromPostGame(me, game.durationSeconds);
   const average = averageOf(samples);
 
-  const metrics = ORDER.map((key) => toMetric(key, current[key], average[key]));
+  // Sem rotas (ARAM, Arena...) não há sentinelas: visão não entra na conta nem nas dicas.
+  const mode = postGameMode(game);
+  const keys = mode.lanes ? ORDER : ORDER.filter((key) => key !== 'visionPerMin');
+  const metrics = keys.map((key) => toMetric(key, current[key], average[key]));
   const report: CoachReport = {
     games: samples.length,
     role,
@@ -219,7 +230,7 @@ export function buildCoachReport(game: PostGame, recent: MatchSummary[], puuid: 
     improve: [],
     highlights: highlightsOf(me, current, samples, game),
   };
-  fillInsights(report, me);
+  fillInsights(report, me, mode);
   return report;
 }
 
@@ -277,7 +288,7 @@ function highlightsOf(me: PostGamePlayer, current: Sample, samples: Sample[], ga
 }
 
 /** Transforma as métricas em frases, equilibrado: positivo primeiro, depois o passo seguinte. */
-function fillInsights(report: CoachReport, me: PostGamePlayer): void {
+function fillInsights(report: CoachReport, me: PostGamePlayer, mode: ModeInfo): void {
   const priority = report.role ? ROLE_PRIORITY[report.role] : DEFAULT_PRIORITY;
   const byPriority = (a: CoachMetric, b: CoachMetric) => priority.indexOf(a.key) - priority.indexOf(b.key);
   const strength = (m: CoachMetric) => Math.abs(m.deltaPct);
@@ -286,7 +297,7 @@ function fillInsights(report: CoachReport, me: PostGamePlayer): void {
   const bads = report.metrics.filter((m) => m.verdict === 'bad').sort((a, b) => byPriority(a, b) || strength(b) - strength(a));
 
   report.wins = goods.slice(0, 2).map((m) => ({ tone: 'good', metric: m.key, text: praise(m) }));
-  report.improve = bads.slice(0, 2).map((m) => ({ tone: 'bad', metric: m.key, text: coach(m) }));
+  report.improve = bads.slice(0, 2).map((m) => ({ tone: 'bad', metric: m.key, text: coach(m, mode) }));
 
   // Equilibrado: se nada se destacou como positivo, reconhece o esforço sem inventar.
   if (!report.wins.length) {
@@ -295,7 +306,8 @@ function fillInsights(report: CoachReport, me: PostGamePlayer): void {
   }
   // Se nada caiu, deixa claro que foi sólido — e dá uma direção leve.
   if (!report.improve.length) {
-    report.improve = [{ tone: 'neutral', text: 'Nada gritante pra corrigir aqui. Pra subir mais um degrau, escolha um único foco (visão ou farm) e repita na próxima.' }];
+    const focus = mode.lanes ? 'visão ou farm' : 'dano ou mortes';
+    report.improve = [{ tone: 'neutral', text: `Nada gritante pra corrigir aqui. Pra subir mais um degrau, escolha um único foco (${focus}) e repita na próxima.` }];
   }
 }
 
@@ -332,7 +344,22 @@ function praise(m: CoachMetric): string {
 }
 
 /** Frase de próximo passo para uma métrica abaixo da média (honesta, não dura). */
-function coach(m: CoachMetric): string {
+function coach(m: CoachMetric, mode: ModeInfo): string {
+  // Sem rotas (ARAM, Arena...): sem rotação, sentinela nem "presença de mapa".
+  if (!mode.lanes) {
+    switch (m.key) {
+      case 'csPerMin':
+        return `Farm abaixo do seu normal: ${n1(m.value)} CS/min (você costuma fazer ${n1(m.average)}). Entre as lutas, os últimos golpes nas ondas rendem ouro sem risco.`;
+      case 'goldPerMin':
+        return `Ouro/min abaixo da média (${k(m.value)} vs ${k(m.average)}). Últimos golpes nas ondas e participar das lutas mantêm os itens em dia.`;
+      case 'deaths':
+        return `${Math.round(m.value)} mortes, acima da sua média (${n1(m.average)}). Evite ficar no alcance do poke antes da luta começar.`;
+      case 'killParticipation':
+        return `Participação de ${pct(m.value)} nos abates, abaixo do seu normal (${pct(m.average)}). Chegue junto nas lutas do time.`;
+      default:
+        break;
+    }
+  }
   switch (m.key) {
     case 'csPerMin':
       return `Farm abaixo do seu normal: ${n1(m.value)} CS/min (você costuma fazer ${n1(m.average)}). Tente não largar ondas ao rotacionar.`;

@@ -1,6 +1,7 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { PlanResponse } from '../history/riot.types';
+import type { ModeInfo } from '../riot/modes';
 import { Icon } from '../ui/icon';
 
 /** A tela de carregamento dura ~1 a 2 min; depois disso o plano se recolhe sozinho. */
@@ -21,6 +22,8 @@ export class PlanPanel {
   readonly loading = input(false);
   /** Segundos de partida: passado o carregamento, o plano se recolhe sozinho (uma vez). */
   readonly elapsed = input<number | null>(null);
+  /** Modo de jogo: fora do Rift normal não há estatísticas Mestre+ (o texto muda). */
+  readonly mode = input<ModeInfo | null>(null);
   protected readonly open = signal(true);
   protected readonly ddragon = inject(DataDragonService);
   private touched = false;

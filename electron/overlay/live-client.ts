@@ -76,7 +76,7 @@ export interface RawGameData {
   activePlayer?: { riotId?: string; summonerName?: string; currentGold?: number; level?: number };
   allPlayers: RawPlayer[];
   events?: { Events: Array<{ EventName: string; KillerName?: string; EventTime: number; DragonType?: string }> };
-  gameData: { gameTime: number; gameMode: string };
+  gameData: { gameTime: number; gameMode: string; mapNumber?: number };
 }
 
 /** Leituras feitas há menos disso são reaproveitadas: overlay, painel e avisos dividem a mesma. */

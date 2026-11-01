@@ -5,7 +5,13 @@
     @if (!open() && plan()?.plan; as p) {
       <span class="plan-peek">{{ p.resumo }}</span>
     } @else {
-      <span class="plan-sub">antes da partida · IA + estatísticas Mestre+</span>
+      <span class="plan-sub">
+        @if (mode(); as m) {
+          @if (m.riftStats) { {{ m.name }} · IA + estatísticas Mestre+ } @else { {{ m.name }} · análise da IA para este modo }
+        } @else {
+          antes da partida · IA + estatísticas Mestre+
+        }
+      </span>
     }
     <span class="plan-toggle">{{ open() ? 'Recolher' : 'Ver plano' }}</span>
   </button>
@@ -26,7 +32,9 @@
               }
             </ul>
           } @else {
-            <p class="plan-summary muted">A análise da IA não respondeu agora. As opções de build vêm das partidas Mestre+.</p>
+            <p class="plan-summary muted">
+              A análise da IA não respondeu agora.{{ mode()?.riftStats === false ? '' : ' As opções de build vêm das partidas Mestre+.' }}
+            </p>
           }
         </div>
         @if (plan()?.build; as b) {
@@ -72,6 +80,12 @@
             @if (plan()?.plan?.build; as hint) {
               <p class="build-hint">{{ hint }}</p>
             }
+          </aside>
+        } @else if (plan()?.plan?.build; as hint) {
+          <!-- Modo sem estatísticas Mestre+ (ARAM, URF...): só a sugestão de itens da IA. -->
+          <aside class="plan-build">
+            <h5>Itens <span>sugestão para {{ mode()?.name ?? 'este modo' }}</span></h5>
+            <p class="build-hint">{{ hint }}</p>
           </aside>
         }
       </div>

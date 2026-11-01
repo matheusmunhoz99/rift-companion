@@ -36,7 +36,10 @@ function liveGame() {
     summonerSpellIds: n === 2 || n === 7 ? [11, 4] : [4, n % 2 ? 12 : 14], keystoneId: 8010, subStyleId: 8400, ranked,
     mastery: mastery ? { level: 10, points: mastery } : null,
   });
-  return { gameId: 777, queueId: 420, mapId: 11, gameStartTime: Date.now() - 540000, participants: [
+  // SIM_QUEUE=2400 (ou 450) simula ARAM: Abismo Uivante, sem rotas.
+  const queueId = Number(process.env.SIM_QUEUE || 420);
+  const mapId = [450, 2400, 100, 720].includes(queueId) ? 12 : 11;
+  return { gameId: 777, queueId, mapId, gameStartTime: Date.now() - 540000, participants: [
     pl(1, 'Aliado Topo#BR1', 39, 100, rank('PLATINUM', 'II', 22, 60, 70), 57000),
     pl(2, `${ME.gameName}#${ME.tagLine}`, 19, 100, rank('PLATINUM', 'IV', 0, 70, 80), 180000),
     pl(3, 'Aliado Meio#BR1', 7, 100, rank('PLATINUM', 'III', 53, 9, 6), 4000),
@@ -71,7 +74,13 @@ const clientTeams = { gameId: 777, queueId: 420, players: [
   { puuid: 'l10', teamId: 200, championId: 80, partyId: null, position: 'UTILITY', autofill: null },
 ] };
 
-const plan = { plan: { resumo: 'Seu time tem mais controle de grupo e luta melhor no meio do jogo: com Braum e Irelia iniciando, vocês ganham as lutas em volta dos objetivos se chegarem juntos.',
+const ARAM_SIM = [450, 2400, 100, 720].includes(Number(process.env.SIM_QUEUE || 420));
+const plan = ARAM_SIM ? { plan: { resumo: 'Seu time tem mais engage (Braum, Irelia) e eles têm mais poke (Caitlyn, Neeko): vocês vencem forçando a luta cedo, antes do poke desgastar.',
+  pontos: [
+    { tipo: 'oportunidade', texto: 'Braum e Irelia iniciam bem: lutem juntos quando os dois tiverem as ultimates.' },
+    { tipo: 'cuidado', texto: 'Caitlyn e Neeko desgastam de longe: não fiquem parados no alcance antes da luta.' },
+    { tipo: 'dica', texto: 'Pegue os pacotes de vida no meio da rota para segurar o poke.' } ],
+  build: 'Contra a cura do Warwick inimigo e da Soraka, um item de anticura cedo vale muito.' }, build: null } : { plan: { resumo: 'Seu time tem mais controle de grupo e luta melhor no meio do jogo: com Braum e Irelia iniciando, vocês ganham as lutas em volta dos objetivos se chegarem juntos.',
   pontos: [
     { tipo: 'oportunidade', texto: 'Meio e atirador têm o melhor cenário de gank: Lucian e Braum dão controle, e Yone e Tristana têm pouca fuga no início.' },
     { tipo: 'cuidado', texto: 'Shyvana fica forte rápido nos campos: evite trocar selva com ela depois do nível 6.' },
