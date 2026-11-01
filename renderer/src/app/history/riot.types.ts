@@ -103,6 +103,41 @@ export interface LivePlayerProfile {
   autofill: boolean | null;
 }
 
+export interface PlanPlayer {
+  champion: string;
+  championId: number;
+  position: string | null;
+  rank: string | null;
+  winRate: number | null;
+  games: number;
+  masteryK: number | null;
+  tags: string[];
+  party: string | null;
+  me: boolean;
+}
+
+export interface PlanRequest {
+  gameId: number;
+  platformId: string;
+  queueId: number;
+  enemyDamage: 'ad' | 'ap' | 'mixed' | null;
+  allies: PlanPlayer[];
+  enemies: PlanPlayer[];
+}
+
+export interface PlanResponse {
+  plan: { resumo: string; pontos: Array<{ tipo: 'oportunidade' | 'cuidado' | 'dica'; texto: string }>; build: string | null } | null;
+  build: {
+    position: string;
+    games: number;
+    winRate: number;
+    cores: Array<{ items: number[]; games: number; winRate: number }>;
+    boots: Array<{ itemId: number; games: number; winRate: number }>;
+    situational: Array<{ itemId: number; winRate: number; lift: number }>;
+    opponent: { championId: number; champion: string; games: number; winRate: number | null } | null;
+  } | null;
+}
+
 export interface GameAnalysis {
   groups: string[][];
   premades?: PremadeGroup[];
@@ -314,6 +349,8 @@ export interface RiotBridge {
   getMatches(puuid: string, platformId: string, start: number, count: number): Promise<MatchSummary[]>;
   /** Fim de jogo: timeline do early + narração por IA (ou null se indisponível). */
   getCoach(request: CoachNarrationRequest): Promise<CoachNarrationResult>;
+  /** Plano de jogo da tela de carregamento (null se o servidor não respondeu). Espelha server/src/plan.ts. */
+  getPlan?(request: PlanRequest): Promise<PlanResponse | null>;
 }
 
 declare global {

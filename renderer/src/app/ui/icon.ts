@@ -86,6 +86,11 @@ const ICONS: Record<string, Shape[]> = {
     { d: 'M2.5 4.5H9.5L11.5 7H21.5V19.5H2.5Z' },
     { d: 'M2.5 10.5H21.5' },
   ],
+  // Bússola em losango: plano de jogo.
+  plan: [
+    { d: 'M12 2.5 21.5 12 12 21.5 2.5 12Z' },
+    { d: 'M15.5 8.5 13.2 13.2 8.5 15.5 10.8 10.8Z', fill: true },
+  ],
   // Elo unido: jogadores no mesmo grupo (duo, trio...).
   linked: [
     { d: 'M9.5 7 12 4.5H19.5V12L17 14.5' },

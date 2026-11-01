@@ -150,6 +150,10 @@
     </section>
   }
 
+  @if (planLoading() || plan()?.plan || plan()?.build) {
+    <app-plan-panel [plan]="plan()" [loading]="planLoading()" />
+  }
+
   <div class="teams-cards">
     @for (team of [allies(), enemies()]; track $index) {
       <section class="team-row" [class.enemy-team]="$index === 1">

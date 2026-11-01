@@ -104,6 +104,9 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
     }>(`/v1/premades/${enc(platformId)}/${enc(gameName)}/${enc(tagLine)}`);
   });
 
+  // Tela de carregamento: plano de jogo (IA + opções de build Mestre+). Falha -> null.
+  ipcMain.handle('riot:get-plan', (_event, request: unknown) => apiPost('/v1/plan', request).catch(() => null));
+
   // Fim de jogo: manda os fatos calculados no app e recebe timeline + narração por IA.
   ipcMain.handle('riot:get-coach', (_event, request: unknown) =>
     apiPost('/v1/coach', request).catch(() => ({ timeline: null, narration: null })),

@@ -1,8 +1,9 @@
+import { PlanPanel } from './plan-panel';
 import { Icon } from '../ui/icon';
 import { diag, errorText } from '../core/diag';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PremadeGroup } from '../history/riot.types';
+import type { LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PlanPlayer, PlanRequest, PlanResponse, PremadeGroup } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
@@ -116,7 +117,7 @@ interface EncounterSummary {
 
 @Component({
   selector: 'app-live-game-view',
-  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon],
+  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon, PlanPanel],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })
@@ -245,6 +246,11 @@ export class LiveGameView {
   /** Nova tentativa dos grupos quando a análise falha ou vem incompleta (limite da Riot, servidor ocupado). */
   private premadeRetry: ReturnType<typeof setTimeout> | null = null;
   private premadeAttempts = 0;
+
+  /** Plano de jogo da tela de carregamento (IA + opções de build Mestre+), uma vez por partida. */
+  protected readonly plan = signal<PlanResponse | null>(null);
+  protected readonly planLoading = signal(false);
+  private planFor = 0;
 
   /**
    * Grupo de cada jogador (por Riot ID): os do histórico mais o seu grupo da sala,
@@ -777,6 +783,8 @@ export class LiveGameView {
       complete = false;
       diag('falha', { gameId: game.gameId, ms: Date.now() - started, detail: { onde: 'grupos', tentativa: attempt, erro: errorText(error) } });
     }
+    // Plano de jogo depois da 1ª análise de grupos: a IA já sabe quem é Duo/Trio e "Main X".
+    void this.loadPlan(game, platformId);
     if (complete) {
       this.premadeAttempts = 0;
       return;
@@ -788,6 +796,58 @@ export class LiveGameView {
       this.premadesFor = 0;
       void this.loadPremades(game, gameName, tagLine, platformId);
     }, PREMADE_RETRY_MS);
+  }
+
+  /** Pede o plano de jogo uma vez por partida; sem resposta, o painel some (é um extra). */
+  private async loadPlan(game: LiveGame, platformId: string): Promise<void> {
+    const me = this.me();
+    if (!window.riot?.getPlan || !me || this.planFor === game.gameId) return;
+    this.planFor = game.gameId;
+    this.planLoading.set(true);
+    const started = Date.now();
+    try {
+      const result = await window.riot.getPlan(this.planRequest(game, platformId, me));
+      if (this.game()?.gameId !== game.gameId) return;
+      this.plan.set(result);
+      diag('plano', {
+        gameId: game.gameId,
+        ms: Date.now() - started,
+        detail: { ia: !!result?.plan, build: !!result?.build, pontos: result?.plan?.pontos.length ?? 0 },
+      });
+    } catch (error) {
+      diag('falha', { gameId: game.gameId, detail: { onde: 'plano', erro: errorText(error) } });
+    } finally {
+      if (this.game()?.gameId === game.gameId) this.planLoading.set(false);
+    }
+  }
+
+  private planRequest(game: LiveGame, platformId: string, me: LiveParticipant): PlanRequest {
+    const toPlayer = (p: LiveParticipant): PlanPlayer => {
+      const rank = mainRank(p.ranked);
+      const party = this.partyBadge(p);
+      return {
+        champion: this.ddragon.champion(p.championId)?.name ?? '',
+        championId: p.championId,
+        position: this.positions().get(p) ?? null,
+        rank: rank ? this.tierName(rank) : null,
+        winRate: this.rankWinRate(p),
+        games: this.rankGames(p),
+        masteryK: p.mastery ? Math.round(p.mastery.points / 1000) : null,
+        tags: this.cardTags(p).tags.map((tag) => tag.label),
+        party: party ? `${party.text} ${party.confidence ?? '(certeza)'}` : null,
+        me: p === me,
+      };
+    };
+    const damage = this.teamDamage(this.enemies());
+    const enemyDamage = damage ? (damage.ap >= 0.5 ? 'ap' : damage.ap <= 0.3 ? 'ad' : 'mixed') : null;
+    return {
+      gameId: game.gameId,
+      platformId,
+      queueId: game.queueId,
+      enemyDamage,
+      allies: this.allies().map(toPlayer),
+      enemies: this.enemies().map(toPlayer),
+    };
   }
 
   private clearPremadeRetry(): void {
@@ -854,6 +914,9 @@ export class LiveGameView {
     this.premadesFor = 0;
     this.clearPremadeRetry();
     this.premadeAttempts = 0;
+    this.plan.set(null);
+    this.planLoading.set(false);
+    this.planFor = 0;
     this.knownPositions.set(new Map());
     this.failures = 0;
   }

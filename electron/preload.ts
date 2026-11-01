@@ -81,6 +81,7 @@ contextBridge.exposeInMainWorld('riot', {
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
   getCoach: (request: unknown) => ipcRenderer.invoke('riot:get-coach', request),
+  getPlan: (request: unknown) => ipcRenderer.invoke('riot:get-plan', request),
 });
 
 contextBridge.exposeInMainWorld('telegram', {
