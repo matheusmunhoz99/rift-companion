@@ -151,7 +151,7 @@
   }
 
   @if (planLoading() || plan()?.plan || plan()?.build) {
-    <app-plan-panel [plan]="plan()" [loading]="planLoading()" />
+    <app-plan-panel [plan]="plan()" [loading]="planLoading()" [elapsed]="elapsedSeconds()" />
   }
 
   <div class="teams-cards">

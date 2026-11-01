@@ -156,6 +156,11 @@ button {
 
 img {
   -webkit-user-drag: none;
+  /* Imagem que não carregou (ícone novo que o Data Dragon ainda não tem, internet instável):
+     some em vez de mostrar o texto alternativo quebrado dentro do círculo. O leitor de tela
+     continua lendo o alt. */
+  color: transparent;
+  font-size: 0;
 }
 
 /* Números de placar: largura fixa por dígito, para não "pularem" ao atualizar. */

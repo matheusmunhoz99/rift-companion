@@ -18,7 +18,7 @@
         <div><strong>{{ o.vision }}</strong><span>Visão</span></div>
       </div>
       <div class="streak" [class.win]="o.streak.win">
-        {{ o.streak.count }} {{ o.streak.win ? (o.streak.count === 1 ? 'vitória' : 'vitórias') : (o.streak.count === 1 ? 'derrota' : 'derrotas') }} seguidas
+        {{ o.streak.count }} {{ o.streak.win ? (o.streak.count === 1 ? 'vitória seguida' : 'vitórias seguidas') : (o.streak.count === 1 ? 'derrota seguida' : 'derrotas seguidas') }}
       </div>
       <div class="results">
         @for (won of o.results; track $index) {

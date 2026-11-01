@@ -10,7 +10,7 @@
           {{ championName(m.championId) }} · nível {{ m.level }}
         </span>
         <span class="result-chips">
-          <span class="chip-stat"><strong class="num">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</strong> KDA {{ kda(m) }}</span>
+          <span class="chip-stat"><strong class="num">{{ m.kills }}/{{ m.deaths }}/{{ m.assists }}</strong> {{ kda(m) }}</span>
           <span class="chip-stat"><strong class="num">{{ thousands(m.damageToChampions) }}</strong> de dano</span>
           <span class="chip-stat"><strong class="num">{{ m.cs }}</strong> CS · {{ perMinute(m.cs, g.durationSeconds) }}/min</span>
           <span class="chip-stat"><strong class="num">{{ thousands(m.gold) }}</strong> de ouro</span>
@@ -58,7 +58,7 @@
     <section class="panel coach-panel" [attr.data-overall]="c.overall.verdict">
       <header class="panel-head">
         <h3>Seu coach</h3>
-        <span class="coach-base">vs suas últimas {{ c.games }} partidas@if (c.role) { · {{ c.role }}}</span>
+        <span class="coach-base">vs suas últimas {{ c.games }} partidas@if (roleName(c.role); as role) { · {{ role }}}</span>
       </header>
 
       <!-- Fala do coach: narração por IA quando disponível; senão, o resumo do próprio app. -->

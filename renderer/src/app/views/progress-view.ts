@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import type { RankEntry, RankedQueue } from '../core/app.types';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { tierName } from '../riot/labels';
-import { currentRank, forQueue, ladderSeries, summarize, todayEntries } from '../progress/rank-stats';
+import { currentRank, forQueue, ladderChart, ladderLabel, summarize, todayEntries } from '../progress/rank-stats';
 import { Icon } from '../ui/icon';
 
 const QUEUE_LABEL: Record<RankedQueue, string> = { solo: 'Solo/Duo', flex: 'Flex' };
@@ -49,23 +49,26 @@ export class ProgressView {
     forQueue(this.entries() ?? [], this.queue()).slice(0, RECENT_LIMIT),
   );
 
-  /** Pontos do gráfico de PDL, normalizados numa área de 100×40. */
-  protected readonly spark = computed(() => {
-    const series = ladderSeries(this.entries() ?? [], this.queue());
-    if (series.length < 2) return null;
-    const values = series.map((p) => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const span = max - min || 1;
-    const stepX = 100 / (series.length - 1);
-    const points: SparkPoint[] = series.map((p, i) => ({
-      x: +(i * stepX).toFixed(2),
-      y: +(38 - ((p.value - min) / span) * 36).toFixed(2),
-    }));
-    const line = points.map((p) => `${p.x},${p.y}`).join(' ');
-    const area = `0,40 ${line} 100,40`;
-    const net = values[values.length - 1] - values[0];
-    return { line, area, net, last: points[points.length - 1] };
+  /** Gráfico da escada (elo + divisão + PDL) das últimas 30 partidas da fila. */
+  protected readonly chart = computed(() => {
+    const chart = ladderChart(this.entries() ?? [], this.queue(), 30);
+    if (!chart) return null;
+    const line = chart.points.map((p) => `${p.x},${p.y}`).join(' ');
+    return {
+      ...chart,
+      line,
+      area: `0,100 ${line} 100,100`,
+      grid: chart.grid.map((g) => ({ ...g, label: this.ladderText(g.value) })),
+      dots: chart.points.map((p) => ({
+        x: p.x,
+        y: p.y,
+        win: p.entry.win,
+        title: `${p.entry.win === true ? 'Vitória' : p.entry.win === false ? 'Derrota' : 'Partida'} · ${p.entry.lpChange >= 0 ? '+' : ''}${p.entry.lpChange} PDL · ${this.rankAfter(p.entry)} · ${this.dayLabel(p.entry.at)} ${this.timeLabel(p.entry.at)}`,
+      })),
+      from: this.dayLabel(chart.points[0].entry.at),
+      to: this.dayLabel(chart.points[chart.points.length - 1].entry.at),
+      games: chart.points.length,
+    };
   });
 
   protected readonly rankTier = computed(() => this.rank()?.tier ?? '');
@@ -88,6 +91,21 @@ export class ProgressView {
 
   protected pick(q: RankedQueue): void {
     this.queue.set(q);
+  }
+
+  protected championName(championId: number): string {
+    return this.ddragon.champion(championId)?.name ?? '';
+  }
+
+  /** Elo depois da partida: "Platina III · 82 PDL". */
+  protected rankAfter(e: RankEntry): string {
+    const division = APEX.has(e.tier) ? '' : ` ${e.division}`;
+    return `${tierName(e.tier)}${division} · ${e.lp} PDL`;
+  }
+
+  private ladderText(value: number): string {
+    const label = ladderLabel(value);
+    return label.division ? `${tierName(label.tier)} ${label.division}` : tierName(label.tier);
   }
 
   protected iconUrl(championId: number): string | null {

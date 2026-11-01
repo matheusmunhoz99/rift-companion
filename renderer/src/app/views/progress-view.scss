@@ -1,7 +1,7 @@
 :host {
   display: grid;
   gap: 18px;
-  max-width: 900px;
+  max-width: 1000px;
 }
 
 h2,
@@ -12,7 +12,7 @@ p {
 
 .head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -198,32 +198,115 @@ p {
 }
 
 .chart {
-  padding: 16px 18px;
+  padding: 16px 18px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
 
   .chart-head {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 10px;
-    color: var(--muted);
-    font-size: 13px;
+    gap: 6px 14px;
+    margin-bottom: 14px;
+  }
 
-    strong {
-      font-family: var(--font-display);
+  .chart-title {
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+
+    em {
+      margin-left: 6px;
+      color: var(--muted);
+      font-family: var(--font-body, inherit);
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 500;
+    }
+  }
+
+  .chart-record {
+    display: flex;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-size: 14px;
+
+    .wins { color: var(--win); }
+    .losses { color: var(--loss); }
+    .net {
+      color: var(--muted);
       &.up { color: var(--success); }
       &.down { color: var(--loss); }
     }
   }
+}
 
-  .spark {
+// Área do gráfico: SVG esticado para a linha; marcas e bolinhas em HTML (não deformam).
+.plot {
+  position: relative;
+  height: 190px;
+  margin: 0 6px 0 0;
+
+  svg {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: 90px;
-    display: block;
+    height: 100%;
     overflow: visible;
   }
+}
+
+.grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--border-strong) 70%, transparent);
+
+  span {
+    position: absolute;
+    top: -16px;
+    left: 0;
+    color: var(--faint, var(--muted));
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+}
+
+.dot {
+  position: absolute;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--muted);
+  transform: translate(-50%, -50%);
+  transition: transform var(--dur) var(--ease-out);
+
+  &.win { background: var(--win); }
+  &.loss { background: var(--loss); }
+
+  &.last {
+    width: 13px;
+    height: 13px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+.axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .games {
@@ -304,6 +387,16 @@ p {
       .when {
         color: var(--muted);
         font-size: 12px;
+      }
+    }
+
+    .after {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+
+      @media (max-width: 560px) {
+        display: none;
       }
     }
 

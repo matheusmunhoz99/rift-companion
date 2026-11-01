@@ -2,45 +2,44 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.0';
+const RELEASE = '1.12';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
-    icon: 'swords',
-    title: 'Seleção de campeões nova',
-    text: 'Os dois times lado a lado em cards com a arte de cada campeão, banimentos, tempo e quem está escolhendo. Tudo numa tela só.',
+    icon: 'plan',
+    title: 'Plano de jogo',
+    text: 'Na tela de carregamento, a IA analisa as duas composições: como seu time vence, quem merece cuidado e opções de build com partidas Mestre+.',
   },
   {
-    icon: 'live',
-    title: 'Partida ao vivo',
-    text: 'Cards de cada jogador com elo, runas e dano físico e mágico do campeão. No ARAM, sem rotas nem dragões.',
+    icon: 'linked',
+    title: 'Duo e Trio à vista',
+    text: 'Selo no topo do card e o card inteiro na cor do grupo. Os parceiros aparecem ligados de relance, nos dois times.',
   },
   {
-    icon: 'layers',
-    title: 'Fim de partida',
-    text: 'Sua nota num anel, os 3 melhores da partida e a explicação de como a nota é calculada.',
+    icon: 'home',
+    title: 'Seu momento',
+    text: 'No Início: sua forma recente, seu melhor campeão e o seu farm comparado ao de jogadores Mestre+ com o mesmo campeão.',
+  },
+  {
+    icon: 'progress',
+    title: 'Evolução no elo',
+    text: 'Gráfico com as divisões, cada partida marcada e com quanto PDL você ficou depois dela.',
   },
   {
     icon: 'history',
-    title: 'Histórico completo',
-    text: 'Inclusive as partidas de ARAM: Desordem, que a API da Riot não entrega.',
+    title: 'Composições no histórico',
+    text: 'Os 10 campeões de cada partida na lista, com você em destaque.',
   },
   {
-    icon: 'chat',
-    title: 'Modo invisível confiável',
-    text: '"Abrir LoL" fecha e reabre o Riot Client sozinho, mesmo depois de uma atualização da Riot.',
-  },
-  {
-    icon: 'play',
-    title: 'No celular também',
-    text: 'O app para Android controla o LoL do PC: fila, aceitar partida, seleção e partida ao vivo.',
+    icon: 'refresh',
+    title: 'Mais rápido',
+    text: 'O app abre mais leve, a partida ao vivo e os grupos aparecem em segundos e dá para atualizar até no meio da partida.',
   },
 ];
 
 /**
- * Apresentação da 1.0 na primeira vez que ela abre (também para quem vinha do beta).
- * Lembra no próprio aparelho.
+ * Novidades da versão na primeira vez que ela abre. Lembra no próprio aparelho.
  */
 @Component({
   selector: 'app-whats-new',
@@ -50,9 +49,9 @@ const HIGHLIGHTS = [
       <div class="backdrop" role="dialog" aria-modal="true" aria-labelledby="whats-new-title" (click)="close()">
         <article class="sheet" (click)="$event.stopPropagation()">
           <header class="hero">
-            <span class="badge">Versão oficial</span>
-            <h2 id="whats-new-title">Rift Companion <span class="num">1.0</span></h2>
-            <p>Saiu do beta. Quase tudo foi refeito desde as primeiras versões: veja o que mudou.</p>
+            <span class="badge">Novidades</span>
+            <h2 id="whats-new-title">Rift Companion <span class="num">1.12</span></h2>
+            <p>Mais leitura de jogo, mais clareza e mais velocidade: veja o que mudou.</p>
           </header>
           <ul class="highlights">
             @for (item of highlights; track item.title) {
@@ -66,7 +65,7 @@ const HIGHLIGHTS = [
             }
           </ul>
           <footer class="actions">
-            <span class="muted small">Obrigado a quem usou e testou o beta.</span>
+            <span class="muted small">Boas partidas.</span>
             <button type="button" class="btn big" (click)="close()">Começar</button>
           </footer>
         </article>

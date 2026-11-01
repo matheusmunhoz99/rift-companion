@@ -8,6 +8,9 @@ import { MatchDetails } from '../match/match-details';
 import { PlayerSummary } from './player-summary';
 import type { MatchParticipant, MatchSummary, PlayerProfile, RiotSettings } from './riot.types';
 
+/** Ordem das rotas na coluna das equipes. */
+const TEAM_ORDER = ['top', 'jungle', 'middle', 'bottom', 'utility'];
+
 const PAGE_SIZE = 20;
 
 interface Feedback {
@@ -34,6 +37,7 @@ export class HistoryView {
   protected readonly player = signal<PlayerProfile | null>(null);
   protected readonly matches = signal<MatchSummary[]>([]);
   protected readonly expandedMatchId = signal<string | null>(null);
+  private readonly teamCache = new Map<string, MatchParticipant[][]>();
   protected readonly loading = signal<'search' | 'more' | null>(null);
   protected readonly hasMore = signal(false);
   protected readonly busyKey = signal<string | null>(null);
@@ -108,6 +112,28 @@ export class HistoryView {
     this.loading.set('more');
     await this.guard(() => this.loadMatches(this.serverOffset));
     this.loading.set(null);
+  }
+
+  /** As duas equipes da partida (seu time primeiro), na ordem Topo, Selva, Meio, Atirador, Suporte. */
+  protected teamsOf(match: MatchSummary): MatchParticipant[][] {
+    const key = `${match.matchId}:${this.player()?.puuid ?? ''}`;
+    const cached = this.teamCache.get(key);
+    if (cached) return cached;
+    const myTeam = this.me(match)?.teamId ?? 100;
+    const order = (p: MatchParticipant) => {
+      const i = TEAM_ORDER.indexOf(p.position?.toLowerCase());
+      return i < 0 ? TEAM_ORDER.length : i;
+    };
+    const teams = [myTeam, myTeam === 100 ? 200 : 100].map((teamId) =>
+      match.participants.filter((p) => p.teamId === teamId).sort((a, b) => order(a) - order(b)),
+    );
+    this.teamCache.set(key, teams);
+    return teams;
+  }
+
+  /** Nome sem a tag, para caber na coluna das equipes. */
+  protected name(riotId: string): string {
+    return (riotId || 'Jogador').split('#')[0];
   }
 
   protected toggleMatch(matchId: string): void {

@@ -50,7 +50,19 @@
     white-space: nowrap;
   }
 
+  // Recolhido: o resumo numa linha, para lembrar do plano sem ocupar a tela.
+  .plan-peek {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .plan-toggle {
+    flex: none;
     margin-left: auto;
     color: var(--muted);
     font-size: 12px;

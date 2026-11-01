@@ -1,8 +1,12 @@
 <section class="plan-card" [class.collapsed]="!open()">
-  <button type="button" class="plan-head" (click)="open.set(!open())" [attr.aria-expanded]="open()">
+  <button type="button" class="plan-head" (click)="toggle()" [attr.aria-expanded]="open()">
     <app-icon name="plan" [size]="20" />
     <span class="plan-title">Plano de jogo</span>
-    <span class="plan-sub">antes da partida · IA + estatísticas Mestre+</span>
+    @if (!open() && plan()?.plan; as p) {
+      <span class="plan-peek">{{ p.resumo }}</span>
+    } @else {
+      <span class="plan-sub">antes da partida · IA + estatísticas Mestre+</span>
+    }
     <span class="plan-toggle">{{ open() ? 'Recolher' : 'Ver plano' }}</span>
   </button>
   @if (open()) {

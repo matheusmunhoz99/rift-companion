@@ -1,6 +1,6 @@
 {
   "name": "rift-companion",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "private": true,
   "description": "Companion app para League of Legends: builds, runas, partida ao vivo e histórico.",
   "engines": {
@@ -17,7 +17,8 @@
     "dist": "npm run build && electron-builder --win portable --x64",
     "test": "npm run build:electron && node --test \"test/**/*.test.js\"",
     "release": "npm run dist && node scripts/publish-release.js",
-    "release:android": "npm --prefix renderer run android:apk && node scripts/publish-android.js"
+    "release:android": "npm --prefix renderer run android:apk && node scripts/publish-android.js",
+    "review": "node scripts/visual-review.cjs"
   },
   "dependencies": {
     "@blamejs/pki": "^0.9.5",

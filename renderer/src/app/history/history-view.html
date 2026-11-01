@@ -98,6 +98,22 @@
               }
             }
           </div>
+
+          <!-- As duas equipes, como nos sites de histórico: ícone + nome, você em destaque. -->
+          <div class="teams" aria-hidden="true">
+            @for (team of teamsOf(match); track $index) {
+              <ul>
+                @for (player of team; track player.puuid) {
+                  <li [class.me]="player.puuid === p.puuid">
+                    @if (ddragon.champion(player.championId); as champion) {
+                      <img [src]="ddragon.championIconUrl(champion)" alt="" />
+                    }
+                    <span>{{ name(player.riotId) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
         </button>
 
         @if (expandedMatchId() === match.matchId) {

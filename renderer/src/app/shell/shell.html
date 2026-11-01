@@ -116,28 +116,44 @@
           <app-home-view />
         }
         @case ('play') {
-          <app-play-view />
+          @defer (on immediate) {
+            <app-play-view />
+          }
         }
         @case ('champ-select') {
-          <app-champ-select-view />
+          @defer (on immediate) {
+            <app-champ-select-view />
+          }
         }
         @case ('live') {
-          <app-live-view />
+          @defer (on immediate) {
+            <app-live-view />
+          }
         }
         @case ('tierlist') {
-          <app-tierlist-view />
+          @defer (on immediate) {
+            <app-tierlist-view />
+          }
         }
         @case ('builds') {
-          <app-builds-view />
+          @defer (on immediate) {
+            <app-builds-view />
+          }
         }
         @case ('history') {
-          <app-history-view />
+          @defer (on immediate) {
+            <app-history-view />
+          }
         }
         @case ('progress') {
-          <app-progress-view />
+          @defer (on immediate) {
+            <app-progress-view />
+          }
         }
         @case ('settings') {
-          <app-settings-view />
+          @defer (on immediate) {
+            <app-settings-view />
+          }
         }
       }
     </main>

@@ -1,8 +1,5 @@
 <header class="head">
-  <div>
-    <h2>Progresso</h2>
-    <p class="sub">Seu PDL e a sessão de hoje, partida a partida.</p>
-  </div>
+  <p class="sub">Seu PDL e a sessão de hoje, partida a partida. Registrado neste PC a cada ranqueada.</p>
   @if (availableQueues().length > 1) {
     <div class="queue-tabs" role="tablist">
       @for (q of availableQueues(); track q) {
@@ -57,41 +54,61 @@
         </div>
         @if (today().tilt) {
           <p class="tilt-warn">
-            {{ today().lossStreak }} derrotas seguidas — considere uma pausa. 🧊
+            {{ today().lossStreak }} derrotas seguidas: considere uma pausa.
           </p>
         }
       }
     </section>
   </div>
 
-  <!-- Gráfico de PDL da fila -->
-  @if (spark(); as s) {
+  <!-- Gráfico da escada (elo + divisão + PDL) -->
+  @if (chart(); as c) {
     <section class="chart">
       <div class="chart-head">
-        <span>Evolução de PDL</span>
-        <strong [class.up]="s.net >= 0" [class.down]="s.net < 0">
-          {{ s.net >= 0 ? '+' : '' }}{{ s.net }} no período
-        </strong>
+        <span class="chart-title">Evolução no elo <em>últimas {{ c.games }} partidas</em></span>
+        <span class="chart-record">
+          <strong class="wins">{{ c.wins }}V</strong>
+          <strong class="losses">{{ c.losses }}D</strong>
+          <strong class="net" [class.up]="c.net >= 0" [class.down]="c.net < 0">
+            {{ c.net >= 0 ? '+' : '' }}{{ c.net }} PDL no período
+          </strong>
+        </span>
       </div>
-      <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
-            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <polygon [attr.points]="s.area" fill="url(#sparkFill)" />
-        <polyline
-          [attr.points]="s.line"
-          fill="none"
-          stroke="var(--accent)"
-          stroke-width="1.5"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-          vector-effect="non-scaling-stroke"
-        />
-        <circle [attr.cx]="s.last.x" [attr.cy]="s.last.y" r="2" fill="var(--accent)" />
-      </svg>
+      <div class="plot">
+        @for (g of c.grid; track g.value) {
+          <div class="grid-line" [style.top.%]="g.y"><span>{{ g.label }}</span></div>
+        }
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="ladderFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.26" />
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon [attr.points]="c.area" fill="url(#ladderFill)" />
+          <polyline
+            [attr.points]="c.line"
+            fill="none"
+            stroke="var(--accent)"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </svg>
+        @for (d of c.dots; track $index) {
+          <span
+            class="dot"
+            [class.win]="d.win === true"
+            [class.loss]="d.win === false"
+            [class.last]="$last"
+            [style.left.%]="d.x"
+            [style.top.%]="d.y"
+            [title]="d.title"
+          ></span>
+        }
+      </div>
+      <div class="axis"><span>{{ c.from }}</span><span>{{ c.to }}</span></div>
     </section>
   }
 
@@ -113,8 +130,9 @@
               @if (e.note === 'promo') { <em class="pin up">Subiu</em> }
               @if (e.note === 'demote') { <em class="pin down">Desceu</em> }
             </span>
-            <span class="when">{{ dayLabel(e.at) }} · {{ timeLabel(e.at) }}</span>
+            <span class="when">{{ championName(e.championId) }}@if (championName(e.championId)) { · }{{ dayLabel(e.at) }} · {{ timeLabel(e.at) }}</span>
           </div>
+          <span class="after">{{ rankAfter(e) }}</span>
           <span class="delta" [class.up]="e.lpChange >= 0" [class.down]="e.lpChange < 0">
             {{ e.lpChange >= 0 ? '+' : '' }}{{ e.lpChange }}
           </span>

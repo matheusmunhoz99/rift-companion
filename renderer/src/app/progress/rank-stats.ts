@@ -64,3 +64,60 @@ export function ladderSeries(entries: RankEntry[], queue: RankedQueue): Array<{ 
     return { at: e.at, value };
   });
 }
+
+const LADDER_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND'];
+const LADDER_DIVISIONS = ['IV', 'III', 'II', 'I'];
+const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+/** Mestre+ começa onde termina o Diamante I (7 elos x 4 divisões x 100 PDL). */
+const APEX_BASE = LADDER_TIERS.length * 400;
+
+/** Posição absoluta na escada: Ferro IV 0 PDL = 0, cada divisão vale 100, Mestre+ soma o PDL. */
+export function ladderValue(entry: Pick<RankEntry, 'tier' | 'division' | 'lp'>): number | null {
+  if (APEX_TIERS.has(entry.tier)) return APEX_BASE + entry.lp;
+  const tier = LADDER_TIERS.indexOf(entry.tier);
+  const division = LADDER_DIVISIONS.indexOf(entry.division);
+  if (tier < 0 || division < 0) return null;
+  return tier * 400 + division * 100 + entry.lp;
+}
+
+/** Elo e divisão de um ponto da escada (marcas do gráfico): 1300 -> PLATINUM I... */
+export function ladderLabel(value: number): { tier: string; division: string | null } {
+  if (value >= APEX_BASE) return { tier: 'MASTER', division: null };
+  const tier = LADDER_TIERS[Math.max(0, Math.min(LADDER_TIERS.length - 1, Math.floor(value / 400)))];
+  const division = LADDER_DIVISIONS[Math.floor((value % 400) / 100)];
+  return { tier, division };
+}
+
+export interface LadderChart {
+  /** Pontos de 0 a 100 nos dois eixos (o gráfico estica na largura). */
+  points: Array<{ x: number; y: number; entry: RankEntry; value: number }>;
+  /** Linhas de referência nas divisões (ou nos elos, se houver muitas). */
+  grid: Array<{ y: number; value: number }>;
+  /** Variação de posição no período, contando subidas e quedas de divisão. */
+  net: number;
+  wins: number;
+  losses: number;
+}
+
+/** Gráfico da escada das últimas `limit` partidas da fila (mais antiga à esquerda). */
+export function ladderChart(entries: RankEntry[], queue: RankedQueue, limit = 30): LadderChart | null {
+  const list = forQueue(entries, queue)
+    .slice(0, limit)
+    .reverse()
+    .map((entry) => ({ entry, value: ladderValue(entry) }))
+    .filter((p): p is { entry: RankEntry; value: number } => p.value !== null);
+  if (list.length < 2) return null;
+  const values = list.map((p) => p.value);
+  const pad = Math.max(12, (Math.max(...values) - Math.min(...values)) * 0.15);
+  const min = Math.min(...values) - pad;
+  const max = Math.max(...values) + pad;
+  const y = (value: number) => +((1 - (value - min) / (max - min)) * 100).toFixed(2);
+  const points = list.map((p, i) => ({ x: +((i / (list.length - 1)) * 100).toFixed(2), y: y(p.value), ...p }));
+  // Divisões dentro da faixa; se forem muitas (subiu vários elos), só os elos.
+  let step = 100;
+  if (Math.floor(max / 100) - Math.ceil(min / 100) > 5) step = 400;
+  const grid: LadderChart['grid'] = [];
+  for (let v = Math.ceil(min / step) * step; v <= max; v += step) grid.push({ y: y(v), value: v });
+  const summary = summarize(list.map((p) => p.entry));
+  return { points, grid, net: values[values.length - 1] - values[0], wins: summary.wins, losses: summary.losses };
+}

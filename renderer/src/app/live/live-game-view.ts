@@ -28,7 +28,6 @@ interface CardTag {
   color?: string;
 }
 
-/** Nome das rotas em português, para o perfil do jogador. */
 /** Nome curto do grupo no selo do card. */
 const PARTY_SHORT: Record<number, string> = { 2: 'Duo', 3: 'Trio', 4: 'Grupo de 4', 5: 'Time fechado' };
 
@@ -47,6 +46,7 @@ interface TeamParty {
   names: string[];
 }
 
+/** Nome das rotas em português, para o perfil do jogador. */
 const ROLE_NAMES: Record<string, string> = {
   top: 'Topo',
   jungle: 'Selva',
@@ -412,10 +412,15 @@ export class LiveGameView {
 
   /** Relógio da partida (atualiza a cada segundo enquanto a tela está aberta). */
   private readonly now = signal(Date.now());
-  protected readonly elapsed = computed(() => {
+  /** Segundos desde o início da partida (null sem horário de início). */
+  protected readonly elapsedSeconds = computed(() => {
     const start = this.game()?.gameStartTime ?? 0;
-    if (start <= 0) return null;
-    const seconds = Math.max(0, Math.floor((this.now() - start) / 1000));
+    return start > 0 ? Math.max(0, Math.floor((this.now() - start) / 1000)) : null;
+  });
+
+  protected readonly elapsed = computed(() => {
+    const seconds = this.elapsedSeconds();
+    if (seconds === null) return null;
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   });
 
@@ -673,8 +678,8 @@ export class LiveGameView {
     if (profile?.oneTrick) {
       const top = this.ddragon.champion(profile.topChampions[0]?.championId ?? 0)?.name;
       tags.push({ label: top ? `OTP ${top}` : 'One-trick', tone: 'good' });
-    } else if (profile?.mainRole && profile.roleShare >= 0.65) {
-      tags.push({ label: `Main ${ROLE_NAMES[profile.mainRole]}`, tone: 'accent' });
+    } else if (profile?.mainRole && profile.roleShare >= 0.65 && ROLE_NAMES[profile.mainRole.toLowerCase()]) {
+      tags.push({ label: `Main ${ROLE_NAMES[profile.mainRole.toLowerCase()]}`, tone: 'accent' });
     }
     const met = this.encounterOf(player);
     if (met) tags.push({ label: `Já jogou ${met.encounters.length}x`, tone: 'accent' });

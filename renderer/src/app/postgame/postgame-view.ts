@@ -320,6 +320,12 @@ export class PostGameView {
     return riotId.split('#')[0] || 'Jogador';
   }
 
+  /** Rota em português no cabeçalho do coach ("jungle" -> "Selva"). */
+  protected roleName(role: string | null): string | null {
+    const names: Record<string, string> = { top: 'Topo', jungle: 'Selva', middle: 'Meio', bottom: 'Atirador', utility: 'Suporte' };
+    return role ? (names[role.toLowerCase()] ?? null) : null;
+  }
+
   protected kdaValue(p: PostGamePlayer): number {
     return (p.kills + p.assists) / Math.max(1, p.deaths);
   }

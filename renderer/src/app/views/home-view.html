@@ -72,6 +72,76 @@
     }
   </section>
 
+  @if (insights(); as ins) {
+    <section class="card moment">
+      <header class="moment-head">
+        <h3 class="section-title">Seu momento</h3>
+        <span class="muted small">suas últimas {{ ins.form.games + ins.form.previousGames }} partidas no Summoner's Rift</span>
+      </header>
+      @if (focus(); as f) {
+        <p class="moment-focus" [attr.data-kind]="f.kind">
+          <app-icon name="plan" [size]="18" />
+          <span>{{ f.text }}</span>
+        </p>
+      }
+      <div class="moment-tiles">
+        <div class="tile" [attr.data-trend]="ins.form.trend">
+          <span class="tile-label">Forma</span>
+          <strong class="tile-value">{{ ins.form.wins }}V {{ ins.form.games - ins.form.wins }}D</strong>
+          <span class="tile-sub">
+            nas últimas {{ ins.form.games }}
+            @if (ins.form.previousGames >= 5) {
+              · antes {{ ins.form.previousWins }}V {{ ins.form.previousGames - ins.form.previousWins }}D
+              <em class="trend">{{ ins.form.trend === 'up' ? 'subindo' : ins.form.trend === 'down' ? 'caindo' : 'estável' }}</em>
+            }
+          </span>
+        </div>
+
+        @if (ins.best; as best) {
+          <div class="tile champ-tile">
+            @if (iconUrl(best.championId); as icon) {
+              <img [src]="icon" [alt]="championName(best.championId)" />
+            }
+            <div>
+              <span class="tile-label">Melhor campeão</span>
+              <strong class="tile-value">{{ championName(best.championId) }}</strong>
+              <span class="tile-sub">{{ pct(best.wins, best.games) }}% em {{ best.games }} jogos · {{ best.kda.toFixed(1) }} KDA</span>
+            </div>
+          </div>
+        } @else {
+          <div class="tile" [attr.data-trend]="ins.avgDeaths >= 7 ? 'down' : ins.avgDeaths <= 4.5 ? 'up' : 'flat'">
+            <span class="tile-label">Mortes por partida</span>
+            <strong class="tile-value">{{ ins.avgDeaths.toFixed(1) }}</strong>
+            <span class="tile-sub">
+              média nas últimas partidas
+              <em class="trend">{{ ins.avgDeaths >= 7 ? 'alta' : ins.avgDeaths <= 4.5 ? 'boa' : 'na média' }}</em>
+            </span>
+          </div>
+        }
+
+        @if (ins.main; as main) {
+          <div class="tile champ-tile">
+            @if (iconUrl(main.championId); as icon) {
+              <img [src]="icon" [alt]="championName(main.championId)" />
+            }
+            <div class="farm">
+              <span class="tile-label">Farm de {{ championName(main.championId) }}@if (positionName(main.position); as pos) { ({{ pos }})}</span>
+              <strong class="tile-value">{{ main.csPerMin.toFixed(1) }} <small>CS/min</small></strong>
+              @if (benchmark(); as ref) {
+                <span class="farm-bar" [title]="'Mestre+: ' + ref.toFixed(1) + ' CS/min'">
+                  <span [style.width.%]="Math.min(100, (main.csPerMin / ref) * 100)" [class.low]="main.csPerMin < ref * 0.85"></span>
+                </span>
+                <span class="tile-sub">Mestre+ faz {{ ref.toFixed(1) }} com ele</span>
+              } @else {
+                <span class="tile-sub">{{ main.games }} partidas com ele</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
   <div class="grid">
     <section class="card">
       <h3 class="section-title">Automação</h3>

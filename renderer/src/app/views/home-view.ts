@@ -10,6 +10,7 @@ import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
 import { ToastService, errorText } from '../core/toast.service';
 import { isAndroid, phoneStatus } from '../mobile/mobile-client';
+import { benchmarkCsPerMin, buildInsights, focusOf } from '../home/insights';
 
 const INVISIBLE_LABELS: Record<InvisibleStatus, string> = { offline: 'offline', mobile: 'celular', online: 'online' };
 
@@ -28,6 +29,10 @@ const PHASE_LABELS: Record<string, string> = {
 };
 
 const RECENT_COUNT = 6;
+/** Partidas analisadas em "Seu momento" (as 6 primeiras também aparecem na lista). */
+const INSIGHT_COUNT = 20;
+const POSITION_KEYS: Record<string, string> = { top: 'TOP', jungle: 'JUNGLE', middle: 'MIDDLE', bottom: 'BOTTOM', utility: 'UTILITY' };
+const POSITION_NAMES: Record<string, string> = { top: 'topo', jungle: 'selva', middle: 'meio', bottom: 'atirador', utility: 'suporte' };
 
 interface RecentRow {
   match: MatchSummary;
@@ -51,6 +56,22 @@ export class HomeView {
   protected readonly state = this.lcu.state;
   protected readonly profile = signal<PlayerProfile | null>(null);
   protected readonly recent = signal<RecentRow[] | null>(null);
+  /** Últimas 20 partidas, para "Seu momento". */
+  private readonly analyzed = signal<RecentRow[] | null>(null);
+  /** CS/min Mestre+ do seu campeão mais jogado na rota dele. */
+  protected readonly benchmark = signal<number | null>(null);
+
+  protected readonly insights = computed(() => {
+    const rows = this.analyzed();
+    return rows ? buildInsights(rows) : null;
+  });
+
+  protected readonly focus = computed(() => {
+    const insights = this.insights();
+    if (!insights) return null;
+    const champion = insights.main ? (this.ddragon.champion(insights.main.championId)?.name ?? 'seu campeão') : 'seu campeão';
+    return focusOf(insights, champion, this.benchmark());
+  });
   protected readonly profileError = signal<string | null>(null);
   protected readonly openingLeague = signal(false);
 
@@ -84,6 +105,7 @@ export class HomeView {
     };
   });
 
+  protected readonly Math = Math;
   protected readonly queueName = queueName;
   protected readonly rankLabel = rankQueueLabel;
   protected readonly rankText = rankText;
@@ -101,6 +123,8 @@ export class HomeView {
         this.loadedFor = key;
         this.profile.set(null);
         this.recent.set(null);
+        this.analyzed.set(null);
+        this.benchmark.set(null);
         if (key) void this.loadProfile();
       });
     });
@@ -152,6 +176,31 @@ export class HomeView {
     }
   }
 
+  /** Referência Mestre+ de farm do seu campeão mais jogado (estatísticas do servidor). */
+  private async loadBenchmark(): Promise<void> {
+    const main = this.insights()?.main;
+    const position = main?.position ? POSITION_KEYS[main.position] : null;
+    if (!main || !position || !window.stats) return;
+    try {
+      const stats = await window.stats.champion(main.championId, position);
+      this.benchmark.set(benchmarkCsPerMin(stats?.benchmarks));
+    } catch {
+      // Sem referência: "Seu momento" mostra o resto.
+    }
+  }
+
+  protected positionName(position: string | null): string {
+    return position ? (POSITION_NAMES[position] ?? '') : '';
+  }
+
+  protected championName(championId: number): string {
+    return this.ddragon.champion(championId)?.name ?? '';
+  }
+
+  protected pct(wins: number, games: number): number {
+    return games ? Math.round((wins / games) * 100) : 0;
+  }
+
   private async loadProfile(): Promise<void> {
     const summoner = this.me();
     if (!summoner || !window.riot) return;
@@ -160,12 +209,13 @@ export class HomeView {
       const platformId = summoner.platformId;
       const profile = await window.riot.findPlayer(summoner.gameName, summoner.tagLine, platformId);
       this.profile.set(profile);
-      const matches = await window.riot.getMatches(profile.puuid, platformId, 0, RECENT_COUNT);
-      this.recent.set(
-        matches
-          .map((match) => ({ match, me: match.participants.find((p) => p.puuid === profile.puuid)! }))
-          .filter((row) => !!row.me),
-      );
+      const matches = await window.riot.getMatches(profile.puuid, platformId, 0, INSIGHT_COUNT);
+      const rows = matches
+        .map((match) => ({ match, me: match.participants.find((p) => p.puuid === profile.puuid)! }))
+        .filter((row) => !!row.me);
+      this.recent.set(rows.slice(0, RECENT_COUNT));
+      this.analyzed.set(rows);
+      void this.loadBenchmark();
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
       this.profileError.set(text.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, ''));
