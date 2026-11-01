@@ -77,7 +77,8 @@ export class PreferencesService {
 
   async installUpdate(): Promise<void> {
     try {
-      await window.app?.installUpdate();
+      // false = adiada na confirmação (durante a seleção ou a partida).
+      if ((await window.app?.installUpdate()) === false) return;
       this.toast.show('Atualização baixada. Abrindo a nova versão…', 'success');
     } catch (error) {
       this.toast.show(errorText(error), 'error');

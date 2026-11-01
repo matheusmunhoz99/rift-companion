@@ -115,7 +115,8 @@ export interface AppBridge {
   gameWindowMode(): Promise<GameWindowMode>;
   updateStatus(): Promise<UpdateStatus>;
   checkUpdate(): Promise<UpdateStatus>;
-  installUpdate(): Promise<void>;
+  /** false = adiada pelo usuário na confirmação (durante a seleção ou a partida). */
+  installUpdate(): Promise<boolean | void>;
   onUpdateStatus(callback: (status: UpdateStatus) => void): () => void;
 }
 

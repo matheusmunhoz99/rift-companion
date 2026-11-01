@@ -558,14 +558,40 @@ void acquireInstance().then((acquired) => {
     const updater = new Updater((status) => mainWindow?.webContents.send('update:status', status));
     ipcMain.handle('update:status', () => updater.getStatus());
     ipcMain.handle('update:check', () => updater.check());
-    ipcMain.handle('update:install', () => {
-      // Reiniciar o app derruba o chat do modo invisível; espera a partida acabar.
+    ipcMain.handle('update:install', async () => {
+      // Durante a seleção ou a partida: pergunta antes. O jogo não depende do app; com o modo
+      // invisível o chat volta sozinho (o proxy reabre nas mesmas portas da sessão anterior).
       const phase = connector.getState().gameflowPhase;
       if (phase && BUSY_PHASES.has(phase)) {
-        throw new Error('Termine a partida antes de atualizar: o Rift Companion reinicia ao atualizar.');
+        const inGame = phase !== 'ChampSelect';
+        const options: Electron.MessageBoxOptions = {
+          type: 'question',
+          title: 'Atualizar agora?',
+          message: inGame ? 'Atualizar durante a partida?' : 'Atualizar durante a seleção de campeões?',
+          detail:
+            'O Rift Companion fecha e abre de novo em uns 5 segundos, já na versão nova. ' +
+            (inGame ? 'O jogo não é afetado e a partida ao vivo volta sozinha.' : 'A seleção continua normalmente no LoL.') +
+            (invisibleMode?.hasActiveChat()
+              ? '\n\nCom o modo invisível ligado, o chat do LoL pode cair por alguns segundos e volta sozinho.'
+              : ''),
+          buttons: ['Atualizar agora', 'Depois'],
+          defaultId: 0,
+          cancelId: 1,
+          noLink: true,
+        };
+        const { response } = mainWindow
+          ? await dialog.showMessageBox(mainWindow, options)
+          : await dialog.showMessageBox(options);
+        if (response !== 0) {
+          appLog(`atualização adiada pelo usuário (fase: ${phase})`);
+          return false;
+        }
+        appLog(`atualização pedida pelo usuário durante ${phase}`);
+      } else {
+        appLog('atualização pedida pelo usuário');
       }
-      appLog('atualização pedida pelo usuário');
-      return updater.install();
+      await updater.install();
+      return true;
     });
     if (!capturing) updater.start();
     // Versão nova aberta pela atualização: apaga o .exe antigo da mesma pasta.
