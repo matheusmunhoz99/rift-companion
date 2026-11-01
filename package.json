@@ -16,7 +16,8 @@
     "icon": "electron scripts/render-icon.js",
     "dist": "npm run build && electron-builder --win portable --x64",
     "test": "npm run build:electron && node --test \"test/**/*.test.js\"",
-    "release": "npm run dist && node scripts/publish-release.js"
+    "release": "npm run dist && node scripts/publish-release.js",
+    "release:android": "npm --prefix renderer run android:apk && node scripts/publish-android.js"
   },
   "dependencies": {
     "@blamejs/pki": "^0.9.5",
