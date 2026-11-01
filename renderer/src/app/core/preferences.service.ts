@@ -24,6 +24,7 @@ export class PreferencesService {
     showAsRiftUser: true,
     chatObjectiveAlerts: true,
     sendErrorReports: true,
+    detailedDiagnostics: false,
     telegramReadyCheck: true,
     telegramChampion: true,
     telegramGameStart: true,

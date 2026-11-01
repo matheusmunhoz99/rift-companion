@@ -248,7 +248,7 @@ Rift Companion follows Riot's [developer policies](https://developer.riotgames.c
 
 ## Privacy
 
-No accounts, no passwords and no ads. The server stores only aggregated stats, a temporary cache and, if you connect Telegram, your chat ID. See [PRIVACY.md](PRIVACY.md).
+No accounts, no passwords and no ads. The server stores only aggregated stats, a temporary cache your chat ID if you connect Telegram, and a log of your games for 30 days only if you turn on detailed diagnostics. See [PRIVACY.md](PRIVACY.md).
 
 ## Development
 

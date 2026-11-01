@@ -34,6 +34,7 @@ export interface Preferences {
   showAsRiftUser: boolean;
   chatObjectiveAlerts: boolean;
   sendErrorReports: boolean;
+  detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
   telegramChampion: boolean;
   telegramGameStart: boolean;
@@ -99,6 +100,8 @@ export interface AppBridge {
   openBuildsFolder(): Promise<void>;
   /** Envia um erro ao servidor (anônimo), respeitando a preferência da pessoa. */
   report(context: string, message: string, stack?: string): Promise<void>;
+  /** Diagnóstico detalhado (só tem efeito com a opção ligada). Ausente no celular. */
+  diagEvent?(kind: string, fields?: unknown): Promise<void>;
   /** Histórico de PDL das partidas ranqueadas (registrado localmente). */
   rankHistory(): Promise<RankEntry[]>;
   onRankUpdated(callback: () => void): () => void;

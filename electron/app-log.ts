@@ -3,6 +3,12 @@ import path from 'node:path';
 
 const MAX_BYTES = 1024 * 1024;
 let file: string | null = null;
+let listener: ((line: string) => void) | null = null;
+
+/** Recebe cada linha registrada (o diagnóstico detalhado repassa ao servidor). */
+export function onAppLog(callback: (line: string) => void): void {
+  listener = callback;
+}
 
 /**
  * Registro do app em %APPDATA%\Rift Companion\logs\app.log, para entender uma queda
@@ -20,6 +26,11 @@ export function startAppLog(userData: string): void {
 }
 
 export function appLog(line: string): void {
+  try {
+    listener?.(line);
+  } catch {
+    // Quem escuta nunca derruba o registro.
+  }
   if (!file) return;
   try {
     if ((statSync(file, { throwIfNoEntry: false })?.size ?? 0) > MAX_BYTES) {

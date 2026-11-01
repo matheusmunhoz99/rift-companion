@@ -248,7 +248,7 @@ O Rift Companion segue as [políticas para desenvolvedores](https://developer.ri
 
 ## Privacidade
 
-Sem contas, sem senhas e sem anúncios. O servidor guarda só estatísticas agregadas, cache temporário e, se você conectar o Telegram, o código do seu chat. Detalhes em [PRIVACY.md](PRIVACY.md) (em inglês).
+Sem contas, sem senhas e sem anúncios. O servidor guarda só estatísticas agregadas, cache temporário o código do seu chat, se você conectar o Telegram, e o registro das suas partidas por 30 dias, só se você ligar o diagnóstico detalhado. Detalhes em [PRIVACY.md](PRIVACY.md) (em inglês).
 
 ## Desenvolvimento
 

@@ -270,6 +270,13 @@
       [checked]="prefs.preferences().sendErrorReports"
       (toggled)="prefs.set({ sendErrorReports: $event })"
     />
+    <div class="divider"></div>
+    <app-switch
+      label="Diagnóstico detalhado das partidas"
+      description="Para eu achar e corrigir falhas que acontecem com você: manda ao servidor o que o app fez em cada partida (fases, pedidos, tempos, erros) com o seu Riot ID. Fica guardado por 30 dias. Desligue quando quiser."
+      [checked]="prefs.preferences().detailedDiagnostics"
+      (toggled)="prefs.set({ detailedDiagnostics: $event })"
+    />
   </section>
 
   <section class="card">

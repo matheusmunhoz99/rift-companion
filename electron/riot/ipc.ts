@@ -1,3 +1,4 @@
+import { diagEvent, diagHeaders, diagPath } from '../diagnostics';
 import { app } from 'electron';
 import { ipcMain } from '../mobile/rpc';
 import { readFileSync } from 'node:fs';
@@ -180,11 +181,14 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
 
 async function apiGet<T>(path: string, notFoundMessage?: string): Promise<T> {
   let response: Response;
+  const started = Date.now();
   try {
-    response = await fetch(RIFT_API_URL + path, { signal: AbortSignal.timeout(60_000) });
-  } catch {
+    response = await fetch(RIFT_API_URL + path, { headers: diagHeaders(), signal: AbortSignal.timeout(60_000) });
+  } catch (error) {
+    traceApi('GET', path, 0, started, error);
     throw new Error('Não foi possível conectar ao servidor de partidas. Verifique sua internet.');
   }
+  traceApi('GET', path, response.status, started);
 
   if (response.ok) return (await response.json()) as T;
   if (response.status === 404 && notFoundMessage) throw new Error(notFoundMessage);
@@ -195,19 +199,37 @@ async function apiGet<T>(path: string, notFoundMessage?: string): Promise<T> {
 
 async function apiPost<T>(path: string, data: unknown): Promise<T> {
   let response: Response;
+  const started = Date.now();
   try {
     response = await fetch(RIFT_API_URL + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...diagHeaders() },
       body: JSON.stringify(data),
       signal: AbortSignal.timeout(60_000),
     });
-  } catch {
+  } catch (error) {
+    traceApi('POST', path, 0, started, error);
     throw new Error('Não foi possível conectar ao servidor de partidas. Verifique sua internet.');
   }
+  traceApi('POST', path, response.status, started);
   if (response.ok) return (await response.json()) as T;
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
   throw new Error(body?.error ?? `O servidor de partidas respondeu com erro ${response.status}.`);
+}
+
+/** Diagnóstico detalhado: cada pedido ao servidor visto do lado do app (inclui timeouts). */
+function traceApi(method: string, path: string, status: number, started: number, error?: unknown): void {
+  // Estatísticas (tier list, builds) não ajudam a achar falha de partida e enchem o registro.
+  if (path.startsWith('/v1/stats')) return;
+  diagEvent('api', {
+    status,
+    ms: Date.now() - started,
+    detail: {
+      metodo: method,
+      caminho: diagPath(path.split('?')[0]),
+      ...(error ? { erro: error instanceof Error ? `${error.name}: ${error.message}` : String(error) } : {}),
+    },
+  });
 }
 
 function enc(value: string): string {

@@ -1,3 +1,4 @@
+import { diag, errorText } from '../core/diag';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveGame, LiveParticipant, LivePlayerProfile, LocalGame, MatchSummary, PremadeGroup } from '../history/riot.types';
@@ -442,7 +443,19 @@ export class LiveGameView {
     this.loading.set(true);
     this.error.set(null);
     try {
+      const started = Date.now();
       const game = await window.riot.getLiveGame(summoner.gameName, summoner.tagLine, platformId);
+      if (this.game()?.gameId !== game.gameId) {
+        diag('partida', {
+          gameId: game.gameId,
+          ms: Date.now() - started,
+          detail: {
+            fila: game.queueId,
+            jogadores: game.participants.length,
+            ocultos: game.participants.filter((p) => !p.puuid).length,
+          },
+        });
+      }
       this.game.set(game);
       this.waitingRiot.set(false);
       this.failures = 0;
@@ -466,6 +479,9 @@ export class LiveGameView {
    * tenta sozinho até a partida aparecer — nunca deixa a tela num erro que exige clicar.
    */
   private async showFromLocalOrRetry(platformId: string, error: unknown): Promise<void> {
+    diag('falha', {
+      detail: { onde: 'partida-ao-vivo', erro: errorText(error), tentativas: this.failures, fase: this.lcu.state().gameflowPhase },
+    });
     const inGame = ['InProgress', 'Reconnect'].includes(this.lcu.state().gameflowPhase ?? '');
     const local = await window.riot!.getLocalGame().catch(() => null);
 
@@ -662,9 +678,25 @@ export class LiveGameView {
     this.premadesFor = game.gameId;
     this.clearPremadeRetry();
     let complete = false;
+    const attempt = this.premadeAttempts + 1;
+    const started = Date.now();
     try {
       const analysis = await window.riot.getPremades(gameName, tagLine, platformId);
       if (this.game()?.gameId !== game.gameId) return;
+      const names = new Map(game.participants.map((p) => [p.puuid, p.riotId]));
+      diag('grupos', {
+        gameId: game.gameId,
+        ms: Date.now() - started,
+        detail: {
+          tentativa: attempt,
+          completo: analysis.complete ?? null,
+          grupos: (analysis.premades ?? []).map((g) => ({
+            confianca: g.confidence,
+            jogadores: g.puuids.map((puuid) => names.get(puuid) ?? '?'),
+          })),
+          perfis: Object.keys(analysis.profiles ?? {}).length,
+        },
+      });
       // Clientes contra um servidor antigo recebem só `groups`; aí derivo os grupos sem confiança.
       const premades =
         analysis.premades ?? analysis.groups.map((puuids) => ({ puuids, size: puuids.length, confidence: 60 }));
@@ -673,8 +705,9 @@ export class LiveGameView {
       const profiles = analysis.profiles ?? {};
       if (Object.keys(profiles).length || analysis.complete !== false) this.profiles.set(profiles);
       complete = analysis.complete !== false;
-    } catch {
+    } catch (error) {
       complete = false;
+      diag('falha', { gameId: game.gameId, ms: Date.now() - started, detail: { onde: 'grupos', tentativa: attempt, erro: errorText(error) } });
     }
     if (complete) {
       this.premadeAttempts = 0;

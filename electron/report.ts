@@ -1,3 +1,4 @@
+import { diagEvent } from './diagnostics';
 import { app } from 'electron';
 import { homedir, release } from 'node:os';
 import path from 'node:path';
@@ -36,6 +37,14 @@ export class ErrorReporter {
 
   /** Chamado pelo renderer (via IPC) e pelo processo principal. */
   async report(context: string, error: unknown): Promise<void> {
+    // Diagnóstico detalhado (opcional): o erro vai junto da linha do tempo da partida.
+    diagEvent('erro', {
+      detail: {
+        contexto: context.slice(0, 40),
+        mensagem: scrub(this.clean(describe(error))).slice(0, MAX_MESSAGE),
+        stack: error instanceof Error && error.stack ? scrub(this.clean(error.stack)).slice(0, 1_500) : null,
+      },
+    });
     if (!this.settings.getPreferences().sendErrorReports) return;
     if (this.seen.size >= MAX_PER_SESSION) return;
 

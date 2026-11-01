@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, shell } from 'electron';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
-import { appLog, startAppLog } from './app-log';
+import { appLog, onAppLog, startAppLog } from './app-log';
+import { diagEvent, flushDiagnostics, startDiagnostics } from './diagnostics';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { registerBuildHandlers } from './builds/ipc';
@@ -14,7 +15,7 @@ import { readGameWindowMode } from './overlay/game-settings';
 import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
-import { registerRiotHandlers } from './riot/ipc';
+import { RIFT_API_URL, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
 import { Settings, type Preferences } from './settings';
@@ -255,6 +256,29 @@ void acquireInstance().then((acquired) => {
     ipcMain.handle('app:report', (_event, context: unknown, message: unknown, stack: unknown) =>
       reporter.report(typeof context === 'string' ? context : 'renderer', buildError(message, stack)),
     );
+    // Diagnóstico detalhado (opcional, desligado por padrão): ver electron/diagnostics.ts.
+    startDiagnostics(
+      {
+        enabled: () => prefs.getPreferences().detailedDiagnostics,
+        riotId: () => {
+          const summoner = connector.getState().summoner;
+          return summoner?.gameName ? `${summoner.gameName}#${summoner.tagLine}` : null;
+        },
+      },
+      RIFT_API_URL,
+    );
+    onAppLog((line) => diagEvent('log', { detail: { linha: line.slice(0, 600) } }));
+    ipcMain.handle('diag:event', (_event, kind: unknown, fields: unknown) => {
+      if (typeof kind !== 'string' || !kind) return;
+      const f = (fields && typeof fields === 'object' ? fields : {}) as Record<string, unknown>;
+      diagEvent(kind, {
+        gameId: typeof f.gameId === 'number' ? f.gameId : null,
+        matchId: typeof f.matchId === 'string' ? f.matchId : null,
+        status: typeof f.status === 'number' ? f.status : null,
+        ms: typeof f.ms === 'number' ? f.ms : null,
+        detail: f.detail ?? null,
+      });
+    });
     const invisible = new InvisibleModeProxy(path.join(app.getPath('userData'), 'invisible'));
     invisibleMode = invisible;
     invisible.configure(invisibleState(prefs.getPreferences()));
@@ -611,6 +635,7 @@ void acquireInstance().then((acquired) => {
 
   app.on('before-quit', () => {
     quitting = true;
+    void flushDiagnostics();
   });
   app.on('will-quit', () => {
     androidLink?.stop();

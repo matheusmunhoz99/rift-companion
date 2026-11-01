@@ -1,6 +1,6 @@
 {
   "name": "rift-companion",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "private": true,
   "description": "Companion app para League of Legends: builds, runas, partida ao vivo e histórico.",
   "engines": {

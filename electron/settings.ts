@@ -33,6 +33,11 @@ export interface Preferences {
   chatObjectiveAlerts: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
+  /**
+   * Diagnóstico detalhado (desligado por padrão): manda ao servidor o que acontece em cada
+   * partida, com o Riot ID, para achar onde algo falhou. Apagado no servidor após 30 dias.
+   */
+  detailedDiagnostics: boolean;
   /** Avisos no Telegram (só valem com o Telegram conectado). */
   telegramReadyCheck: boolean;
   telegramChampion: boolean;
@@ -56,6 +61,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   showAsRiftUser: true,
   chatObjectiveAlerts: true,
   sendErrorReports: true,
+  detailedDiagnostics: false,
   telegramReadyCheck: true,
   telegramChampion: true,
   telegramGameStart: true,
@@ -81,6 +87,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   showAsRiftUser: isBoolean,
   chatObjectiveAlerts: isBoolean,
   sendErrorReports: isBoolean,
+  detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,
   telegramChampion: isBoolean,
   telegramGameStart: isBoolean,

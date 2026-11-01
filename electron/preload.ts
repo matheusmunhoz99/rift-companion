@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('app', {
   openBuildsFolder: () => ipcRenderer.invoke('app:open-builds-folder'),
   launchLeague: () => ipcRenderer.invoke('app:launch-league'),
   report: (context: string, message: string, stack?: string) => ipcRenderer.invoke('app:report', context, message, stack),
+  diagEvent: (kind: string, fields?: unknown) => ipcRenderer.invoke('diag:event', kind, fields),
   rankHistory: () => ipcRenderer.invoke('rank:history'),
   onRankUpdated: (callback: () => void) => subscribe('rank:updated', callback),
   onAutoAccepted: (callback: (timestamp: number) => void) =>

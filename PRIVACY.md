@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: October 19, 2026_
+_Last updated: November 1, 2026_
 
 Rift Companion is a free desktop app for League of Legends. This policy explains what data the app uses and what it doesn't.
 
@@ -51,6 +51,25 @@ folder removed), the app version and your operating system and architecture. It
 never includes your name, Riot ID, Telegram chat or any account data. Reports are
 grouped by message and version so we can fix recurring bugs, and are deleted after
 30 days. You can turn this off in the app under Settings.
+
+## Detailed diagnostics (optional, off by default)
+
+If you turn on "Diagnóstico detalhado das partidas" in the app's settings, the app helps us
+find and fix problems that happen to you. While it is on, it sends our server:
+
+- your Riot ID and a random code created each time the app opens (it identifies that session
+  only, not your PC or account);
+- what the app did in each game: game phases, requests to our server (route, status, time),
+  live game, party (duo/trio) and post-game coach results, and errors, including the Riot IDs
+  of players in your games as shown in the app;
+- the app's own event log (connections, phases, crashes), which never contains passwords,
+  tokens or chat messages;
+- the app version and your operating system.
+
+For requests from that session our server also records which Riot API calls it made, their
+status and timing. This data is used only to fix bugs, is never sold or shared, and is deleted
+automatically after 30 days. Turn the option off at any time to stop sending; to have existing
+data deleted sooner, contact us.
 
 ## Updates
 

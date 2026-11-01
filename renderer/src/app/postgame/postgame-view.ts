@@ -1,3 +1,4 @@
+import { diag, errorText } from '../core/diag';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { CoachTimeline, PostGame, PostGamePlayer } from '../history/riot.types';
@@ -134,18 +135,29 @@ export class PostGameView {
       const recent = await window.riot.getMatches(profile.puuid, platformId, 0, BASELINE_SIZE);
       const report = buildCoachReport(game, recent, profile.puuid);
       this.coach.set(report);
-      if (!report) return;
+      if (!report) {
+        diag('coach', { gameId: game.gameId, detail: { semRelatorio: true, partidasBase: recent.length } });
+        return;
+      }
 
       // Enriquecimento opcional (timeline + IA); nunca trava a tela nem o resto.
       const matchId = `${platformId}_${game.gameId}`;
       const request = toCoachRequest(report, game, me, this.championName(me.championId), matchId, platformId, profile.puuid);
+      const started = Date.now();
       const result = await window.riot.getCoach(request).catch(() => null);
       if (result) {
         this.coachNarration.set(result.narration);
         this.coachTimeline.set(result.timeline);
       }
-    } catch {
+      diag('coach', {
+        gameId: game.gameId,
+        matchId,
+        ms: Date.now() - started,
+        detail: { partidasBase: recent.length, narracao: !!result?.narration, timeline: !!result?.timeline },
+      });
+    } catch (error) {
       // O coach é um extra: qualquer falha apenas o deixa de fora.
+      diag('falha', { gameId: game.gameId, detail: { onde: 'coach', erro: errorText(error) } });
     } finally {
       this.coachLoading.set(false);
     }
