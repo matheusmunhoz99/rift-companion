@@ -74,10 +74,14 @@ const RECENT_GAMES = 10;
 /** Quantas partidas suas são cruzadas com os jogadores da partida atual. */
 const ENCOUNTER_GAMES = 20;
 /**
- * A Riot só libera a partida no spectator 2 a 3 minutos depois do início.
- * Enquanto isso a tela usa os dados locais do jogo e tenta de novo a cada 15 s.
+ * A Riot libera a partida no spectator de alguns segundos a 2-3 minutos depois do início.
+ * Enquanto isso a tela usa os dados locais do jogo e tenta de novo: a cada 6 s nos
+ * primeiros ~2 min (no diagnóstico ela saiu ~25 s após o início; com 15 s a tela atrasava),
+ * depois a cada 15 s.
  */
 const RETRY_MS = 15_000;
+const WAITING_RETRY_MS = 6_000;
+const WAITING_FAST_ATTEMPTS = 20;
 /** No começo (sem nada na tela ainda), tenta de novo bem mais rápido. */
 const FIRST_RETRY_MS = 4_000;
 /** Grupos (Duo/Trio): nova tentativa a cada 20 s, por até ~4 min da partida. */
@@ -144,6 +148,8 @@ export class LiveGameView {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   /** Tentativas seguidas sem conseguir montar a partida (para só mostrar erro se insistir). */
   private failures = 0;
+  /** Tentativas esperando a Riot liberar a partida (com os dados locais na tela). */
+  private waitingAttempts = 0;
 
   protected readonly me = computed(() => {
     const game = this.game();
@@ -517,6 +523,7 @@ export class LiveGameView {
       }
       this.game.set(game);
       this.waitingRiot.set(false);
+      this.waitingAttempts = 0;
       this.failures = 0;
       // A Riot API não informa rotas; o jogo local às vezes sim.
       void window.riot.getLocalGame().then(
@@ -538,10 +545,12 @@ export class LiveGameView {
    * tenta sozinho até a partida aparecer — nunca deixa a tela num erro que exige clicar.
    */
   private async showFromLocalOrRetry(platformId: string, error: unknown): Promise<void> {
-    diag('falha', {
-      detail: { onde: 'partida-ao-vivo', erro: errorText(error), tentativas: this.failures, fase: this.lcu.state().gameflowPhase },
-    });
     const inGame = ['InProgress', 'Reconnect'].includes(this.lcu.state().gameflowPhase ?? '');
+    // No começo da partida a Riot ainda não liberou os dados: é normal, não é falha.
+    const notYet = inGame && /não está em partida/i.test(errorText(error));
+    diag(notYet ? 'aguardando-riot' : 'falha', {
+      detail: { onde: 'partida-ao-vivo', erro: errorText(error), tentativas: this.waitingAttempts, fase: this.lcu.state().gameflowPhase },
+    });
     const local = await window.riot!.getLocalGame().catch(() => null);
 
     if (local && local.players.length > 0) {
@@ -564,7 +573,12 @@ export class LiveGameView {
 
     // Enquanto estamos em partida e ainda falta a versão da Riot, tenta de novo sozinho.
     if (inGame && (!this.game() || this.waitingRiot())) {
-      this.retryTimer = setTimeout(() => void this.load(), this.game() ? RETRY_MS : FIRST_RETRY_MS);
+      const delay = !this.game()
+        ? FIRST_RETRY_MS
+        : this.waitingAttempts++ < WAITING_FAST_ATTEMPTS
+          ? WAITING_RETRY_MS
+          : RETRY_MS;
+      this.retryTimer = setTimeout(() => void this.load(), delay);
     }
   }
 
@@ -834,6 +848,7 @@ export class LiveGameView {
     this.openMatchId.set(null);
     this.openRecent.set(null);
     this.waitingRiot.set(false);
+    this.waitingAttempts = 0;
     this.premades.set([]);
     this.profiles.set({});
     this.premadesFor = 0;
