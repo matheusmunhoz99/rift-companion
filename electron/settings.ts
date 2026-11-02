@@ -22,6 +22,10 @@ export interface Preferences {
   overlayOpacity: number;
   /** Abre a tela certa sozinho (seleção, partida) conforme a fase do cliente. */
   autoNavigate: boolean;
+  /** Modo partida: da seleção ao fim de jogo o app usa a tela toda (menu só com ícones, timers no topo). */
+  matchMode: boolean;
+  /** No modo partida, a janela cresce para a área útil do monitor e volta ao tamanho de antes. */
+  matchModeWindow: boolean;
   /** Importa runas e feitiços recomendados ao travar o campeão. */
   autoRunes: boolean;
   /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
@@ -55,6 +59,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   overlayPosition: 'center',
   overlayOpacity: 0.9,
   autoNavigate: true,
+  matchMode: true,
+  matchModeWindow: true,
   autoRunes: false,
   minimizeToTray: true,
   startWithWindows: false,
@@ -81,6 +87,8 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   overlayOpacity: (value): value is number =>
     typeof value === 'number' && value >= 0.4 && value <= 1,
   autoNavigate: isBoolean,
+  matchMode: isBoolean,
+  matchModeWindow: isBoolean,
   autoRunes: isBoolean,
   minimizeToTray: isBoolean,
   startWithWindows: isBoolean,

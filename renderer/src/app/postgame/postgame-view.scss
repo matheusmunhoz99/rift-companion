@@ -2,7 +2,7 @@
 :host {
   display: grid;
   gap: 12px;
-  max-width: 1480px;
+  max-width: var(--view-max, 1480px);
   margin-inline: auto;
 
   // Mesmas cores de lado da partida ao vivo (validadas contra o fundo escuro).

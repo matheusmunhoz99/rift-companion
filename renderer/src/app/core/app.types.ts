@@ -28,6 +28,8 @@ export interface Preferences {
   overlayPosition: OverlayPosition;
   overlayOpacity: number;
   autoNavigate: boolean;
+  matchMode: boolean;
+  matchModeWindow: boolean;
   autoRunes: boolean;
   minimizeToTray: boolean;
   startWithWindows: boolean;
@@ -113,6 +115,8 @@ export interface AppBridge {
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;
   onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;
   gameWindowMode(): Promise<GameWindowMode>;
+  /** Modo partida: aumenta a janela (true) ou volta ao tamanho de antes (false). App antigo não tem. */
+  setMatchWindow?(expand: boolean): Promise<void>;
   updateStatus(): Promise<UpdateStatus>;
   checkUpdate(): Promise<UpdateStatus>;
   /** false = adiada pelo usuário na confirmação (durante a seleção ou a partida). */

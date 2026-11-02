@@ -163,7 +163,7 @@ async function postGame() {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text().slice(0, 300)); });
   await page.exposeFunction('__api', (path) => api(path));
-  await page.addInitScript(({ st, game, premades, plan, ranks, post, me, clientTeams }) => {
+  await page.addInitScript(({ st, game, premades, plan, ranks, post, me, clientTeams, match, dash }) => {
     try {
       localStorage.setItem('rift.groupMemory.v1', JSON.stringify({ 'inimigo meio#br1|inimigo topo#br1': { n: 3, g: 'BR1_1', t: Date.now() } }));
       // Fim de jogo: um duo no seu time (você + o primeiro aliado) e um trio inimigo, como se vistos ao vivo.
@@ -182,7 +182,7 @@ async function postGame() {
     window.lcu = bridge({ getState: async () => st, onState: () => () => {} });
     window.riot = bridge({
       getLiveGame: async () => { if (st.gameflowPhase !== 'InProgress') throw new Error('Você não está em partida.'); return game; },
-      getPremades: async () => premades, getLocalGame: async () => null, getLiveDashboard: async () => null,
+      getPremades: async () => premades, getLocalGame: async () => null, getLiveDashboard: async () => dash,
       getClientTeams: async () => (st.gameflowPhase === 'InProgress' ? clientTeams : null),
       getPlan: async () => plan, getPostGame: async () => post, onPostGame: () => () => {},
       getSettings: async () => ({ platformId: 'BR1' }),
@@ -199,7 +199,7 @@ async function postGame() {
       damage: () => window.__api('/v1/stats/damage'),
     });
     window.app = bridge({
-      getPreferences: async () => ({ autoAccept: true, appearOffline: false, invisibleStatus: 'offline', invisibleStartupStatus: 'last', invisibleLobbyChat: true, overlayEnabled: true, overlayPosition: 'center', overlayOpacity: 0.9, autoNavigate: false, autoRunes: false, minimizeToTray: true, startWithWindows: false, showAsRiftUser: false, chatObjectiveAlerts: true, sendErrorReports: true, detailedDiagnostics: true, telegramReadyCheck: true, telegramChampion: true, telegramGameStart: true, telegramGameEnd: true }),
+      getPreferences: async () => ({ matchMode: match, matchModeWindow: true, autoAccept: true, appearOffline: false, invisibleStatus: 'offline', invisibleStartupStatus: 'last', invisibleLobbyChat: true, overlayEnabled: true, overlayPosition: 'center', overlayOpacity: 0.9, autoNavigate: false, autoRunes: false, minimizeToTray: true, startWithWindows: false, showAsRiftUser: false, chatObjectiveAlerts: true, sendErrorReports: true, detailedDiagnostics: true, telegramReadyCheck: true, telegramChampion: true, telegramGameStart: true, telegramGameEnd: true }),
       info: async () => ({ version: '1.12.0', overlayShortcut: 'Ctrl+Shift+O', buildsDirectory: 'C:\\Users\\mathe\\AppData\\Roaming\\Rift Companion\\builds' }),
       updateStatus: async () => ({ state: 'idle' }), gameWindowMode: async () => 'borderless', rankHistory: async () => ranks,
       onRankUpdated: () => () => {}, onAutoAccepted: () => () => {}, onOverlayData: () => () => {}, onPreferencesChanged: () => () => {}, onAutoRunesApplied: () => () => {}, onUpdateStatus: () => () => {},
@@ -207,7 +207,9 @@ async function postGame() {
     window.builds = bridge({ get: async () => ({ mapId: 11, runePages: [], itemBuilds: [], buildsDirectory: '' }) });
     for (const name of ['lobby', 'telegram', 'mobile', 'riftUsers', 'champSelect']) window[name] = bridge({});
     
-  }, { st, game: liveGame(), premades, plan, ranks: rankHistory(), post, me: ME, clientTeams });
+  }, { st, game: liveGame(), premades, plan, ranks: rankHistory(), post, me: ME, clientTeams, match: process.env.SIM_MATCH === '1',
+    // SIM_DASHBOARD=arquivo.json: dados do jogo (timers, objetivos) para a aba Ao vivo e o topo do modo partida.
+    dash: process.env.SIM_DASHBOARD ? JSON.parse(fs.readFileSync(process.env.SIM_DASHBOARD, 'utf8')) : null });
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html#view=${view}`);
   await page.waitForTimeout(Number(process.env.WAIT ?? 7000));
   // SIM_CLICK="seletor|seletor": cliques antes da captura (ex.: abrir o menu Organizar).

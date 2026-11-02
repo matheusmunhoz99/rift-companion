@@ -18,6 +18,8 @@ export class PreferencesService {
     overlayPosition: 'center',
     overlayOpacity: 0.9,
     autoNavigate: true,
+    matchMode: true,
+    matchModeWindow: true,
     autoRunes: false,
     minimizeToTray: true,
     startWithWindows: false,

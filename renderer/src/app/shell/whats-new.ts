@@ -7,14 +7,19 @@ const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
-    icon: 'layout',
-    title: 'Você organiza a tela',
-    text: 'Na partida e no fim de jogo, o botão "Organizar" muda a ordem das seções e esconde o que você não usa. Fica salvo neste aparelho.',
+    icon: 'live',
+    title: 'Modo partida',
+    text: 'Da seleção ao fim de jogo o app usa a tela toda: menu só com ícones, telas mais largas e, no topo, a sua vez na seleção e os próximos objetivos. Desliga em Configurações.',
   },
   {
     icon: 'swords',
     title: 'Placar no fim de jogo',
     text: 'Os dois times lado a lado logo de cara: KDA, CS, dano, itens, nota e quem jogou de Duo ou Trio. O coach vem depois.',
+  },
+  {
+    icon: 'layout',
+    title: 'Você organiza a tela',
+    text: 'O botão "Organizar" muda a ordem das seções e esconde o que você não usa. Na partida, os times já vêm primeiro.',
   },
   {
     icon: 'linked',
@@ -25,11 +30,6 @@ const HIGHLIGHTS = [
     icon: 'plan',
     title: 'Análise por modo de jogo',
     text: 'Em ARAM, ARAM: Desordem, URF e Arena o plano e o coach falam das regras do modo, sem selva nem rotas onde não existem.',
-  },
-  {
-    icon: 'live',
-    title: 'Times primeiro',
-    text: 'Na partida ao vivo os 10 jogadores aparecem no topo; o plano de jogo da IA e os encontros ficam logo abaixo.',
   },
   {
     icon: 'refresh',

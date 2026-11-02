@@ -18,6 +18,7 @@ import { ObjectiveAnnouncer } from './overlay/objective-announcer';
 import { RIFT_API_URL, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
+import { MatchWindow } from './match-window';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
 import { removeOldVersions, repointShortcuts, Updater } from './updater';
@@ -618,6 +619,12 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(directory);
     });
     ipcMain.handle('app:launch-league', () => openLeague(true));
+    // Modo partida: a janela cresce na seleção e volta ao tamanho de antes no fim de jogo.
+    const matchWindow = new MatchWindow(() => mainWindow);
+    ipcMain.handle('app:match-window', (_event, expand: unknown) => {
+      const changed = expand === true ? matchWindow.enter() : matchWindow.leave();
+      if (changed) appLog(`modo partida: janela ${expand === true ? 'aumentada' : 'restaurada'}`);
+    });
     mobileOverride('app:launch-league', () => openLeague(false));
     if (!capturing) androidLink = new AndroidLink(connector);
 

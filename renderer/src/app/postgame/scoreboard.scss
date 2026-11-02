@@ -296,6 +296,41 @@
   }
 }
 
+// Tela larga (modo partida, monitor grande): ícones e números maiores para ler de longe.
+@container (min-width: 1500px) {
+  .cols,
+  .row {
+    grid-template-columns: 40px minmax(0, 1fr) 70px 52px 84px 174px 40px;
+  }
+
+  .row {
+    min-height: 52px;
+  }
+
+  .champ,
+  .champ img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .pname {
+    font-size: 14px;
+  }
+
+  .items {
+    img,
+    .slot {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .kda > span,
+  .cs > span {
+    font-size: 14px;
+  }
+}
+
 // Celular / janela estreita: campeão, nome, KDA e nota na linha; itens embaixo do nome.
 @container (max-width: 560px) {
   .cols {

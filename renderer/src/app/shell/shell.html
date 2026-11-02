@@ -1,4 +1,4 @@
-<div class="shell" [class.phone]="android">
+<div class="shell" [class.phone]="android" [class.match-mode]="match.active()">
   @if (!android) {
   <aside class="sidebar">
     <div class="brand drag">
@@ -66,6 +66,11 @@
     <header class="titlebar drag">
       <h1>{{ title() }}</h1>
 
+      <!-- Modo partida: o que está acontecendo agora, visível em qualquer aba. -->
+      @if (match.active()) {
+        <app-match-strip class="no-drag" />
+      }
+
       <!-- Fase do jogo agora: o que mais importa num app que fica ao lado do LoL. -->
       @if (phase(); as p) {
         <button
@@ -81,6 +86,16 @@
           @if (p.detail) {
             <span class="phase-detail num">{{ p.detail }}</span>
           }
+        </button>
+      }
+
+      @if (match.active()) {
+        <button type="button" class="mode-toggle no-drag" title="Volta ao layout normal só nesta partida" (click)="match.exit()">
+          Tela normal
+        </button>
+      } @else if (match.canResume()) {
+        <button type="button" class="mode-toggle no-drag" title="Usar a tela toda até o fim desta partida" (click)="match.resume()">
+          Modo partida
         </button>
       }
     </header>

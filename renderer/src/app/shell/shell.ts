@@ -17,6 +17,8 @@ import { TierListView } from '../views/tierlist-view';
 import { isAndroid } from '../mobile/mobile-client';
 import { AndroidUpdate } from '../mobile/android-update';
 import { WhatsNew } from './whats-new';
+import { MatchStrip } from './match-strip';
+import { MatchModeService } from '../core/match-mode.service';
 
 /** Já mostrou o aviso do ícone de usuário do Rift Companion. */
 const RIFT_USER_NOTICE = 'rift.riftUserNotice';
@@ -84,6 +86,7 @@ function clock(seconds: number): string {
     ProgressView,
     SettingsView,
     AndroidUpdate,
+    MatchStrip,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -95,6 +98,8 @@ export class Shell {
   protected readonly toast = inject(ToastService);
 
   private readonly live = inject(LiveDataService);
+  /** Modo partida: menu só com ícones, conteúdo largo e timers no topo (da seleção ao fim de jogo). */
+  protected readonly match = inject(MatchModeService);
 
   protected readonly state = this.lcu.state;
   protected readonly groups = NAV_GROUPS;
