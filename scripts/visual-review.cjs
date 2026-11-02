@@ -166,6 +166,15 @@ async function postGame() {
   await page.addInitScript(({ st, game, premades, plan, ranks, post, me, clientTeams }) => {
     try {
       localStorage.setItem('rift.groupMemory.v1', JSON.stringify({ 'inimigo meio#br1|inimigo topo#br1': { n: 3, g: 'BR1_1', t: Date.now() } }));
+      // Fim de jogo: um duo no seu time (você + o primeiro aliado) e um trio inimigo, como se vistos ao vivo.
+      if (post) {
+        const meP = post.players.find((p) => p.isMe);
+        const mine = post.players.filter((p) => p.teamId === meP.teamId);
+        const theirs = post.players.filter((p) => p.teamId !== meP.teamId);
+        const duo = [meP, mine.find((p) => !p.isMe)].map((p) => p.riotId.toLowerCase());
+        const trio = theirs.slice(1, 4).map((p) => p.riotId.toLowerCase());
+        localStorage.setItem('rift.parties.v1', JSON.stringify({ [`BR1_${post.gameId}`]: { at: Date.now(), groups: [duo, trio] } }));
+      }
     } catch {}
     const empty = () => { const p = Promise.resolve([]); return Object.assign(() => {}, { then: p.then.bind(p), catch: p.catch.bind(p), finally: p.finally.bind(p) }); };
     const bridge = (impl) => new Proxy(impl, { get: (t, k) => (k in t ? t[k] : () => empty()) });
@@ -201,6 +210,11 @@ async function postGame() {
   }, { st, game: liveGame(), premades, plan, ranks: rankHistory(), post, me: ME, clientTeams });
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html#view=${view}`);
   await page.waitForTimeout(Number(process.env.WAIT ?? 7000));
+  // SIM_CLICK="seletor|seletor": cliques antes da captura (ex.: abrir o menu Organizar).
+  for (const sel of (process.env.SIM_CLICK ?? '').split('|').filter(Boolean)) {
+    await page.click(sel);
+    await page.waitForTimeout(400);
+  }
   const target = selector ? await page.$(selector) : null;
   await (target ?? page).screenshot({ path: out, fullPage: !selector && process.env.FULL === '1' });
   const metrics = await page.evaluate(() => ({ scrollW: document.documentElement.scrollWidth, innerW: innerWidth, title: document.querySelector('h1,h2')?.textContent?.trim() }));

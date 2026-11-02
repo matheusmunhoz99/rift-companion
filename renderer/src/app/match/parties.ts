@@ -17,6 +17,12 @@ export interface PartyInfo {
   confirmed: boolean;
 }
 
+/** O mínimo de uma partida para achar os grupos (serve para o histórico e o fim de jogo). */
+export interface PartyMatch {
+  matchId: string;
+  participants: Array<{ riotId: string; teamId: number }>;
+}
+
 const STORAGE_KEY = 'rift.parties.v1';
 /** Partidas guardadas; as mais antigas saem primeiro. */
 const MAX_STORED = 300;
@@ -54,7 +60,7 @@ export function rememberParties(matchId: string, groups: string[][]): void {
  * memória de grupos deste PC (quem já entrou junto antes) e por quem esteve no mesmo time
  * em outra partida da lista (`context`).
  */
-export function partiesOf(match: MatchSummary, context: MatchSummary[] = []): Map<string, PartyInfo> {
+export function partiesOf(match: PartyMatch, context: MatchSummary[] = []): Map<string, PartyInfo> {
   const stored = read()[match.matchId]?.groups;
   const confirmed = !!stored;
   const groups = stored ?? mergeGroups([...memoryGroups(match), ...inferGroups(match, context)]);
@@ -71,7 +77,7 @@ export function partiesOf(match: MatchSummary, context: MatchSummary[] = []): Ma
 }
 
 /** Pares que a memória de grupos conhece, por time. */
-function memoryGroups(match: MatchSummary): string[][] {
+function memoryGroups(match: PartyMatch): string[][] {
   return [100, 200].flatMap((teamId) =>
     rememberedGroups(match.participants.filter((p) => p.teamId === teamId && p.riotId).map((p) => p.riotId)).map((g) => g.ids),
   );
@@ -93,7 +99,7 @@ function mergeGroups(groups: string[][]): string[][] {
 }
 
 /** Jogadores do mesmo time que também estiveram juntos (mesmo time) em outra partida da lista. */
-function inferGroups(match: MatchSummary, context: MatchSummary[]): string[][] {
+function inferGroups(match: PartyMatch, context: MatchSummary[]): string[][] {
   const others = context.filter((m) => m.matchId !== match.matchId);
   if (!others.length) return [];
   const teammates = (m: MatchSummary) => {

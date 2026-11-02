@@ -92,6 +92,23 @@ const ICONS: Record<string, Shape[]> = {
     { d: 'M15.5 8.5 13.2 13.2 8.5 15.5 10.8 10.8Z', fill: true },
   ],
   // Elo unido: jogadores no mesmo grupo (duo, trio...).
+  // Organizar a tela: painéis empilhados, um deles destacado.
+  layout: [
+    { d: 'M3.5 4H20.5V9.5H3.5Z' },
+    { d: 'M3.5 13H12V20H3.5Z' },
+    { d: 'M15.5 13H20.5V20H15.5Z', fill: true },
+  ],
+  'arrow-up': [{ d: 'M12 20V5M6 11 12 5 18 11' }],
+  'arrow-down': [{ d: 'M12 4V19M6 13 12 19 18 13' }],
+  // Olho em losango (como a sentinela), com a pupila preenchida.
+  eye: [
+    { d: 'M2.5 12 7 6.5H17L21.5 12 17 17.5H7Z' },
+    { d: 'M12 9.5 14.5 12 12 14.5 9.5 12Z', fill: true },
+  ],
+  'eye-off': [
+    { d: 'M2.5 12 7 6.5H17L21.5 12 17 17.5H7Z' },
+    { d: 'M4 20 20 4' },
+  ],
   linked: [
     { d: 'M9.5 7 12 4.5H19.5V12L17 14.5' },
     { d: 'M14.5 17 12 19.5H4.5V12L7 9.5' },

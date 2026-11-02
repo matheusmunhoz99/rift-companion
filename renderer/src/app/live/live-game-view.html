@@ -35,6 +35,10 @@
       </div>
     }
 
+    @if (tab() === 'players') {
+      <app-layout-menu [layout]="layout" />
+    }
+
     <button type="button" class="ghost refresh" [disabled]="loading()" [title]="loading() ? 'Atualizando…' : 'Atualizar'" (click)="load()">
       {{ loading() ? 'Atualizando…' : 'Atualizar' }}
     </button>
@@ -66,10 +70,12 @@
     </p>
   }
 
-  @if (encounters() === 'loading') {
-    <p class="muted encounters-note">Procurando jogadores conhecidos nas suas últimas 20 partidas…</p>
+  @if (!layout.visible('encontros')) {
+    <!-- Escondido pelo "Organizar". -->
+  } @else if (encounters() === 'loading') {
+    <p class="muted encounters-note" [style.order]="layout.position('encontros')">Procurando jogadores conhecidos nas suas últimas 20 partidas…</p>
   } @else if (encounterSummaries().length > 0) {
-    <section class="encounters">
+    <section class="encounters" [style.order]="layout.position('encontros')">
       <header class="encounters-head">
         <h4>Já jogaram com você</h4>
         <span class="muted">dos jogadores desta sala, estes apareceram nas suas últimas 20 partidas · toque para ver os jogos</span>
@@ -158,11 +164,18 @@
     </section>
   }
 
-  @if (planLoading() || plan()?.plan || plan()?.build) {
-    <app-plan-panel [plan]="plan()" [loading]="planLoading()" [elapsed]="elapsedSeconds()" [mode]="mode()" />
+  @if (layout.visible('plano') && (planLoading() || plan()?.plan || plan()?.build)) {
+    <app-plan-panel
+      [style.order]="layout.position('plano')"
+      [plan]="plan()"
+      [loading]="planLoading()"
+      [elapsed]="elapsedSeconds()"
+      [mode]="mode()"
+    />
   }
 
-  <div class="teams-cards">
+  @if (layout.visible('times')) {
+  <div class="teams-cards" [style.order]="layout.position('times')">
     @for (team of [allies(), enemies()]; track $index) {
       <section class="team-row" [class.enemy-team]="$index === 1">
         <header class="team-head">
@@ -420,6 +433,14 @@
       </section>
     }
   </div>
+  }
+
+  @if (layout.hiddenItems().length) {
+    <p class="hidden-note">
+      Escondido nesta aba: {{ hiddenLabels() }}.
+      <button type="button" class="link" (click)="showAll()">Mostrar tudo</button>
+    </p>
+  }
   }
 } @else if (loading()) {
   <p class="muted">Carregando a partida…</p>

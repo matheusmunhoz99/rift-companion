@@ -311,6 +311,39 @@ select {
   cursor: pointer;
 }
 
+/* ------------------------------------------------------------ Organizar a tela */
+
+/* Linha do botão "Organizar" (partida ao vivo e fim de jogo). */
+.screen-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: -4px -6px;
+}
+
+/* Seções escondidas pelo "Organizar": lembrete discreto no fim da tela. */
+.hidden-note {
+  order: 99;
+  margin: 0;
+  color: var(--faint);
+  font-size: 12px;
+  text-align: center;
+
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text);
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ Chips */
 
 .chip {

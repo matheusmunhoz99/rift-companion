@@ -1,0 +1,339 @@
+// Placar do fim de jogo: os dois times lado a lado quando cabe, um embaixo do outro quando não.
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.board {
+  display: grid;
+  gap: 12px;
+
+  @container (min-width: 1080px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.team {
+  --side: var(--ally);
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--side);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--side) 7%, transparent), transparent 90px),
+    var(--surface);
+  box-shadow: inset 0 1px 0 var(--highlight);
+
+  &.enemy {
+    --side: var(--enemy);
+  }
+}
+
+.team-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .outcome {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+
+    &.win {
+      color: var(--win);
+    }
+
+    &.loss {
+      color: var(--loss);
+    }
+  }
+
+  .totals {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+  }
+}
+
+// Mesma grade no cabeçalho das colunas e em cada linha.
+.cols,
+.row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 60px 44px 66px 140px 34px;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.cols {
+  padding: 0 6px;
+  color: var(--faint);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.c {
+  text-align: center;
+  justify-items: center;
+}
+
+.rows {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  min-height: 46px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+
+  // Você: fundo um pouco mais claro e nome em destaque.
+  &.me {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+
+    .pname {
+      color: var(--text);
+      font-weight: 700;
+    }
+  }
+
+  // Grupo: fio na cor do grupo à esquerda da linha (liga quem entrou junto).
+  &.in-party::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--party);
+  }
+}
+
+.champ {
+  position: relative;
+  width: 34px;
+  height: 34px;
+
+  img {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .lvl {
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    min-width: 16px;
+    padding: 0 3px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--well);
+    color: var(--text);
+    font-size: 10px;
+    line-height: 13px;
+    text-align: center;
+  }
+}
+
+.who {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pname {
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.sub {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.spell {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+}
+
+.party {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 3px;
+  padding: 0 6px 0 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--party) 22%, transparent);
+  color: color-mix(in srgb, var(--party) 75%, white);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 15px;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  // Estimado (não visto ao vivo): contorno tracejado, sem preenchimento.
+  &.est {
+    border-color: color-mix(in srgb, var(--party) 70%, transparent);
+    border-style: dashed;
+    background: transparent;
+  }
+}
+
+.kda,
+.cs {
+  display: grid;
+  line-height: 1.2;
+
+  > span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  em {
+    color: var(--loss);
+    font-style: normal;
+  }
+
+  small {
+    color: var(--muted);
+    font-size: 10.5px;
+  }
+}
+
+.dmg {
+  display: grid;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.dmg-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+}
+
+.dmg-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--side);
+}
+
+.items {
+  display: flex;
+  gap: 2px;
+
+  img,
+  .slot {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+
+  .slot {
+    background: var(--border);
+  }
+}
+
+.score {
+  font-size: 15px;
+  font-weight: 700;
+
+  &[data-tone='high'] {
+    color: var(--success);
+  }
+
+  &[data-tone='mid'] {
+    color: var(--warning);
+  }
+
+  &[data-tone='low'] {
+    color: var(--muted);
+  }
+}
+
+// Celular / janela estreita: campeão, nome, KDA e nota na linha; itens embaixo do nome.
+@container (max-width: 560px) {
+  .cols {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 34px minmax(0, 1fr) 56px 30px;
+    grid-template-areas:
+      'champ who kda score'
+      'champ items items items';
+    row-gap: 4px;
+    padding-block: 6px;
+  }
+
+  .champ {
+    grid-area: champ;
+    align-self: start;
+  }
+
+  .who {
+    grid-area: who;
+  }
+
+  .kda {
+    grid-area: kda;
+  }
+
+  .score {
+    grid-area: score;
+  }
+
+  .items {
+    grid-area: items;
+  }
+
+  .cs,
+  .dmg {
+    display: none;
+  }
+}

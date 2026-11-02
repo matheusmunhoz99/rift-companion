@@ -6,6 +6,10 @@ import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName } from '../riot/labels';
 import { PostGameService } from './postgame.service';
+import { PostGameScoreboard } from './scoreboard';
+import { ScreenLayout } from '../core/screen-layout';
+import { LayoutMenu } from '../ui/layout-menu';
+import { partiesOf } from '../match/parties';
 import { BASELINE_SIZE, buildCoachReport, toCoachRequest, type CoachMetric, type CoachReport } from './coach';
 
 type MetricKey =
@@ -88,12 +92,32 @@ interface Highlight {
   selector: 'app-postgame-view',
   templateUrl: './postgame-view.html',
   styleUrl: './postgame-view.scss',
+  imports: [PostGameScoreboard, LayoutMenu],
 })
 export class PostGameView {
   protected readonly ddragon = inject(DataDragonService);
   private readonly nav = inject(NavigationService);
   private readonly lcu = inject(LcuService);
   protected readonly game = inject(PostGameService).game;
+
+  /**
+   * Ordem das seções, escolhida por quem usa (botão "Organizar"). Padrão: o placar dos dois
+   * times primeiro (composição, itens, Duo/Trio), depois ranking e gráficos, e o coach por IA
+   * por último, para não empurrar o que mais se procura depois da partida.
+   */
+  protected readonly layout = new ScreenLayout('rift.layout.postgame.v1', [
+    { id: 'placar', label: 'Placar', description: 'Os dois times: KDA, itens, dano e Duo/Trio' },
+    { id: 'desempenho', label: 'Ranking e gráficos', description: 'Nota de 1 a 10, estatísticas e destaques' },
+    { id: 'coach', label: 'Seu coach', description: 'A partida contra a sua média, com a IA' },
+  ]);
+
+  /** Grupos da partida: os vistos ao vivo (guardados pela tela da partida) ou pela memória. */
+  protected readonly parties = computed(() => {
+    const game = this.game();
+    if (!game) return new Map();
+    const platformId = this.lcu.state().platformId ?? 'BR1';
+    return partiesOf({ matchId: `${platformId}_${game.gameId}`, participants: game.players });
+  });
 
   protected readonly metrics = METRICS;
   protected readonly metric = signal<MetricKey>('damageToChampions');
@@ -385,6 +409,14 @@ export class PostGameView {
     const pct = Math.round(m.deltaPct * 100);
     if (pct === 0) return '≈';
     return `${pct > 0 ? '+' : '−'}${Math.abs(pct)}%`;
+  }
+
+  protected hiddenLabels(): string {
+    return this.layout.hiddenItems().map((item) => item.label).join(', ');
+  }
+
+  protected showAll(): void {
+    for (const item of this.layout.hiddenItems()) this.layout.setVisible(item.id, true);
   }
 
   protected openPlayer(player: PostGamePlayer): void {

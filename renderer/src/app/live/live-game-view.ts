@@ -1,4 +1,6 @@
 import { PlanPanel } from './plan-panel';
+import { ScreenLayout } from '../core/screen-layout';
+import { LayoutMenu } from '../ui/layout-menu';
 import { Icon } from '../ui/icon';
 import { diag, errorText } from '../core/diag';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
@@ -135,7 +137,7 @@ interface EncounterSummary {
 
 @Component({
   selector: 'app-live-game-view',
-  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon, PlanPanel],
+  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon, PlanPanel, LayoutMenu],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })
@@ -145,6 +147,24 @@ export class LiveGameView {
   private readonly nav = inject(NavigationService);
 
   protected readonly liveData = inject(LiveDataService);
+
+  /**
+   * Ordem das seções da aba Jogadores, escolhida por quem usa (botão "Organizar"). Padrão:
+   * os times primeiro (composição, elo, Duo/Trio), o plano da IA e os encontros abaixo.
+   */
+  protected readonly layout = new ScreenLayout('rift.layout.live.v1', [
+    { id: 'times', label: 'Times', description: 'Os 10 jogadores: elo, maestria e Duo/Trio' },
+    { id: 'plano', label: 'Plano de jogo', description: 'Análise da IA e opções de build' },
+    { id: 'encontros', label: 'Já jogaram com você', description: 'Quem você já encontrou nas últimas partidas' },
+  ]);
+
+  protected hiddenLabels(): string {
+    return this.layout.hiddenItems().map((item) => item.label).join(', ');
+  }
+
+  protected showAll(): void {
+    for (const item of this.layout.hiddenItems()) this.layout.setVisible(item.id, true);
+  }
   /** Aba: jogadores (elo, histórico) ou dados ao vivo do jogo (timers, objetivos). */
   // A aba inicial pelo hash (#...&tab=live) é usada na revisão visual.
   protected readonly tab = signal<'players' | 'live' | 'build'>(

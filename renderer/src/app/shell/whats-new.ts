@@ -2,34 +2,34 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.13';
+const RELEASE = '1.14';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
+    icon: 'layout',
+    title: 'Você organiza a tela',
+    text: 'Na partida e no fim de jogo, o botão "Organizar" muda a ordem das seções e esconde o que você não usa. Fica salvo neste aparelho.',
+  },
+  {
+    icon: 'swords',
+    title: 'Placar no fim de jogo',
+    text: 'Os dois times lado a lado logo de cara: KDA, CS, dano, itens, nota e quem jogou de Duo ou Trio. O coach vem depois.',
+  },
+  {
     icon: 'linked',
     title: 'Duo e Trio com certeza',
-    text: 'O app lê do próprio cliente do LoL quem entrou junto na fila, nos dois times, e lembra de quem já jogou junto. Selo com ✓ é certeza; "3x" é quem já entrou junto 3 vezes.',
+    text: 'Lido do próprio cliente do LoL, nos dois times, e marcado também na lista do histórico, sem abrir a partida.',
   },
   {
     icon: 'plan',
-    title: 'Plano de jogo',
-    text: 'Na tela de carregamento, a IA analisa as duas composições: como seu time vence, quem merece cuidado e opções de build com partidas Mestre+.',
+    title: 'Análise por modo de jogo',
+    text: 'Em ARAM, ARAM: Desordem, URF e Arena o plano e o coach falam das regras do modo, sem selva nem rotas onde não existem.',
   },
   {
-    icon: 'home',
-    title: 'Seu momento',
-    text: 'No Início: sua forma recente, seu melhor campeão e o seu farm comparado ao de jogadores Mestre+ com o mesmo campeão.',
-  },
-  {
-    icon: 'progress',
-    title: 'Evolução no elo',
-    text: 'Gráfico com as divisões, cada partida marcada e com quanto PDL você ficou depois dela.',
-  },
-  {
-    icon: 'history',
-    title: 'Composições no histórico',
-    text: 'Os 10 campeões de cada partida na lista, com você em destaque.',
+    icon: 'live',
+    title: 'Times primeiro',
+    text: 'Na partida ao vivo os 10 jogadores aparecem no topo; o plano de jogo da IA e os encontros ficam logo abaixo.',
   },
   {
     icon: 'refresh',
@@ -50,7 +50,7 @@ const HIGHLIGHTS = [
         <article class="sheet" (click)="$event.stopPropagation()">
           <header class="hero">
             <span class="badge">Novidades</span>
-            <h2 id="whats-new-title">Rift Companion <span class="num">1.13</span></h2>
+            <h2 id="whats-new-title">Rift Companion <span class="num">1.14</span></h2>
             <p>Mais leitura de jogo, mais clareza e mais velocidade: veja o que mudou.</p>
           </header>
           <ul class="highlights">

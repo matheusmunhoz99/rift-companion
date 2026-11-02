@@ -53,9 +53,23 @@
     }
   </header>
 
+  <!-- Cada um escolhe a ordem e o que aparece (fica salvo neste aparelho). -->
+  <div class="screen-tools">
+    <app-layout-menu [layout]="layout" />
+  </div>
+
+  @if (layout.visible('placar')) {
+    <app-postgame-scoreboard
+      [style.order]="layout.position('placar')"
+      [game]="g"
+      [parties]="parties()"
+      (openPlayer)="openPlayer($event)"
+    />
+  }
+
   <!-- Coach: como ESTA partida se compara com a SUA média recente. -->
-  @if (coach(); as c) {
-    <section class="panel coach-panel" [attr.data-overall]="c.overall.verdict">
+  @if (layout.visible('coach') && coach(); as c) {
+    <section class="panel coach-panel" [style.order]="layout.position('coach')" [attr.data-overall]="c.overall.verdict">
       <header class="panel-head">
         <h3>Seu coach</h3>
         <span class="coach-base">vs suas últimas {{ c.games }} partidas@if (roleName(c.role); as role) { · {{ role }}}</span>
@@ -100,11 +114,12 @@
         }
       </div>
     </section>
-  } @else if (coachLoading()) {
-    <section class="panel coach-panel loading"><p class="coach-say muted">Analisando sua partida…</p></section>
+  } @else if (layout.visible('coach') && coachLoading()) {
+    <section class="panel coach-panel loading" [style.order]="layout.position('coach')"><p class="coach-say muted">Analisando sua partida…</p></section>
   }
 
-  <div class="board">
+  @if (layout.visible('desempenho')) {
+  <div class="board" [style.order]="layout.position('desempenho')">
     <!-- Ranking de 1 a 10 pela nota. -->
     <section class="panel ranking-panel">
       <header class="panel-head">
@@ -212,4 +227,12 @@
       </div>
     </section>
   </div>
+  }
+
+  @if (layout.hiddenItems().length) {
+    <p class="hidden-note">
+      Escondido nesta tela: {{ hiddenLabels() }}.
+      <button type="button" class="link" (click)="showAll()">Mostrar tudo</button>
+    </p>
+  }
 }

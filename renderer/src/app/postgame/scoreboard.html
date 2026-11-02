@@ -1,0 +1,82 @@
+<section class="board" aria-label="Placar da partida">
+  @for (team of teams(); track team.teamId) {
+    <div class="team" [class.ally]="team.ally" [class.enemy]="!team.ally">
+      <header class="team-head">
+        <h3>{{ team.ally ? 'Seu time' : 'Inimigos' }}</h3>
+        @if (team.won !== null) {
+          <span class="outcome" [class.win]="team.won" [class.loss]="!team.won">{{ team.won ? 'Vitória' : 'Derrota' }}</span>
+        }
+        <span class="totals num">{{ team.kills }} abates · {{ thousands(team.gold) }} de ouro</span>
+      </header>
+
+      <div class="cols" aria-hidden="true">
+        <span></span>
+        <span>Jogador</span>
+        <span class="c">KDA</span>
+        <span class="c">CS</span>
+        <span>Dano</span>
+        <span>Itens</span>
+        <span class="c">Nota</span>
+      </div>
+
+      <ol class="rows">
+        @for (p of team.players; track p.puuid || p.riotId) {
+          @let party = partyOf(p);
+          <li class="row" [class.me]="p.isMe" [class.in-party]="!!party" [style.--party]="party?.color ?? null">
+            <span class="champ" [title]="championName(p.championId) + ' · nível ' + p.level">
+              @if (icon(p.championId); as src) {
+                <img [src]="src" [alt]="championName(p.championId)" />
+              }
+              <span class="lvl num">{{ p.level }}</span>
+            </span>
+
+            <span class="who">
+              <button type="button" class="pname" [title]="'Ver histórico de ' + p.riotId" (click)="openPlayer.emit(p)">
+                {{ name(p.riotId) }}
+              </button>
+              <span class="sub">
+                @for (spellId of p.spellIds; track $index) {
+                  @if (ddragon.spellIconUrl(spellId); as spell) {
+                    <img class="spell" [src]="spell" [alt]="ddragon.spellName(spellId)" [title]="ddragon.spellName(spellId)" />
+                  }
+                }
+                @if (party) {
+                  <span class="party" [class.est]="!party.confirmed" [title]="partyTitle(party)">
+                    <app-icon name="linked" [size]="11" />{{ party.label }}
+                  </span>
+                }
+              </span>
+            </span>
+
+            <span class="kda c">
+              <span class="num">{{ p.kills }}/<em>{{ p.deaths }}</em>/{{ p.assists }}</span>
+              <small class="num">{{ kdaRatio(p) }}</small>
+            </span>
+
+            <span class="cs c">
+              <span class="num">{{ p.cs }}</span>
+              <small class="num">{{ perMinute(p.cs) }}/min</small>
+            </span>
+
+            <span class="dmg" [title]="p.damageToChampions.toLocaleString('pt-BR') + ' de dano a campeões'">
+              <span class="num">{{ thousands(p.damageToChampions) }}</span>
+              <span class="dmg-track"><span class="dmg-fill" [style.width.%]="damageWidth(p)"></span></span>
+            </span>
+
+            <span class="items">
+              @for (item of slots(p); track $index) {
+                @if (item && ddragon.itemIconUrl(item); as src) {
+                  <img [src]="src" [alt]="ddragon.itemName(item)" [title]="ddragon.itemName(item)" />
+                } @else {
+                  <span class="slot"></span>
+                }
+              }
+            </span>
+
+            <strong class="score num c" [attr.data-tone]="scoreTone(p.score)" [title]="p.rank + 'º de 10 na partida'">{{ p.score.toFixed(1) }}</strong>
+          </li>
+        }
+      </ol>
+    </div>
+  }
+</section>
