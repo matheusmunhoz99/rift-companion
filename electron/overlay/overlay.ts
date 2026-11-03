@@ -9,8 +9,8 @@ const POLL_MS = 1_000;
 export const OVERLAY_WIDTH = 980;
 export const OVERLAY_HEIGHT = 84;
 const WIDTH = OVERLAY_WIDTH;
-/** Com campos da selva marcados ou inibidores para voltar, uma terceira linha. */
-const TALL_HEIGHT = OVERLAY_HEIGHT + 28;
+/** Linhas extras (selva e inibidores; leitura da IA): cada uma aumenta a janela. */
+const ROW_HEIGHT = 28;
 export const OVERLAY_SHORTCUT = 'CommandOrControl+Shift+O';
 
 /**
@@ -33,6 +33,8 @@ export class OverlayController {
     private readonly timings: () => Promise<ObjectiveTimings>,
     /** Campos da selva marcados na tela do app (a API do jogo não informa). */
     private readonly camps: () => OverlayData['camps'] = () => [],
+    /** Última leitura da IA feita na tela do app. */
+    private readonly ai: () => OverlayData['ai'] = () => null,
   ) {
     connector.on('state', () => this.sync());
     globalShortcut.register(OVERLAY_SHORTCUT, () => this.toggleByUser());
@@ -90,10 +92,10 @@ export class OverlayController {
   private async read(): Promise<void> {
     const raw = await fetchRawGameData();
     if (!raw?.allPlayers?.length || !this.timer) return;
-    const data = { ...toOverlayData(raw, await this.timings()), camps: this.camps() };
+    const data = { ...toOverlayData(raw, await this.timings()), camps: this.camps(), ai: this.ai() };
     if (!this.timer) return;
     const window = this.ensureWindow();
-    const height = overlayRows(data) === 3 ? TALL_HEIGHT : OVERLAY_HEIGHT;
+    const height = OVERLAY_HEIGHT + (overlayRows(data) - 2) * ROW_HEIGHT;
     if (height !== this.height) {
       this.height = height;
       this.applyLayout(window);
@@ -173,8 +175,15 @@ export class OverlayController {
 }
 
 /** Linhas do overlay: a terceira só aparece com campos marcados ou inibidores voltando. */
-export function overlayRows(data: Pick<OverlayData, 'camps' | 'inhibitors' | 'gameTime'>): 2 | 3 {
+export function overlayRows(data: Pick<OverlayData, 'camps' | 'inhibitors' | 'gameTime'> & { ai?: OverlayData['ai'] }): 2 | 3 | 4 {
   const camps = data.camps.some((c) => c.backAt > data.gameTime);
   const inhibitors = data.inhibitors.some((i) => i.respawnAt > data.gameTime);
-  return camps || inhibitors ? 3 : 2;
+  return (2 + (camps || inhibitors ? 1 : 0) + (aiVisible(data) ? 1 : 0)) as 2 | 3 | 4;
+}
+
+/** A leitura da IA fica 90 s de jogo no overlay. */
+export const AI_VISIBLE_S = 90;
+
+export function aiVisible(data: { ai?: OverlayData['ai']; gameTime: number }): boolean {
+  return !!data.ai && data.gameTime - data.ai.at >= 0 && data.gameTime - data.ai.at <= AI_VISIBLE_S;
 }

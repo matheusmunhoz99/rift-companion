@@ -90,3 +90,11 @@ test('overlay ganha a terceira linha só com campo marcado ou inibidor voltando'
   assert.equal(overlayRows({ gameTime: 800, camps: [{ key: 'ally:blue', name: 'Azul', backAt: 700 }], inhibitors: [] }), 2, 'campo já voltou');
   assert.equal(overlayRows({ gameTime: 600, camps: [], inhibitors: [{ ally: false, lane: 'Meio', respawnAt: 650 }] }), 3);
 });
+
+test('overlay: a leitura da IA ganha uma linha própria por 90 s de jogo', () => {
+  const { overlayRows } = require('../dist-electron/overlay/overlay.js');
+  const camps = [{ key: 'ally:blue', name: 'Azul', backAt: 700 }];
+  assert.equal(overlayRows({ gameTime: 600, camps, inhibitors: [], ai: { text: 'x', at: 590 } }), 4);
+  assert.equal(overlayRows({ gameTime: 600, camps: [], inhibitors: [], ai: { text: 'x', at: 590 } }), 3);
+  assert.equal(overlayRows({ gameTime: 700, camps: [], inhibitors: [], ai: { text: 'x', at: 590 } }), 2, 'passou de 90 s');
+});

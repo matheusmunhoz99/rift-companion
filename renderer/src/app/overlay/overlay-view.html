@@ -74,6 +74,14 @@
       }
     </div>
 
+    @if (aiLine(); as line) {
+      <!-- Última leitura da IA (some depois de 90 s de jogo). -->
+      <div class="row ai-row">
+        <span class="ai-badge">IA</span>
+        <span class="ai-text">{{ line }}</span>
+      </div>
+    }
+
     @if (extras(); as x) {
       <!-- Campos da selva marcados no app e inibidores voltando (a janela cresce uma linha). -->
       <div class="row">

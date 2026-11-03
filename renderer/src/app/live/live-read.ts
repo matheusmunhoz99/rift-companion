@@ -295,6 +295,10 @@ export class LiveReadPanel {
         this.shown.set({ read: response.read, at: data.gameTime, trigger, minimap: !!request.minimap });
         this.live.rememberRead(data.gameTime, response.read.opcoes.map((o) => o.titulo), response.read.itens);
         ok = true;
+        // Por cima do jogo: a primeira opção e o alerta, numa linha do overlay.
+        const first = response.read.opcoes[0]?.titulo;
+        const line = [first, response.read.atencao].filter(Boolean).join(' · ');
+        if (line) window.app?.setOverlayRead?.({ text: line.slice(0, 160), at: data.gameTime });
         if (trigger === 'death') this.speak(response.read);
       } else {
         this.failed.set(true);

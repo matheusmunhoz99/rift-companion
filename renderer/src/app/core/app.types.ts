@@ -97,6 +97,8 @@ export interface OverlayData {
   inhibitors?: Array<{ ally: boolean; lane: string; respawnAt: number }>;
   /** Campos da selva marcados como mortos no app (tempo de jogo em que voltam). */
   camps?: CampTimer[];
+  /** Última leitura da IA (frase curta) e o tempo de jogo dela. */
+  ai?: { text: string; at: number } | null;
 }
 
 /** Um campo da selva marcado como morto: o app conta até ele voltar. */
@@ -165,6 +167,10 @@ export interface AppBridge {
   onJungleMark?(callback: (camp: string) => void): () => void;
   /** Recorte do minimapa agora (JPEG em base64); null fora da partida. Só no PC. */
   visionMinimap?(): Promise<{ jpeg: string; black: boolean } | null>;
+  /** Manda a leitura da IA para o overlay (frase curta). Só no PC. */
+  setOverlayRead?(read: { text: string; at: number }): void;
+  /** Troca o jogo para Sem bordas pela API do cliente (vale na próxima partida). Só no PC. */
+  setBorderless?(): Promise<'changed' | 'already' | 'in-game' | 'no-client'>;
   visionStatus?(): Promise<{ black: boolean | null; samples: number; folder: string }>;
   openVisionSamples?(): Promise<void>;
   /** Campos da selva marcados, para o overlay mostrar a contagem por cima do jogo. Só no PC. */

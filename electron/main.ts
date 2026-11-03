@@ -2,6 +2,7 @@ import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electr
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
 import { VisionController } from './vision/controller';
+import { setBorderless } from './lcu/window-mode';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
 import { appLog, onAppLog, startAppLog } from './app-log';
@@ -64,6 +65,8 @@ let jungleHotkeys: JungleHotkeys | null = null;
 let visionSync: () => void = () => undefined;
 /** Campos da selva marcados na tela do app, para o overlay mostrar por cima do jogo. */
 let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
+/** Última leitura da IA (frase curta), para o overlay mostrar por cima do jogo. */
+let overlayRead: { text: string; at: number } | null = null;
 let quitting = false;
 /** O modo partida está mexendo na janela (não grava esse tamanho como o lugar escolhido). */
 let matchManaging: () => boolean = () => false;
@@ -229,7 +232,7 @@ function captureDemoOverlay(dataFile: string): void {
   const data = JSON.parse(readFileSync(dataFile, 'utf8'));
   const window = new BrowserWindow({
     width: OVERLAY_WIDTH,
-    height: overlayRows({ camps: [], inhibitors: [], ...data }) === 3 ? OVERLAY_HEIGHT + 28 : OVERLAY_HEIGHT,
+    height: OVERLAY_HEIGHT + (overlayRows({ camps: [], inhibitors: [], ...data }) - 2) * 28,
     frame: false,
     transparent: true,
     show: true,
@@ -615,7 +618,17 @@ void acquireInstance().then((acquired) => {
       path.join(__dirname, 'preload.js'),
       createTimingsSource(connector, app.isPackaged),
       () => campTimers,
+      () => overlayRead,
     );
+    electronIpc.on('app:overlay-read', (_event, read: unknown) => {
+      const r = read as { text?: unknown; at?: unknown } | null;
+      overlayRead = r && typeof r.text === 'string' && typeof r.at === 'number' ? { text: r.text.slice(0, 160), at: r.at } : null;
+    });
+    ipcMain.handle('app:set-borderless', async () => {
+      const result = await setBorderless(connector.getCredentials(), connector.getState().gameflowPhase);
+      appLog(`modo de janela do jogo: ${result}`);
+      return result;
+    });
     electronIpc.on('app:camp-timers', (_event, camps: unknown) => {
       campTimers = Array.isArray(camps)
         ? camps

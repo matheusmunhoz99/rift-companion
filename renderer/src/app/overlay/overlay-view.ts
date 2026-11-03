@@ -107,6 +107,13 @@ export class OverlayView {
     });
   });
 
+  /** Leitura da IA feita na tela do app, por 90 s de jogo. */
+  protected readonly aiLine = computed(() => {
+    const ai = this.data()?.ai;
+    const clock = this.clock();
+    return ai && clock - ai.at >= 0 && clock - ai.at <= 90 ? ai.text : null;
+  });
+
   /** Terceira linha: inibidores voltando e campos da selva marcados no app. */
   protected readonly extras = computed(() => {
     const d = this.data();

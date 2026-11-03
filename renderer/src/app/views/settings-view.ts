@@ -146,6 +146,30 @@ export class SettingsView {
   /** Visão da tela: amostras gravadas e se a captura veio preta (tela cheia exclusiva). */
   protected readonly visionStatus = signal<{ black: boolean | null; samples: number; folder: string } | null>(null);
 
+  protected readonly canSetBorderless = !!window.app?.setBorderless;
+  protected readonly switchingWindow = signal(false);
+
+  /** Troca o jogo para Sem bordas pela API do cliente (o overlay e a visão da IA passam a funcionar). */
+  protected async switchToBorderless(): Promise<void> {
+    this.switchingWindow.set(true);
+    try {
+      const result = await window.app!.setBorderless!();
+      const messages = {
+        changed: ['Pronto: o jogo abre em Sem bordas na próxima partida.', 'success'],
+        already: ['O jogo já está em Sem bordas.', 'success'],
+        'in-game': ['Termine a partida primeiro: a troca é feita pelo cliente, fora do jogo.', 'error'],
+        'no-client': ['Abra o cliente do LoL para trocar o modo de janela.', 'error'],
+      } as const;
+      const [text, kind] = messages[result];
+      this.toast.show(text, kind);
+      await this.prefs.refreshGameWindowMode();
+    } catch (error) {
+      this.toast.show(errorText(error), 'error');
+    } finally {
+      this.switchingWindow.set(false);
+    }
+  }
+
   protected openVisionSamples(): void {
     void window.app?.openVisionSamples?.();
   }

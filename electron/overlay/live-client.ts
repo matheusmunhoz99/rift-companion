@@ -60,6 +60,8 @@ export interface OverlayData {
   inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
   /** Campos da selva marcados como mortos na tela do app (tempo de jogo em que voltam). */
   camps: Array<{ key: string; name: string; backAt: number }>;
+  /** Última leitura da IA (frase curta) e o tempo de jogo dela; some depois de 90 s. */
+  ai: { text: string; at: number } | null;
 }
 
 interface RawPlayer {
@@ -208,5 +210,6 @@ export function toOverlayData(raw: RawGameData, timings: ObjectiveTimings = DEFA
     inhibitors: live.timers?.inhibitors ?? [],
     // Quem marca os campos é a tela do app; o controlador do overlay junta antes de mandar.
     camps: [],
+    ai: null,
   };
 }

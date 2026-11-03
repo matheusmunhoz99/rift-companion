@@ -45,6 +45,8 @@ contextBridge.exposeInMainWorld('app', {
   onSpeak: (callback: (text: unknown) => void) => subscribe('voice:say', callback),
   onJungleMark: (callback: (camp: unknown) => void) => subscribe('jungle:mark', callback),
   visionMinimap: () => ipcRenderer.invoke('vision:minimap'),
+  setOverlayRead: (read: unknown) => ipcRenderer.send('app:overlay-read', read),
+  setBorderless: () => ipcRenderer.invoke('app:set-borderless'),
   visionStatus: () => ipcRenderer.invoke('vision:status'),
   openVisionSamples: () => ipcRenderer.invoke('vision:open-samples'),
   setCampTimers: (camps: unknown) => ipcRenderer.send('app:camp-timers', camps),

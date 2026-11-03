@@ -156,3 +156,25 @@ img {
 .inhib.soon b {
   color: #2fd48a;
 }
+
+.ai-row {
+  max-width: 950px;
+  gap: 8px;
+}
+
+.ai-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #ff6a3d;
+  color: #1b0b05;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.ai-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 600;
+}

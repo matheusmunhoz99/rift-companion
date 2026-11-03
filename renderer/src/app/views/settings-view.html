@@ -320,6 +320,14 @@
           Nesse modo o Windows pode não deixar nada aparecer por cima do jogo. Para o overlay funcionar sempre,
           no jogo vá em <em>Configurações › Vídeo › Modo de janela</em> e escolha <strong>Sem bordas</strong>:
           fica igual à tela cheia, com o mesmo desempenho.
+          @if (canSetBorderless) {
+            <div class="notice-actions">
+              <button type="button" class="btn small" [disabled]="switchingWindow()" (click)="switchToBorderless()">
+                {{ switchingWindow() ? 'Mudando…' : 'Mudar para Sem bordas agora' }}
+              </button>
+              <span class="muted">Pelo próprio cliente do LoL, fora da partida. Vale a partir da próxima partida.</span>
+            </div>
+          }
         </div>
       }
       @case ('borderless') {

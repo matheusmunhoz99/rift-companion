@@ -2,10 +2,20 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.19';
+const RELEASE = '1.20';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'eye',
+    title: 'Overlay com a IA por cima do jogo',
+    text: 'A leitura da IA aparece numa linha do overlay (a primeira opção e o alerta), junto com objetivos, inibidores e a selva. É uma janela separada: não injeta nada no jogo.',
+  },
+  {
+    icon: 'display',
+    title: 'Sem bordas com um clique',
+    text: 'Em Configurações › Overlay, o botão troca o jogo para Sem bordas pelo próprio cliente do LoL. Mesmo desempenho da tela cheia, e o overlay e a visão da IA passam a funcionar.',
+  },
   {
     icon: 'display',
     title: 'A IA vê o seu minimapa',
