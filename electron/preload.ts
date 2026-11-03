@@ -36,11 +36,12 @@ contextBridge.exposeInMainWorld('app', {
   onAutoRunesApplied: (callback: (result: unknown) => void) =>
     subscribe('auto-runes:applied', callback),
   gameWindowMode: () => ipcRenderer.invoke('app:game-window-mode'),
-  setMatchWindow: (expand: boolean) => ipcRenderer.invoke('app:match-window', expand),
+  setMatchWindow: (mode: boolean | 'fullscreen') => ipcRenderer.invoke('app:match-window', mode),
   updateStatus: () => ipcRenderer.invoke('update:status'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdateStatus: (callback: (status: unknown) => void) => subscribe('update:status', callback),
+  onFullscreenChanged: (callback: (fullscreen: unknown) => void) => subscribe('window:fullscreen', callback),
 });
 
 contextBridge.exposeInMainWorld('lobby', {

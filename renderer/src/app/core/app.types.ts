@@ -30,6 +30,7 @@ export interface Preferences {
   autoNavigate: boolean;
   matchMode: boolean;
   matchModeWindow: boolean;
+  matchModeFullscreen: boolean;
   autoRunes: boolean;
   minimizeToTray: boolean;
   startWithWindows: boolean;
@@ -116,12 +117,15 @@ export interface AppBridge {
   onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;
   gameWindowMode(): Promise<GameWindowMode>;
   /** Modo partida: aumenta a janela (true) ou volta ao tamanho de antes (false). App antigo não tem. */
-  setMatchWindow?(expand: boolean): Promise<void>;
+  /** true = janela aumentada; 'fullscreen' = tela cheia (carregamento e jogo); false = tamanho de antes. */
+  setMatchWindow?(mode: boolean | 'fullscreen'): Promise<void>;
   updateStatus(): Promise<UpdateStatus>;
   checkUpdate(): Promise<UpdateStatus>;
   /** false = adiada pelo usuário na confirmação (durante a seleção ou a partida). */
   installUpdate(): Promise<boolean | void>;
   onUpdateStatus(callback: (status: UpdateStatus) => void): () => void;
+  /** A janela entrou ou saiu da tela cheia (modo partida). Só no PC. */
+  onFullscreenChanged?(callback: (fullscreen: boolean) => void): () => void;
 }
 
 declare global {

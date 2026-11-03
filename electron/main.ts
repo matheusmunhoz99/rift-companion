@@ -619,11 +619,14 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(directory);
     });
     ipcMain.handle('app:launch-league', () => openLeague(true));
-    // Modo partida: a janela cresce na seleção e volta ao tamanho de antes no fim de jogo.
+    // Modo partida: a janela cresce na seleção, fica em tela cheia no carregamento e no jogo,
+    // e volta ao tamanho de antes no fim de jogo. 'fullscreen' | true (aumentada) | false.
     const matchWindow = new MatchWindow(() => mainWindow);
-    ipcMain.handle('app:match-window', (_event, expand: unknown) => {
-      const changed = expand === true ? matchWindow.enter() : matchWindow.leave();
-      if (changed) appLog(`modo partida: janela ${expand === true ? 'aumentada' : 'restaurada'}`);
+    ipcMain.handle('app:match-window', (_event, mode: unknown) => {
+      const fullscreen = mode === 'fullscreen';
+      if (matchWindow.fullscreen(fullscreen)) appLog(`modo partida: tela cheia ${fullscreen ? 'pedida' : 'desligada'}`);
+      const changed = mode === true || fullscreen ? matchWindow.enter() : matchWindow.leave();
+      if (changed) appLog(`modo partida: janela ${mode === false ? 'restaurada' : 'aumentada'}`);
     });
     mobileOverride('app:launch-league', () => openLeague(false));
     if (!capturing) androidLink = new AndroidLink(connector);
@@ -635,6 +638,10 @@ void acquireInstance().then((acquired) => {
     }
 
     createWindow();
+    // A tela avisa quando a janela entra ou sai da tela cheia (o topo usa a largura toda; Esc sai).
+    for (const [event, on] of [['enter-full-screen', true], ['leave-full-screen', false]] as const) {
+      mainWindow?.on(event as 'enter-full-screen', () => mainWindow?.webContents.send('window:fullscreen', on));
+    }
     connector.start();
     appTray = createTray(ICON, {
       show: showMainWindow,

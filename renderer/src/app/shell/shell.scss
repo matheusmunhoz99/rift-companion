@@ -180,6 +180,11 @@ $gutter: max(clamp(14px, 2.2vw, 36px), calc((100% - 1760px) / 2));
   /* Espaço dos botões nativos de janela (titleBarOverlay). */
   padding: 0 150px 0 $gutter;
 
+  /* Tela cheia (modo partida): o Windows esconde os botões de janela, então o topo usa a largura toda. */
+  .fullscreen & {
+    padding-right: $gutter;
+  }
+
   h1 {
     margin: 0;
     font-size: 24px;

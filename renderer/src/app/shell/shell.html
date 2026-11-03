@@ -1,4 +1,4 @@
-<div class="shell" [class.phone]="android" [class.match-mode]="match.active()">
+<div class="shell" [class.phone]="android" [class.match-mode]="match.active()" [class.fullscreen]="match.fullscreen()">
   @if (!android) {
   <aside class="sidebar">
     <div class="brand drag">

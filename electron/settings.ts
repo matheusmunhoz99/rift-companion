@@ -26,6 +26,8 @@ export interface Preferences {
   matchMode: boolean;
   /** No modo partida, a janela cresce para a área útil do monitor e volta ao tamanho de antes. */
   matchModeWindow: boolean;
+  /** No carregamento e no jogo, tela cheia de verdade (sem borda nem barra de tarefas), como a do LoL. */
+  matchModeFullscreen: boolean;
   /** Importa runas e feitiços recomendados ao travar o campeão. */
   autoRunes: boolean;
   /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
@@ -61,6 +63,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   autoNavigate: true,
   matchMode: true,
   matchModeWindow: true,
+  matchModeFullscreen: true,
   autoRunes: false,
   minimizeToTray: true,
   startWithWindows: false,
@@ -89,6 +92,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   autoNavigate: isBoolean,
   matchMode: isBoolean,
   matchModeWindow: isBoolean,
+  matchModeFullscreen: isBoolean,
   autoRunes: isBoolean,
   minimizeToTray: isBoolean,
   startWithWindows: isBoolean,

@@ -30,12 +30,63 @@ export function sameBounds(a: Rectangle, b: Rectangle): boolean {
 export class MatchWindow {
   private saved: Rectangle | null = null;
   private applied: Rectangle | null = null;
+  /** Tela cheia pedida (carregamento e jogo) e se fomos nós que a ligamos. */
+  private fullscreenWanted = false;
+  private fullscreenApplied = false;
+  private waitingFocus: (() => void) | null = null;
 
   constructor(
     private readonly window: () => BrowserWindow | null,
     /** Área útil do monitor da janela (trocável nos testes). */
     private readonly workArea: (bounds: Rectangle) => Rectangle = (bounds) => screen.getDisplayMatching(bounds).workArea,
+    /**
+     * A janela está num monitor diferente do jogo? O LoL abre no monitor principal; num
+     * segundo monitor dá para entrar em tela cheia na hora sem cobrir nem tirar o foco do jogo.
+     */
+    private readonly apartFromGame: (bounds: Rectangle) => boolean = (bounds) =>
+      screen.getAllDisplays().length > 1 && screen.getDisplayMatching(bounds).id !== screen.getPrimaryDisplay().id,
   ) {}
+
+  /**
+   * Tela cheia de verdade (sem borda, barra de título nem barra de tarefas), como a do LoL,
+   * no carregamento e durante o jogo. Num segundo monitor entra na hora; no mesmo monitor do
+   * jogo espera você vir para o app (Alt+Tab), para nunca cobrir o jogo nem tirar o foco dele.
+   */
+  fullscreen(on: boolean): boolean {
+    const win = this.window();
+    if (!win || win.isDestroyed()) return false;
+    if (!on) {
+      const was = this.fullscreenWanted;
+      this.fullscreenWanted = false;
+      this.stopWaiting(win);
+      if (this.fullscreenApplied && win.isFullScreen()) win.setFullScreen(false);
+      this.fullscreenApplied = false;
+      return was;
+    }
+    if (this.fullscreenWanted) return false;
+    this.fullscreenWanted = true;
+    if (win.isVisible() && !win.isMinimized() && (win.isFocused() || this.apartFromGame(win.getBounds()))) {
+      this.applyFullscreen(win);
+    } else {
+      this.waitingFocus = () => {
+        this.waitingFocus = null;
+        this.applyFullscreen(win);
+      };
+      win.once('focus', this.waitingFocus);
+    }
+    return true;
+  }
+
+  private applyFullscreen(win: BrowserWindow): void {
+    if (!this.fullscreenWanted || win.isDestroyed() || win.isFullScreen()) return;
+    win.setFullScreen(true);
+    this.fullscreenApplied = true;
+  }
+
+  private stopWaiting(win: BrowserWindow): void {
+    if (this.waitingFocus) win.removeListener('focus', this.waitingFocus);
+    this.waitingFocus = null;
+  }
 
   enter(): boolean {
     const win = this.window();

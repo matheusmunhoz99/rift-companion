@@ -20,6 +20,7 @@ export class PreferencesService {
     autoNavigate: true,
     matchMode: true,
     matchModeWindow: true,
+    matchModeFullscreen: true,
     autoRunes: false,
     minimizeToTray: true,
     startWithWindows: false,

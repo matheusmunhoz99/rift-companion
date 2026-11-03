@@ -107,6 +107,13 @@
           [checked]="prefs.preferences().matchModeWindow"
           (toggled)="prefs.set({ matchModeWindow: $event })"
         />
+        <div class="divider"></div>
+        <app-switch
+          label="Tela cheia no carregamento e no jogo"
+          description="Como a tela cheia do LoL: sem borda, barra de título nem barra de tarefas. Num segundo monitor entra na hora; no mesmo monitor do jogo, quando você vem para o app (Alt+Tab), para nunca tirar o foco do jogo. Esc sai da tela cheia nesta partida."
+          [checked]="prefs.preferences().matchModeFullscreen"
+          (toggled)="prefs.set({ matchModeFullscreen: $event })"
+        />
       }
     }
   </section>
