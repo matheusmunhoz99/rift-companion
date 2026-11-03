@@ -8,6 +8,31 @@ import { LiveDataService } from './live-data.service';
 /** A partir desta fatia o time inimigo conta como "maioria mágico" ou "maioria físico". */
 const MAJORITY = 0.6;
 
+/**
+ * Fatia de dano físico x mágico do time inimigo agora: cada campeão pesa pelo que já investiu
+ * em itens e pelos abates (é dele o dano que você vai levar). null sem dados de dano.
+ */
+export function enemyDamageRead(
+  enemies: LivePlayer[],
+  damageOf: (enemy: LivePlayer) => { ap: number; ad: number; true: number } | null,
+  itemValue: (enemy: LivePlayer) => number,
+): { ap: number; ad: number; profile: EnemyDamage } | null {
+  let ap = 0;
+  let ad = 0;
+  for (const enemy of enemies) {
+    const split = damageOf(enemy);
+    if (!split) continue;
+    const weight = 1 + itemValue(enemy) / 3000 + enemy.kills * 0.25;
+    ap += split.ap * weight;
+    ad += (split.ad + split.true) * weight;
+  }
+  const total = ap + ad;
+  if (!total) return null;
+  const share = { ap: ap / total, ad: ad / total };
+  const profile: EnemyDamage = share.ap >= MAJORITY ? 'ap' : share.ad >= MAJORITY ? 'ad' : 'mixed';
+  return { ...share, profile };
+}
+
 interface EnemyRead {
   ap: number;
   ad: number;
@@ -152,21 +177,12 @@ export class AdaptiveBuild {
 
   protected readonly read = computed<EnemyRead | null>(() => {
     const enemies = (this.live.data()?.players ?? []).filter((p) => !p.ally);
-    let ap = 0;
-    let ad = 0;
-    for (const enemy of enemies) {
-      const split = this.damage.of(this.ddragon.championKeyOf(enemy.championKey));
-      if (!split) continue;
-      // Quem já comprou mais e abateu mais pesa mais: é dele o dano que você vai levar.
-      const weight = 1 + this.live.itemValue(enemy) / 3000 + enemy.kills * 0.25;
-      ap += split.ap * weight;
-      ad += (split.ad + split.true) * weight;
-    }
-    const total = ap + ad;
-    if (!total) return null;
-    const share = { ap: ap / total, ad: ad / total };
-    const profile: EnemyDamage = share.ap >= MAJORITY ? 'ap' : share.ad >= MAJORITY ? 'ad' : 'mixed';
-    return { ...share, profile, threat: this.threat(enemies) };
+    const read = enemyDamageRead(
+      enemies,
+      (enemy) => this.damage.of(this.ddragon.championKeyOf(enemy.championKey)),
+      (enemy) => this.live.itemValue(enemy),
+    );
+    return read ? { ...read, threat: this.threat(enemies) } : null;
   });
 
   /** Itens contra o perfil de dano que você ainda não tem (até 4). */

@@ -121,6 +121,8 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
 
   // Tela de carregamento: plano de jogo (IA + opções de build Mestre+). Falha -> null.
   ipcMain.handle('riot:get-plan', (_event, request: unknown) => apiPost('/v1/plan', request).catch(() => null));
+  // Partida em andamento: leitura por IA (situação + opções para você escolher). Falha -> null.
+  ipcMain.handle('riot:get-live-read', (_event, request: unknown) => apiPost('/v1/live-read', request).catch(() => null));
 
   // Fim de jogo: manda os fatos calculados no app e recebe timeline + narração por IA.
   ipcMain.handle('riot:get-coach', (_event, request: unknown) =>

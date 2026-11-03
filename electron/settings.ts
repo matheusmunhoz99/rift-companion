@@ -45,6 +45,10 @@ export interface Preferences {
   voiceVolume: number;
   /** Ctrl+Shift+R mostra e esconde o app de qualquer lugar (também por cima do jogo). */
   appShortcut: boolean;
+  /** Leitura da partida em andamento por IA (situação + opções), na aba Ao vivo. */
+  liveRead: boolean;
+  /** Quando você morre, a voz lê as opções da leitura (precisa dos avisos falados ligados). */
+  liveReadVoice: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -81,6 +85,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   voiceAlerts: true,
   voiceVolume: 0.8,
   appShortcut: true,
+  liveRead: true,
+  liveReadVoice: true,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -114,6 +120,8 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   voiceAlerts: isBoolean,
   voiceVolume: (value): value is number => typeof value === 'number' && value >= 0.1 && value <= 1,
   appShortcut: isBoolean,
+  liveRead: isBoolean,
+  liveReadVoice: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,

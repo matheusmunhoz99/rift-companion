@@ -2,10 +2,15 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.16';
+const RELEASE = '1.17';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'eye',
+    title: 'Leitura da partida por IA',
+    text: 'Na aba Ao vivo a IA lê o placar (KDA, itens, ouro, objetivos) quando você morre, a cada 4 minutos ou no botão "Ler agora": como está a partida e 2 ou 3 caminhos possíveis, com o motivo. Morto, ouve as opções no fone.',
+  },
   {
     icon: 'chat',
     title: 'Avisos falados',
@@ -51,7 +56,7 @@ const HIGHLIGHTS = [
           <header class="hero">
             <span class="badge">Novidades</span>
             <h2 id="whats-new-title">Rift Companion <span class="num">{{ release }}</span></h2>
-            <p>Voz no fone, sugestões só suas e um card para mostrar a partida: veja o que mudou.</p>
+            <p>A IA lendo a sua partida, voz no fone e um card para mostrar o jogo: veja o que mudou.</p>
           </header>
           <ul class="highlights">
             @for (item of highlights; track item.title) {

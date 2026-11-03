@@ -167,7 +167,7 @@ export function initializeAndroid(): void {
       ...methods({ getSettings: 'riot:get-settings', setPlatform: 'riot:set-platform', findPlayer: 'riot:find-player',
         getLiveGame: 'riot:get-live-game', getLocalGame: 'riot:get-local-game', getClientTeams: 'riot:get-client-teams',
         getLiveDashboard: 'riot:get-live-dashboard',
-        getPremades: 'riot:get-premades', getMatches: 'riot:get-matches', getCoach: 'riot:get-coach', getPlan: 'riot:get-plan' }),
+        getPremades: 'riot:get-premades', getMatches: 'riot:get-matches', getCoach: 'riot:get-coach', getPlan: 'riot:get-plan', getLiveRead: 'riot:get-live-read' }),
       getPostGame: async () => snapshot?.postgame ?? null, onPostGame: on('postgame:ready'),
     },
     stats: methods({ meta: 'stats:meta', tierList: 'stats:tierlist', champion: 'stats:champion', counters: 'stats:counters', damage: 'stats:damage' }),

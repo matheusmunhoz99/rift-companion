@@ -13,7 +13,7 @@ const stages = {
   live: {
     title: "Dez jogadores. Uma visão da partida.",
     description:
-      "Elo, runas, campeão mais jogado, duo e o dano físico e mágico de cada um, num card por jogador. No Ao vivo, objetivos e timers da selva, rota a rota, e os próximos itens contra o dano do time inimigo agora.",
+      "Elo, runas, campeão mais jogado, duo e o dano físico e mágico de cada um, num card por jogador. No Ao vivo, objetivos, timers da selva, os próximos itens contra o dano inimigo e a leitura da partida por IA, com caminhos possíveis para você escolher.",
     tag: "PARTIDA AO VIVO",
     image: "docs/screenshots/players.png?v=1.16",
     alt: "Cards dos dez jogadores com elo, runas, maestria e dano físico e mágico",

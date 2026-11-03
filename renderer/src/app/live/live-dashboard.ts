@@ -5,6 +5,7 @@ import { positionOrder } from '../stats/match-context';
 import { LiveDataService } from './live-data.service';
 import { JungleTimers } from './jungle-timers';
 import { AdaptiveBuild } from './adaptive-build';
+import { LiveReadPanel } from './live-read';
 
 const DRAGONS: Record<string, { name: string; color: string }> = {
   Fire: { name: 'Infernal', color: '#ff7a45' },
@@ -51,7 +52,7 @@ interface Matchup {
 
 @Component({
   selector: 'app-live-dashboard',
-  imports: [JungleTimers, AdaptiveBuild],
+  imports: [JungleTimers, AdaptiveBuild, LiveReadPanel],
   templateUrl: './live-dashboard.html',
   styleUrl: './live-dashboard.scss',
 })

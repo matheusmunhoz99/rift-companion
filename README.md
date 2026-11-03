@@ -139,6 +139,7 @@ Os dois times aparecem **logo no carregamento**, direto do jogo, sem esperar a R
 - **"Já jogaram com você"**: quem esteve nas suas últimas 10 partidas, no seu time ou contra você, com os campeões e o KDA de cada um.
 - **Chance de vitória** baseada no elo, na maestria e no histórico recente dos 10 jogadores.
 - A **sua build para esta partida**, já ajustada ao oponente e ao perfil de dano do time inimigo.
+- **Leitura da partida por IA**: quando você morre, a cada 4 minutos ou no botão "Ler agora", a IA lê o placar (KDA, itens, ouro, objetivos) e mostra como está a partida e 2 ou 3 caminhos possíveis, com o motivo de cada um. Morto, você ouve as opções no fone. A decisão é sua.
 
 ## Overlay em tempo real
 

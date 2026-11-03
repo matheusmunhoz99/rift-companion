@@ -250,6 +250,22 @@
         <button type="button" class="btn ghost small" (click)="testVoice()">Ouvir</button>
       </div>
     }
+    <div class="divider"></div>
+    <app-switch
+      label="Leitura da partida por IA"
+      description="Na aba Ao vivo, a IA lê o placar (KDA, itens, ouro, objetivos) quando você morre, a cada 4 minutos ou no botão “Ler agora”, e mostra como está a partida e 2 ou 3 caminhos possíveis, com o motivo de cada um. A decisão é sua."
+      [checked]="prefs.preferences().liveRead"
+      (toggled)="prefs.set({ liveRead: $event })"
+    />
+    @if (prefs.preferences().liveRead && prefs.preferences().voiceAlerts) {
+      <div class="divider"></div>
+      <app-switch
+        label="Ler as opções em voz alta quando você morrer"
+        description="Enquanto você espera renascer, a voz fala as opções da leitura."
+        [checked]="prefs.preferences().liveReadVoice"
+        (toggled)="prefs.set({ liveReadVoice: $event })"
+      />
+    }
 
     @switch (prefs.gameWindowMode()) {
       @case ('fullscreen') {

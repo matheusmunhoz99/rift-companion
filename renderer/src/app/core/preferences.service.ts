@@ -30,6 +30,8 @@ export class PreferencesService {
     voiceAlerts: true,
     voiceVolume: 0.8,
     appShortcut: true,
+    liveRead: true,
+    liveReadVoice: true,
     sendErrorReports: true,
     detailedDiagnostics: false,
     telegramReadyCheck: true,

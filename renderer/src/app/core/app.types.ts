@@ -40,6 +40,8 @@ export interface Preferences {
   voiceAlerts: boolean;
   voiceVolume: number;
   appShortcut: boolean;
+  liveRead: boolean;
+  liveReadVoice: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;

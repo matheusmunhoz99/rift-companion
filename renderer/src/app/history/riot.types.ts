@@ -135,6 +135,49 @@ export interface PlanPlayer {
   me: boolean;
 }
 
+// Espelha rift-api src/live-read.ts.
+export interface LiveReadPlayer {
+  champion: string;
+  championId: number;
+  ally: boolean;
+  me: boolean;
+  position: string | null;
+  level: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  items: number[];
+  itemValue: number;
+  dead: boolean;
+}
+
+export interface LiveReadRequest {
+  session: string;
+  platformId: string;
+  queueId: number;
+  mapId: number | null;
+  gameMode: string;
+  gameTime: number;
+  trigger: 'death' | 'periodic' | 'manual';
+  myGold: number;
+  enemyDamage: 'ad' | 'ap' | 'mixed' | null;
+  players: LiveReadPlayer[];
+  teams: { ally: Omit<LiveTeam, 'atakhan'>; enemy: Omit<LiveTeam, 'atakhan'> };
+  objectives: string[];
+}
+
+export interface LiveRead {
+  situacao: string;
+  opcoes: Array<{ titulo: string; motivo: string }>;
+  atencao: string | null;
+  itens: number[];
+}
+
+export interface LiveReadResponse {
+  read: LiveRead | null;
+}
+
 export interface PlanRequest {
   gameId: number;
   platformId: string;
@@ -375,6 +418,8 @@ export interface RiotBridge {
   getCoach(request: CoachNarrationRequest): Promise<CoachNarrationResult>;
   /** Plano de jogo da tela de carregamento (null se o servidor não respondeu). Espelha server/src/plan.ts. */
   getPlan?(request: PlanRequest): Promise<PlanResponse | null>;
+  /** Leitura da partida em andamento por IA. Ausente em app antigo. */
+  getLiveRead?(request: LiveReadRequest): Promise<LiveReadResponse | null>;
 }
 
 declare global {
