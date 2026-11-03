@@ -39,6 +39,12 @@ export interface Preferences {
   showAsRiftUser: boolean;
   /** Avisos de objetivos (1 min 30 s e 30 s antes de nascer) pelo contato Rift Companion no chat do LoL. */
   chatObjectiveAlerts: boolean;
+  /** Avisos falados (voz em português) de objetivos e dos campos da selva marcados. */
+  voiceAlerts: boolean;
+  /** Volume da voz, de 0.1 a 1. */
+  voiceVolume: number;
+  /** Ctrl+Shift+R mostra e esconde o app de qualquer lugar (também por cima do jogo). */
+  appShortcut: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -72,6 +78,9 @@ const DEFAULT_PREFERENCES: Preferences = {
   startWithWindows: false,
   showAsRiftUser: true,
   chatObjectiveAlerts: true,
+  voiceAlerts: true,
+  voiceVolume: 0.8,
+  appShortcut: true,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -102,6 +111,9 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   startWithWindows: isBoolean,
   showAsRiftUser: isBoolean,
   chatObjectiveAlerts: isBoolean,
+  voiceAlerts: isBoolean,
+  voiceVolume: (value): value is number => typeof value === 'number' && value >= 0.1 && value <= 1,
+  appShortcut: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,

@@ -82,3 +82,11 @@ test('níveis das habilidades do jogador', () => {
   assert.deepEqual(toOverlayData(g).me.skills, [3, 1, 2, 1]);
   assert.equal(toOverlayData(game()).me.skills, null);
 });
+
+test('overlay ganha a terceira linha só com campo marcado ou inibidor voltando', () => {
+  const { overlayRows } = require('../dist-electron/overlay/overlay.js');
+  assert.equal(overlayRows({ gameTime: 600, camps: [], inhibitors: [] }), 2);
+  assert.equal(overlayRows({ gameTime: 600, camps: [{ key: 'ally:blue', name: 'Azul', backAt: 700 }], inhibitors: [] }), 3);
+  assert.equal(overlayRows({ gameTime: 800, camps: [{ key: 'ally:blue', name: 'Azul', backAt: 700 }], inhibitors: [] }), 2, 'campo já voltou');
+  assert.equal(overlayRows({ gameTime: 600, camps: [], inhibitors: [{ ally: false, lane: 'Meio', respawnAt: 650 }] }), 3);
+});

@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
 import type { ChampSelectState, TeamMember, Trade } from '../lcu/lcu.types';
+import { PoolSuggestions } from './pool-suggestions';
 
 const POSITION_LABELS: Record<string, string> = {
   top: 'Topo',
@@ -19,6 +20,7 @@ interface Feedback {
   selector: 'app-champ-select-panel',
   templateUrl: './champ-select-panel.html',
   styleUrl: './champ-select-panel.scss',
+  imports: [PoolSuggestions],
 })
 export class ChampSelectPanel {
   readonly session = input.required<ChampSelectState>();

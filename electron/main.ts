@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, screen, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electronIpc, nativeImage, screen, shell } from 'electron';
+import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
 import { appLog, onAppLog, startAppLog } from './app-log';
@@ -12,7 +13,7 @@ import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
-import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController } from './overlay/overlay';
+import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController, overlayRows } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
 import { RIFT_API_URL, registerRiotHandlers } from './riot/ipc';
@@ -56,6 +57,9 @@ let settings: Settings | null = null;
 let appTray: AppTray | null = null;
 let invisibleMode: InvisibleModeProxy | null = null;
 let androidLink: AndroidLink | null = null;
+let appShortcut: AppShortcut | null = null;
+/** Campos da selva marcados na tela do app, para o overlay mostrar por cima do jogo. */
+let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
 let quitting = false;
 /** O modo partida está mexendo na janela (não grava esse tamanho como o lugar escolhido). */
 let matchManaging: () => boolean = () => false;
@@ -218,18 +222,21 @@ function scheduleCapture(window: BrowserWindow): void {
 
 /** Só no desenvolvimento: abre o overlay com dados de um arquivo e captura a janela. */
 function captureDemoOverlay(dataFile: string): void {
+  const data = JSON.parse(readFileSync(dataFile, 'utf8'));
   const window = new BrowserWindow({
     width: OVERLAY_WIDTH,
-    height: OVERLAY_HEIGHT,
+    height: overlayRows({ camps: [], inhibitors: [], ...data }) === 3 ? OVERLAY_HEIGHT + 28 : OVERLAY_HEIGHT,
     frame: false,
     transparent: true,
     show: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
   });
   loadRenderer(window, 'overlay');
-  window.webContents.once('did-finish-load', () => {
-    window.webContents.send('overlay:data', JSON.parse(readFileSync(dataFile, 'utf8')));
-  });
+  // Repete o envio: a página só escuta depois que o Angular sobe (o did-finish-load vem antes).
+  const resend = setInterval(() => {
+    if (window.isDestroyed()) clearInterval(resend);
+    else window.webContents.send('overlay:data', data);
+  }, 1000);
   scheduleCapture(window);
 }
 
@@ -339,6 +346,7 @@ void acquireInstance().then((acquired) => {
         try { overlay?.sync(); } catch (error) { appLog(`overlay.sync erro: ${error}`); }
       }, 50);
       if ('showAsRiftUser' in changes) announceRiftUser();
+      appShortcut?.apply(preferences.appShortcut && !capturing);
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
       mainWindow?.webContents.send('prefs:changed', preferences);
@@ -600,14 +608,51 @@ void acquireInstance().then((acquired) => {
       (window) => loadRenderer(window, 'overlay'),
       path.join(__dirname, 'preload.js'),
       createTimingsSource(connector, app.isPackaged),
+      () => campTimers,
     );
-    // Avisos de objetivos no chat do LoL, pelo contato Rift Companion (precisa do modo invisível).
+    electronIpc.on('app:camp-timers', (_event, camps: unknown) => {
+      campTimers = Array.isArray(camps)
+        ? camps
+            .filter((c): c is { key: string; name: string; backAt: number } =>
+              !!c && typeof c.key === 'string' && typeof c.name === 'string' && typeof c.backAt === 'number')
+            .slice(0, 20)
+        : [];
+    });
+    // Avisos de objetivos no chat do LoL (contato Rift Companion, precisa do modo invisível) e em voz alta.
     if (!capturing) new ObjectiveAnnouncer(
       connector,
-      invisible,
-      () => prefs.getPreferences().chatObjectiveAlerts,
+      {
+        chat: invisible,
+        chatEnabled: () => prefs.getPreferences().chatObjectiveAlerts,
+        speak: (text) => mainWindow?.webContents.send('voice:say', text),
+        voiceEnabled: () => prefs.getPreferences().voiceAlerts,
+      },
       createTimingsSource(connector, app.isPackaged),
     );
+    // Ctrl+Shift+R: mostra e esconde o app de qualquer lugar (também por cima do jogo).
+    appShortcut = new AppShortcut(toggleFromShortcut);
+    appShortcut.apply(prefs.getPreferences().appShortcut && !capturing);
+    // Card de compartilhar: copia ou salva como imagem um pedaço da janela.
+    ipcMain.handle('app:capture-image', async (_event, rect: unknown, action: unknown, fileName: unknown) => {
+      const win = mainWindow;
+      if (!win || win.isDestroyed() || !isRect(rect)) return false;
+      const image = await captureSharp(win, rect);
+      if (image.isEmpty()) return false;
+      if (action === 'copy') {
+        await clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(image.toPNG())], { type: 'image/png' }) })]);
+        return true;
+      }
+      const name = typeof fileName === 'string' && fileName ? fileName.replace(/[<>:"/\|?*]+/g, '-') : 'rift-companion';
+      const { canceled, filePath } = await dialog.showSaveDialog(win, {
+        title: 'Salvar imagem',
+        defaultPath: path.join(app.getPath('pictures'), `${name}.png`),
+        filters: [{ name: 'Imagem PNG', extensions: ['png'] }],
+      });
+      if (canceled || !filePath) return false;
+      writeFileSync(filePath, image.toPNG());
+      appLog('card de fim de jogo salvo');
+      return true;
+    });
 
     ipcMain.handle('prefs:get', () => prefs.getPreferences());
     ipcMain.handle('prefs:set', (_event, changes: Partial<Preferences>) => applyPreferences(changes ?? {}));
@@ -666,6 +711,7 @@ void acquireInstance().then((acquired) => {
     ipcMain.handle('app:info', () => ({
       version: app.getVersion(),
       overlayShortcut: OVERLAY_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
+      appShortcut: APP_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
       buildsDirectory: path.join(app.getPath('userData'), 'builds'),
     }));
     ipcMain.handle('app:open-builds-folder', async () => {
@@ -739,6 +785,7 @@ void acquireInstance().then((acquired) => {
     androidLink?.stop();
     appLog('app fechando');
     overlay?.dispose();
+    appShortcut?.dispose();
     invisibleMode?.dispose();
   });
 
@@ -795,6 +842,48 @@ function showMainWindow(): void {
  * O Windows não deixa um app em segundo plano roubar o foco; "sempre no topo" por um
  * instante faz a janela aparecer na frente do cliente do LoL, no monitor em que ela está.
  */
+/** Atalho global: com o app na frente, minimiza (volta para o jogo); senão, traz para a frente. */
+function toggleFromShortcut(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isVisible() && !mainWindow.isMinimized() && mainWindow.isFocused()) {
+    mainWindow.minimize();
+    return;
+  }
+  bringToFront();
+}
+
+/**
+ * Recorta um pedaço da página em alta resolução (1080 px de largura no card), renderizado
+ * de novo pelo Chromium em vez de ampliar o print da tela. Com o DevTools aberto o depurador
+ * já está em uso: cai no print comum, no tamanho da tela.
+ */
+async function captureSharp(win: BrowserWindow, rect: { x: number; y: number; width: number; height: number }): Promise<Electron.NativeImage> {
+  const scale = Math.max(1, Math.min(3, 1080 / rect.width));
+  const debug = win.webContents.debugger;
+  let attached = false;
+  try {
+    debug.attach('1.3');
+    attached = true;
+    const { data } = (await debug.sendCommand('Page.captureScreenshot', {
+      format: 'png',
+      clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height, scale },
+    })) as { data: string };
+    return nativeImage.createFromBuffer(Buffer.from(data, 'base64'));
+  } catch {
+    return win.webContents.capturePage({
+      x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height),
+    });
+  } finally {
+    if (attached) debug.detach();
+  }
+}
+
+function isRect(value: unknown): value is { x: number; y: number; width: number; height: number } {
+  const r = value as Record<string, unknown> | null;
+  return !!r && ['x', 'y', 'width', 'height'].every((k) => typeof r[k] === 'number' && Number.isFinite(r[k] as number))
+    && (r.width as number) > 0 && (r.height as number) > 0;
+}
+
 function bringToFront(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isMinimized()) mainWindow.restore();

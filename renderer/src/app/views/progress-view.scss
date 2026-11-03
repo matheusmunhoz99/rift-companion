@@ -412,3 +412,146 @@ p {
     }
   }
 }
+
+/* Com quem você ganha mais. */
+.partners {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+
+  .up { color: var(--success); }
+  .down { color: var(--loss); }
+}
+
+.partners-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+  }
+
+  .muted { font-size: 12px; }
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.split-item {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.1;
+  }
+
+  .muted { font-size: 12px; }
+}
+
+.split-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.partner-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 18px;
+  }
+}
+
+.partner-name {
+  flex: 1 1 140px;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  small {
+    margin-left: 2px;
+    color: var(--faint);
+    font-weight: 400;
+  }
+}
+
+.partner-champs {
+  display: flex;
+  gap: 3px;
+
+  img {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-xs);
+  }
+}
+
+.partner-record { font-size: 12px; }
+
+.partner-diff {
+  min-width: 110px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.best {
+  display: grid;
+  gap: 8px;
+}
+
+.best-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.best-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 13px;
+
+  img {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-xs);
+  }
+}

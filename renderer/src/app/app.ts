@@ -74,6 +74,8 @@ export class App {
     if (this.overlayMode) {
       // O overlay é uma barra transparente sobre o jogo: sem splash.
       document.body.classList.add('overlay-mode', 'boot-done');
+      // Remove de vez: a transição de opacidade não anda com a janela ainda escondida.
+      document.getElementById('boot')?.remove();
     } else {
       // Os dados ao vivo acumulam desde o início da partida, mesmo antes de abrir a aba.
       if (!isAndroid) inject(LiveDataService);

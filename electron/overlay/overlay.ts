@@ -1,7 +1,7 @@
 import { BrowserWindow, globalShortcut, screen } from 'electron';
 import type { LcuConnector } from '../lcu/connector';
 import type { Preferences } from '../settings';
-import { fetchRawGameData, toOverlayData } from './live-client';
+import { fetchRawGameData, toOverlayData, type OverlayData } from './live-client';
 import type { ObjectiveTimings } from './live-dashboard';
 import { appLog } from '../app-log';
 
@@ -9,7 +9,8 @@ const POLL_MS = 2_000;
 export const OVERLAY_WIDTH = 980;
 export const OVERLAY_HEIGHT = 84;
 const WIDTH = OVERLAY_WIDTH;
-const HEIGHT = OVERLAY_HEIGHT;
+/** Com campos da selva marcados ou inibidores para voltar, uma terceira linha. */
+const TALL_HEIGHT = OVERLAY_HEIGHT + 28;
 export const OVERLAY_SHORTCUT = 'CommandOrControl+Shift+O';
 
 /**
@@ -22,6 +23,7 @@ export class OverlayController {
   private hiddenByUser = false;
   /** A página do overlay terminou de carregar: antes disso a janela seria só um retângulo preto. */
   private ready = false;
+  private height = OVERLAY_HEIGHT;
 
   constructor(
     private readonly connector: LcuConnector,
@@ -29,6 +31,8 @@ export class OverlayController {
     private readonly loadPage: (window: BrowserWindow) => void,
     private readonly preloadPath: string,
     private readonly timings: () => Promise<ObjectiveTimings>,
+    /** Campos da selva marcados na tela do app (a API do jogo não informa). */
+    private readonly camps: () => OverlayData['camps'] = () => [],
   ) {
     connector.on('state', () => this.sync());
     globalShortcut.register(OVERLAY_SHORTCUT, () => this.toggleByUser());
@@ -74,9 +78,14 @@ export class OverlayController {
   private async poll(): Promise<void> {
     const raw = await fetchRawGameData();
     if (!raw?.allPlayers?.length || !this.timer) return;
-    const data = toOverlayData(raw, await this.timings());
+    const data = { ...toOverlayData(raw, await this.timings()), camps: this.camps() };
     if (!this.timer) return;
     const window = this.ensureWindow();
+    const height = overlayRows(data) === 3 ? TALL_HEIGHT : OVERLAY_HEIGHT;
+    if (height !== this.height) {
+      this.height = height;
+      this.applyLayout(window);
+    }
     window.webContents.send('overlay:data', data);
     if (this.hiddenByUser || !this.ready) return;
     if (!window.isVisible()) window.showInactive();
@@ -95,7 +104,7 @@ export class OverlayController {
 
     const window = new BrowserWindow({
       width: WIDTH,
-      height: HEIGHT,
+      height: this.height,
       frame: false,
       resizable: false,
       movable: false,
@@ -146,7 +155,14 @@ export class OverlayController {
         : overlayPosition === 'right'
           ? bounds.x + bounds.width - WIDTH - margin
           : Math.round(bounds.x + (bounds.width - WIDTH) / 2);
-    window.setBounds({ x, y: bounds.y + 6, width: WIDTH, height: HEIGHT });
+    window.setBounds({ x, y: bounds.y + 6, width: WIDTH, height: this.height });
     window.setOpacity(overlayOpacity);
   }
+}
+
+/** Linhas do overlay: a terceira só aparece com campos marcados ou inibidores voltando. */
+export function overlayRows(data: Pick<OverlayData, 'camps' | 'inhibitors' | 'gameTime'>): 2 | 3 {
+  const camps = data.camps.some((c) => c.backAt > data.gameTime);
+  const inhibitors = data.inhibitors.some((i) => i.respawnAt > data.gameTime);
+  return camps || inhibitors ? 3 : 2;
 }

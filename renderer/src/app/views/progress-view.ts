@@ -4,6 +4,9 @@ import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { tierName } from '../riot/labels';
 import { currentRank, forQueue, ladderChart, ladderLabel, summarize, todayEntries } from '../progress/rank-stats';
 import { Icon } from '../ui/icon';
+import { MyMatchesService } from '../history/my-matches.service';
+import { partiesOf } from '../match/parties';
+import { partnerStats, type WinRecord } from '../progress/partners';
 
 const QUEUE_LABEL: Record<RankedQueue, string> = { solo: 'Solo/Duo', flex: 'Flex' };
 const APEX = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
@@ -24,6 +27,16 @@ interface SparkPoint {
 export class ProgressView {
   private readonly ddragon = inject(DataDragonService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly myMatches = inject(MyMatchesService);
+  protected readonly matchesLoading = this.myMatches.loading;
+
+  /** Sozinho x em grupo, parceiros de duo e seus melhores campeões (últimas partidas). */
+  protected readonly partners = computed(() => {
+    const data = this.myMatches.data();
+    if (!data || data.rows.length < 3) return null;
+    const stats = partnerStats(data.rows, (match) => partiesOf(match, data.matches));
+    return { ...stats, total: stats.solo.games + stats.grouped.games };
+  });
 
   protected readonly queue = signal<RankedQueue>('solo');
   protected readonly entries = signal<RankEntry[] | null>(null);
@@ -84,9 +97,23 @@ export class ProgressView {
 
   constructor() {
     void this.load();
+    void this.myMatches.load();
     // Atualiza quando uma partida ranqueada é registrada; limpa ao sair da tela.
     this.unsubscribe = window.app?.onRankUpdated(() => void this.load());
     this.destroyRef.onDestroy(() => this.unsubscribe?.());
+  }
+
+  protected pct(wins: number, games: number): number {
+    return games ? Math.round((wins / games) * 100) : 0;
+  }
+
+  protected tone(r: WinRecord): string {
+    const rate = r.games ? r.wins / r.games : 0.5;
+    return rate >= 0.55 ? 'up' : rate < 0.45 ? 'down' : '';
+  }
+
+  protected diffLabel(points: number): string {
+    return `${points > 0 ? '+' : ''}${points} pts`;
   }
 
   protected pick(q: RankedQueue): void {

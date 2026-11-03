@@ -55,8 +55,14 @@
 
   <!-- Cada um escolhe a ordem e o que aparece (fica salvo neste aparelho). -->
   <div class="screen-tools">
+    @if (me()) {
+      <button type="button" class="btn small share" (click)="sharing.set(true)">Compartilhar</button>
+    }
     <app-layout-menu [layout]="layout" />
   </div>
+  @if (sharing() && me(); as m) {
+    <app-share-card [game]="g" [player]="m" [modeTitle]="title()" (closed)="sharing.set(false)" />
+  }
 
   @if (layout.visible('placar')) {
     <app-postgame-scoreboard

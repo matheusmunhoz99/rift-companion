@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import type { InvisibleStartupStatus, InvisibleStatus, OverlayPosition } from '../core/app.types';
 import { PreferencesService } from '../core/preferences.service';
+import { VoiceService } from '../live/voice.service';
 import { ToastService, errorText } from '../core/toast.service';
 import { Icon } from '../ui/icon';
 import { Switch } from '../ui/switch';
@@ -74,6 +75,7 @@ export class SettingsView {
   })[this.currentStatus()]);
 
   private readonly toast = inject(ToastService);
+  private readonly voice = inject(VoiceService);
   /** Telegram: conectado, desconectado ou esperando a pessoa tocar em "Iniciar" no bot. */
   protected readonly telegram = signal<'connected' | 'disconnected' | 'waiting'>('disconnected');
   protected readonly telegramBusy = signal(false);
@@ -138,6 +140,15 @@ export class SettingsView {
     this.updateMessage.set(
       status.state === 'available' ? `Versão ${status.release.version} disponível: use o aviso no topo para atualizar.` : 'Você está na versão mais recente.',
     );
+  }
+
+  protected setVoiceVolume(value: string): void {
+    void this.prefs.set({ voiceVolume: Math.round(Number(value)) / 100 });
+  }
+
+  /** Exemplo com o volume escolhido (fala mesmo fora da partida). */
+  protected testVoice(): void {
+    this.voice.say('Barão em 30 segundos', true);
   }
 
   protected setOpacity(value: string): void {

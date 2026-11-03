@@ -5,6 +5,7 @@ import { ToastService, errorText } from '../core/toast.service';
 import { HistoryView } from '../history/history-view';
 import { LcuService } from '../lcu/lcu.service';
 import { LiveDataService } from '../live/live-data.service';
+import { VoiceService } from '../live/voice.service';
 import { Icon } from '../ui/icon';
 import { BuildsView } from '../views/builds-view';
 import { ChampSelectView } from '../views/champ-select-view';
@@ -98,6 +99,8 @@ export class Shell {
   protected readonly toast = inject(ToastService);
 
   private readonly live = inject(LiveDataService);
+  /** Avisos falados da partida e campos da selva no overlay (no celular, só a voz dos campos). */
+  private readonly voice = inject(VoiceService);
   /** Modo partida: menu só com ícones, conteúdo largo e timers no topo (da seleção ao fim de jogo). */
   protected readonly match = inject(MatchModeService);
 

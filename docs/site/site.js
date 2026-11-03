@@ -5,9 +5,9 @@ const stages = {
   select: {
     title: "Os dois times. Tudo numa tela só.",
     description:
-      "Cada jogador num card com a arte do campeão, a rota e os feitiços. Os inimigos aparecem conforme travam, com banimentos e o tempo da fase. Ao lado, build, estatísticas e counters do confronto, com runas importadas direto no cliente.",
+      "Cada jogador num card com a arte do campeão, a rota e os feitiços. Na sua vez, os seus campeões que mais ganham na rota, cruzados com o confronto. Ao lado, build, estatísticas e counters, com runas importadas direto no cliente.",
     tag: "SELEÇÃO DE CAMPEÕES",
-    image: "docs/screenshots/champselect.png?v=1.15",
+    image: "docs/screenshots/champselect.png?v=1.16",
     alt: "Seleção de campeões com os dois times em cards, banimentos, tempo e estatísticas do campeão",
   },
   live: {
@@ -15,15 +15,15 @@ const stages = {
     description:
       "Elo, runas, campeão mais jogado, duo e o dano físico e mágico de cada um, num card por jogador. No Ao vivo, objetivos e timers da selva, rota a rota, e os próximos itens contra o dano do time inimigo agora.",
     tag: "PARTIDA AO VIVO",
-    image: "docs/screenshots/players.png?v=1.15",
+    image: "docs/screenshots/players.png?v=1.16",
     alt: "Cards dos dez jogadores com elo, runas, maestria e dano físico e mágico",
   },
   post: {
     title: "Acabou o jogo. Ficaram os números.",
     description:
-      "Sua nota num anel, os três melhores da partida e o ranking dos dez com o porquê de cada nota. Dano, ouro, farm e visão contam o que o resultado sozinho não mostra.",
+      "Sua nota num anel, os três melhores da partida e o ranking dos dez com o porquê de cada nota. Dano, ouro, farm e visão contam o que o resultado sozinho não mostra. E um card 1080×1080 pronto para mandar no WhatsApp ou postar.",
     tag: "FIM DE PARTIDA",
-    image: "docs/screenshots/postgame.png?v=1.15",
+    image: "docs/screenshots/postgame.png?v=1.16",
     alt: "Resumo pós-partida com notas dos jogadores, pódio e estatísticas",
   },
 };

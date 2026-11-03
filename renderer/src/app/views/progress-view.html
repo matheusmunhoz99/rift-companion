@@ -141,3 +141,65 @@
     </ul>
   </section>
 }
+
+<!-- Com quem você ganha mais: últimas partidas (todas as filas), sozinho x em grupo. -->
+@if (partners(); as p) {
+  <section class="partners">
+    <div class="partners-head">
+      <h3>Com quem você ganha mais</h3>
+      <span class="muted">últimas {{ p.total }} partidas, todas as filas</span>
+    </div>
+    <div class="split">
+      <div class="split-item">
+        <span class="split-label">Sozinho</span>
+        <strong class="num" [class]="tone(p.solo)">{{ pct(p.solo.wins, p.solo.games) }}%</strong>
+        <span class="muted">{{ p.solo.wins }}V {{ p.solo.games - p.solo.wins }}D</span>
+      </div>
+      <div class="split-item">
+        <span class="split-label">Em grupo</span>
+        <strong class="num" [class]="tone(p.grouped)">{{ p.grouped.games ? pct(p.grouped.wins, p.grouped.games) + '%' : '—' }}</strong>
+        <span class="muted">{{ p.grouped.wins }}V {{ p.grouped.games - p.grouped.wins }}D</span>
+      </div>
+    </div>
+    @if (p.partners.length) {
+      <ul class="partner-list">
+        @for (m of p.partners; track m.riotId) {
+          <li>
+            <span class="partner-name">{{ m.riotId.split('#')[0] }}<small>#{{ m.riotId.split('#')[1] }}</small></span>
+            <span class="partner-champs">
+              @for (id of m.champions; track id) {
+                @if (iconUrl(id); as url) {<img [src]="url" [alt]="championName(id)" [title]="championName(id)" />}
+              }
+            </span>
+            <span class="partner-record muted">{{ m.games }} juntos</span>
+            <strong class="num" [class]="tone(m)">{{ pct(m.wins, m.games) }}%</strong>
+            @if (p.solo.games >= 3) {
+              <span class="partner-diff" [class.up]="pct(m.wins, m.games) > pct(p.solo.wins, p.solo.games)" [class.down]="pct(m.wins, m.games) < pct(p.solo.wins, p.solo.games)">
+                {{ diffLabel(pct(m.wins, m.games) - pct(p.solo.wins, p.solo.games)) }} vs sozinho
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">Ainda sem um parceiro com 2 partidas juntos nas últimas partidas. Jogue de duo com o app aberto e ele aparece aqui.</p>
+    }
+    @if (p.champions.length) {
+      <div class="best">
+        <span class="split-label">Seus campeões que mais ganham</span>
+        <div class="best-list">
+          @for (c of p.champions; track c.championId) {
+            <span class="best-item">
+              @if (iconUrl(c.championId); as url) {<img [src]="url" alt="" />}
+              <span>{{ championName(c.championId) }}</span>
+              <strong class="num" [class]="tone(c)">{{ pct(c.wins, c.games) }}%</strong>
+              <small class="muted">{{ c.games }}p</small>
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </section>
+} @else if (matchesLoading()) {
+  <p class="empty">Buscando suas últimas partidas…</p>
+}

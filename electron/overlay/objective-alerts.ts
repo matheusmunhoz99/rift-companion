@@ -10,10 +10,36 @@ const WARNING_WINDOW_S = 22;
 const JUST_SPAWNED_S = 20;
 const INHIBITOR_WARNING_S = 30;
 
+/** Aviso falado só bem perto: 1 min 30 s antes fica só no chat (voz demais atrapalha a partida). */
+const SPOKEN_WARNING_S = 30;
+
 export interface ObjectiveAlert {
   /** Identifica o aviso: cada um sai uma vez só por partida. */
   id: string;
   text: string;
+  /** Versão curta para falar em voz alta ("Barão em 30 segundos"); ausente = só no chat. */
+  speech?: string;
+}
+
+/** Nome curto para a voz: "Barão Na'shor" vira "Barão", "Larvas do Vazio" vira "Larvas". */
+const SPOKEN_NAMES: Record<string, string> = {
+  "Barão Na'shor": 'Barão',
+  'Larvas do Vazio': 'Larvas',
+  'Arauto do Vale': 'Arauto',
+};
+
+function spoken(name: string): string {
+  return SPOKEN_NAMES[name] ?? name;
+}
+
+/** "volta em 30 segundos" (a voz lê "s" como letra). */
+function spokenDuration(seconds: number): string {
+  const s = Math.round(seconds);
+  const minutes = Math.floor(s / 60);
+  const rest = s % 60;
+  const min = minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+  if (!minutes) return `${rest} segundos`;
+  return rest ? `${min} e ${rest} segundos` : min;
 }
 
 /**
@@ -24,8 +50,8 @@ export interface ObjectiveAlert {
 export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<string>): ObjectiveAlert[] {
   const now = dashboard.gameTime;
   const alerts: ObjectiveAlert[] = [];
-  const add = (id: string, text: string) => {
-    if (!sent.has(id)) alerts.push({ id, text });
+  const add = (id: string, text: string, speech?: string) => {
+    if (!sent.has(id)) alerts.push(speech ? { id, text, speech } : { id, text });
   };
 
   for (const objective of dashboard.objectives) {
@@ -33,11 +59,15 @@ export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<stri
     const left = objective.at - now;
     for (const warning of objective.state === 'upcoming' ? SPAWN_WARNINGS_S : []) {
       if (left <= warning && left > warning - WARNING_WINDOW_S) {
-        add(`${objective.key}:${objective.at}:${warning}`, `${objective.name} nasce em ${duration(warning)} (aos ${clock(objective.at)}).`);
+        add(
+          `${objective.key}:${objective.at}:${warning}`,
+          `${objective.name} nasce em ${duration(warning)} (aos ${clock(objective.at)}).`,
+          warning <= SPOKEN_WARNING_S ? `${spoken(objective.name)} em ${spokenDuration(warning)}` : undefined,
+        );
       }
     }
     if (objective.state === 'alive' && now - objective.at <= JUST_SPAWNED_S) {
-      add(`${objective.key}:${objective.at}:up`, `${objective.name} nasceu: está no mapa agora.`);
+      add(`${objective.key}:${objective.at}:up`, `${objective.name} nasceu: está no mapa agora.`, `${spoken(objective.name)} nasceu`);
     }
   }
 
@@ -46,7 +76,11 @@ export function objectiveAlerts(dashboard: LiveDashboard, sent: ReadonlySet<stri
     if (left > 0 && left <= INHIBITOR_WARNING_S) {
       const whose = inhibitor.ally ? 'Seu inibidor' : 'Inibidor inimigo';
       const lane = inhibitor.lane ? ` do ${inhibitor.lane}` : '';
-      add(`inhib:${inhibitor.ally}:${inhibitor.lane}:${inhibitor.respawnAt}`, `${whose}${lane} volta em ${duration(left)}.`);
+      add(
+        `inhib:${inhibitor.ally}:${inhibitor.lane}:${inhibitor.respawnAt}`,
+        `${whose}${lane} volta em ${duration(left)}.`,
+        `${whose}${lane} volta em ${spokenDuration(left)}`,
+      );
     }
   }
   return alerts;

@@ -107,6 +107,28 @@ export class OverlayView {
     });
   });
 
+  /** Terceira linha: inibidores voltando e campos da selva marcados no app. */
+  protected readonly extras = computed(() => {
+    const d = this.data();
+    if (!d) return null;
+    const clock = this.clock();
+    const inhibitors = (d.inhibitors ?? [])
+      .filter((i) => i.respawnAt > clock)
+      .map((i) => ({
+        key: `${i.ally}:${i.lane}`,
+        ally: i.ally,
+        name: `Inib. ${i.lane || ''}${i.ally ? ' (seu)' : ' (inim.)'}`.replace('  ', ' '),
+        soon: i.respawnAt - clock <= 30,
+        label: this.time(i.respawnAt - clock),
+      }));
+    const camps = (d.camps ?? [])
+      .filter((c) => c.backAt > clock)
+      .sort((a, b) => a.backAt - b.backAt)
+      .slice(0, 8)
+      .map((c) => ({ key: c.key, name: c.name, soon: c.backAt - clock <= 15, label: this.time(c.backAt - clock) }));
+    return inhibitors.length || camps.length ? { inhibitors, camps } : null;
+  });
+
   constructor() {
     window.app?.onOverlayData((data) => {
       this.data.set(data);

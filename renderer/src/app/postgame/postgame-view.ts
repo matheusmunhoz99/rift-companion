@@ -7,6 +7,7 @@ import { LcuService } from '../lcu/lcu.service';
 import { queueName } from '../riot/labels';
 import { PostGameService } from './postgame.service';
 import { PostGameScoreboard } from './scoreboard';
+import { ShareCard } from './share-card';
 import { ScreenLayout } from '../core/screen-layout';
 import { LayoutMenu } from '../ui/layout-menu';
 import { partiesOf } from '../match/parties';
@@ -92,7 +93,7 @@ interface Highlight {
   selector: 'app-postgame-view',
   templateUrl: './postgame-view.html',
   styleUrl: './postgame-view.scss',
-  imports: [PostGameScoreboard, LayoutMenu],
+  imports: [PostGameScoreboard, LayoutMenu, ShareCard],
 })
 export class PostGameView {
   protected readonly ddragon = inject(DataDragonService);
@@ -123,6 +124,8 @@ export class PostGameView {
   protected readonly metric = signal<MetricKey>('damageToChampions');
   protected readonly formula = FORMULA;
   protected readonly showFormula = signal(false);
+  /** Card do fim de jogo aberto (para copiar ou salvar a imagem). */
+  protected readonly sharing = signal(false);
 
   // --- Coach: comparação com a sua média + narração por IA (opcional) ---
   protected readonly coach = signal<CoachReport | null>(null);

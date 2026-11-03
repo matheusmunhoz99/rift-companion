@@ -132,3 +132,27 @@ img {
 .timer.alive b {
   color: #2fd48a;
 }
+
+.group {
+  color: #c9a24a;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.camp b {
+  color: #eef1f7;
+}
+
+.inhib b {
+  color: #ff6a7c;
+}
+
+.inhib.ally b {
+  color: #6aa6ff;
+}
+
+.camp.soon b,
+.inhib.soon b {
+  color: #2fd48a;
+}

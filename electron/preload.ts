@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('app', {
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdateStatus: (callback: (status: unknown) => void) => subscribe('update:status', callback),
   onFullscreenChanged: (callback: (fullscreen: unknown) => void) => subscribe('window:fullscreen', callback),
+  onSpeak: (callback: (text: unknown) => void) => subscribe('voice:say', callback),
+  setCampTimers: (camps: unknown) => ipcRenderer.send('app:camp-timers', camps),
+  captureImage: (rect: unknown, action: unknown, fileName: unknown) => ipcRenderer.invoke('app:capture-image', rect, action, fileName),
 });
 
 contextBridge.exposeInMainWorld('lobby', {

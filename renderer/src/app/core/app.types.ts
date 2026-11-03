@@ -37,6 +37,9 @@ export interface Preferences {
   startWithWindows: boolean;
   showAsRiftUser: boolean;
   chatObjectiveAlerts: boolean;
+  voiceAlerts: boolean;
+  voiceVolume: number;
+  appShortcut: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
@@ -48,6 +51,8 @@ export interface Preferences {
 export interface AppInfo {
   version: string;
   overlayShortcut: string;
+  /** Mostra e esconde o app de qualquer lugar ("Ctrl+Shift+R"). Ausente em versões antigas. */
+  appShortcut?: string;
   buildsDirectory: string;
 }
 
@@ -81,6 +86,26 @@ export interface OverlayData {
     towers: { ally: number; enemy: number };
   };
   upcoming: Array<{ key: 'dragon' | 'grubs' | 'herald' | 'atakhan' | 'baron'; name: string; state: 'upcoming' | 'alive'; at: number }>;
+  /** Inibidores derrubados que vão voltar (`ally` = do seu time). */
+  inhibitors?: Array<{ ally: boolean; lane: string; respawnAt: number }>;
+  /** Campos da selva marcados como mortos no app (tempo de jogo em que voltam). */
+  camps?: CampTimer[];
+}
+
+/** Um campo da selva marcado como morto: o app conta até ele voltar. */
+export interface CampTimer {
+  key: string;
+  /** "Azul", "Vermelho inimigo", "Caranguejo de cima"... */
+  name: string;
+  backAt: number;
+}
+
+/** Imagem gerada a partir de um pedaço da tela (card de compartilhar). */
+export interface CaptureRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface ReleaseInfo {
@@ -127,6 +152,12 @@ export interface AppBridge {
   onUpdateStatus(callback: (status: UpdateStatus) => void): () => void;
   /** A janela entrou ou saiu da tela cheia (modo partida). Só no PC. */
   onFullscreenChanged?(callback: (fullscreen: boolean) => void): () => void;
+  /** Frase para falar em voz alta (avisos de objetivos da partida). Só no PC. */
+  onSpeak?(callback: (text: string) => void): () => void;
+  /** Campos da selva marcados, para o overlay mostrar a contagem por cima do jogo. Só no PC. */
+  setCampTimers?(camps: CampTimer[]): void;
+  /** Copia (ou salva) como imagem um pedaço da janela. false = cancelado. Só no PC. */
+  captureImage?(rect: CaptureRect, action: 'copy' | 'save', fileName: string): Promise<boolean>;
 }
 
 declare global {

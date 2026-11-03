@@ -63,6 +63,9 @@
         }
       </div>
     } @else {
+      @if (session().pickActionId !== null && session().banActionId == null && !search()) {
+        <app-pool-suggestions [session]="session()" [disabled]="busy() !== null" (chosen)="pick($event)" />
+      }
       <div class="grid">
         @for (champion of pickable(); track champion.key) {
           <button

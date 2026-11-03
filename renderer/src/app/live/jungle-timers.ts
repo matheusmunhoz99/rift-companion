@@ -4,6 +4,9 @@ import { LiveDataService } from './live-data.service';
 interface Camp {
   id: string;
   name: string;
+  /** Para a voz: "Seu azul", "Azul inimigo". */
+  mine?: string;
+  theirs?: string;
   /** Primeiro surgimento e volta depois de morto (segundos de jogo). */
   first: number;
   respawn: number;
@@ -13,15 +16,15 @@ interface Camp {
  * Tempos dos campos no Summoner's Rift. A API do jogo não avisa quando um campo morre,
  * então cada um é um toque: "morreu agora" e o app conta até ele voltar.
  */
-const CAMPS: Camp[] = [
-  { id: 'blue', name: 'Azul', first: 90, respawn: 300 },
-  { id: 'red', name: 'Vermelho', first: 90, respawn: 300 },
-  { id: 'gromp', name: 'Sapo', first: 102, respawn: 135 },
-  { id: 'wolves', name: 'Lobos', first: 90, respawn: 135 },
-  { id: 'raptors', name: 'Aves', first: 90, respawn: 135 },
-  { id: 'krugs', name: 'Krugs', first: 102, respawn: 135 },
+export const CAMPS: Camp[] = [
+  { id: 'blue', name: 'Azul', first: 90, respawn: 300, mine: 'Seu azul', theirs: 'Azul inimigo' },
+  { id: 'red', name: 'Vermelho', first: 90, respawn: 300, mine: 'Seu vermelho', theirs: 'Vermelho inimigo' },
+  { id: 'gromp', name: 'Sapo', first: 102, respawn: 135, mine: 'Seu sapo', theirs: 'Sapo inimigo' },
+  { id: 'wolves', name: 'Lobos', first: 90, respawn: 135, mine: 'Seus lobos', theirs: 'Lobos inimigos' },
+  { id: 'raptors', name: 'Aves', first: 90, respawn: 135, mine: 'Suas aves', theirs: 'Aves inimigas' },
+  { id: 'krugs', name: 'Krugs', first: 102, respawn: 135, mine: 'Seus krugs', theirs: 'Krugs inimigos' },
 ];
-const RIVER: Camp[] = [
+export const RIVER: Camp[] = [
   { id: 'scuttle-top', name: 'Caranguejo de cima', first: 210, respawn: 150 },
   { id: 'scuttle-bot', name: 'Caranguejo de baixo', first: 210, respawn: 150 },
 ];
@@ -214,4 +217,18 @@ export class JungleTimers {
     const s = Math.max(0, Math.ceil(seconds));
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
+}
+
+/** Nomes de um campo marcado ("ally:blue"): curto para o overlay e por extenso para a voz. */
+export function campNames(key: string): { short: string; spoken: string } | null {
+  const [side, id] = key.split(':');
+  if (side === 'river') {
+    const camp = RIVER.find((c) => c.id === id);
+    return camp ? { short: id === 'scuttle-top' ? 'Carang. cima' : 'Carang. baixo', spoken: camp.name } : null;
+  }
+  const camp = CAMPS.find((c) => c.id === id);
+  if (!camp) return null;
+  return side === 'ally'
+    ? { short: camp.name, spoken: camp.mine ?? camp.name }
+    : { short: `${camp.name} inim.`, spoken: camp.theirs ?? `${camp.name} inimigo` };
 }

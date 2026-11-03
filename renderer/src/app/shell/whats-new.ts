@@ -2,39 +2,39 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.15';
+const RELEASE = '1.16';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
-    icon: 'live',
-    title: 'Tela cheia na partida',
-    text: 'No carregamento e no jogo o app fica em tela cheia como a do LoL: sem borda nem barra de tarefas. No segundo monitor entra na hora; no mesmo do jogo, quando você vem para o app. Esc sai.',
+    icon: 'chat',
+    title: 'Avisos falados',
+    text: 'Uma voz em português avisa no fone: "Dragão em 30 segundos", "Barão nasceu", inibidores voltando e os campos da selva que você marcou. Funciona com o jogo em tela cheia. Volume em Configurações.',
   },
   {
-    icon: 'plan',
-    title: 'Timers da selva',
-    text: 'Na aba Ao vivo, toque no campo quando ele morrer (azul, vermelho, caranguejo...) e o app conta até ele voltar, da sua selva e da inimiga.',
-  },
-  {
-    icon: 'book',
-    title: 'Build que se adapta',
-    text: 'Durante a partida o app lê o dano do time inimigo agora e mostra os próximos itens que jogadores Mestre+ do seu campeão compram contra ele. E avisa quem está forte.',
-  },
-  {
-    icon: 'swords',
-    title: 'Placar no fim de jogo',
-    text: 'Os dois times lado a lado logo de cara: KDA, CS, dano, itens, nota e quem jogou de Duo ou Trio. O coach vem depois.',
-  },
-  {
-    icon: 'layout',
-    title: 'Você organiza a tela',
-    text: 'O botão "Organizar" muda a ordem das seções e esconde o que você não usa. Na partida, os times já vêm primeiro.',
+    icon: 'user',
+    title: 'Para você, na seleção',
+    text: 'Na hora de escolher, seus campeões que mais ganham nesta rota, cruzados com o confronto contra o inimigo da sua rota. Um clique e já escolhe.',
   },
   {
     icon: 'linked',
-    title: 'Duo e Trio com certeza',
-    text: 'Lido do próprio cliente do LoL, nos dois times, e marcado também na lista do histórico, sem abrir a partida.',
+    title: 'Com quem você ganha mais',
+    text: 'No Progresso: sozinho x em grupo, cada parceiro de duo com as vitórias juntos e seus campeões que mais ganham.',
+  },
+  {
+    icon: 'swords',
+    title: 'Card do fim de jogo',
+    text: 'O botão "Compartilhar" no fim de jogo gera uma imagem 1080×1080 com a arte do campeão, nota, KDA e destaques. Copie e cole no WhatsApp, Discord ou Instagram.',
+  },
+  {
+    icon: 'eye',
+    title: 'Selva e inibidores no overlay',
+    text: 'O overlay por cima do jogo ganha uma linha com os campos da selva marcados e os inibidores voltando.',
+  },
+  {
+    icon: 'display',
+    title: 'Ctrl+Shift+R',
+    text: 'Mostra o app por cima do jogo e, apertando de novo, volta para o jogo. Sem Alt+Tab.',
   },
 ];
 
@@ -50,8 +50,8 @@ const HIGHLIGHTS = [
         <article class="sheet" (click)="$event.stopPropagation()">
           <header class="hero">
             <span class="badge">Novidades</span>
-            <h2 id="whats-new-title">Rift Companion <span class="num">1.14</span></h2>
-            <p>Mais leitura de jogo, mais clareza e mais velocidade: veja o que mudou.</p>
+            <h2 id="whats-new-title">Rift Companion <span class="num">{{ release }}</span></h2>
+            <p>Voz no fone, sugestões só suas e um card para mostrar a partida: veja o que mudou.</p>
           </header>
           <ul class="highlights">
             @for (item of highlights; track item.title) {
@@ -198,6 +198,7 @@ const HIGHLIGHTS = [
 })
 export class WhatsNew {
   protected readonly highlights = HIGHLIGHTS;
+  protected readonly release = RELEASE;
   protected readonly open = signal(shouldShow());
 
   protected close(): void {

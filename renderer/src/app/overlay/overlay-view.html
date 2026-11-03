@@ -73,5 +73,27 @@
         }
       }
     </div>
+
+    @if (extras(); as x) {
+      <!-- Campos da selva marcados no app e inibidores voltando (a janela cresce uma linha). -->
+      <div class="row">
+        @for (i of x.inhibitors; track i.key) {
+          <span class="stat timer inhib" [class.ally]="i.ally" [class.soon]="i.soon">
+            <small>{{ i.name }}</small> <b>{{ i.label }}</b>
+          </span>
+        }
+        @if (x.inhibitors.length && x.camps.length) {
+          <span class="sep"></span>
+        }
+        @if (x.camps.length) {
+          <span class="stat"><small class="group">Selva</small></span>
+          @for (c of x.camps; track c.key) {
+            <span class="stat timer camp" [class.soon]="c.soon">
+              <small>{{ c.name }}</small> <b>{{ c.label }}</b>
+            </span>
+          }
+        }
+      </div>
+    }
   </div>
 }

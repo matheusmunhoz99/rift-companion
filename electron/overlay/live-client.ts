@@ -56,6 +56,10 @@ export interface OverlayData {
   };
   /** Objetivos do Summoner's Rift ainda em jogo, com o tempo de surgimento (mesmos timers do painel). */
   upcoming: Array<{ key: ObjectiveKey; name: string; state: 'upcoming' | 'alive'; at: number }>;
+  /** Inibidores derrubados que vão voltar (`ally` = do seu time). */
+  inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
+  /** Campos da selva marcados como mortos na tela do app (tempo de jogo em que voltam). */
+  camps: Array<{ key: string; name: string; backAt: number }>;
 }
 
 interface RawPlayer {
@@ -201,5 +205,8 @@ export function toOverlayData(raw: RawGameData, timings: ObjectiveTimings = DEFA
     },
     upcoming: live.objectives
       .filter((o): o is typeof o & { state: 'upcoming' | 'alive' } => o.state !== 'done'),
+    inhibitors: live.timers?.inhibitors ?? [],
+    // Quem marca os campos é a tela do app; o controlador do overlay junta antes de mandar.
+    camps: [],
   };
 }

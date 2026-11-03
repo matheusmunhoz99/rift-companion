@@ -33,3 +33,14 @@ test('inibidor que vai voltar e objetivo que não volta mais', () => {
   );
   assert.deepEqual(alerts.map((a) => a.text), ['Inibidor inimigo do TOP volta em 20 s.']);
 });
+
+test('voz: só o aviso de 30 s, o "nasceu" e os inibidores ganham frase falada, com nome curto', () => {
+  const baron = (state) => [{ key: 'baron', name: "Barão Na'shor", state, at: 1200 }];
+  const at90 = objectiveAlerts(dashboard(1111, baron('upcoming')), new Set());
+  assert.equal(at90.length, 1);
+  assert.equal(at90[0].speech, undefined, '1 min 30 s fica só no chat');
+  assert.equal(objectiveAlerts(dashboard(1171, baron('upcoming')), new Set())[0].speech, 'Barão em 30 segundos');
+  assert.equal(objectiveAlerts(dashboard(1205, baron('alive')), new Set())[0].speech, 'Barão nasceu');
+  const inhib = objectiveAlerts(dashboard(500, [], [{ ally: true, lane: 'Topo', respawnAt: 520 }]), new Set());
+  assert.equal(inhib[0].speech, 'Seu inibidor do Topo volta em 20 segundos');
+});

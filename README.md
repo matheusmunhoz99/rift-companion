@@ -153,7 +153,9 @@ No modo **sem bordas** (Borderless), o overlay aparece direto sobre o jogo — s
 - **CS e ouro contra a média Mestre+** do seu campeão no mesmo minuto da partida.
 - **Qual habilidade evoluir** a seguir (baseado na ordem Mestre+).
 - **Timers de todos os objetivos**: Dragão, Barão, Arauto/Voidgrub e Inibidores, inclusive na **Partida Rápida (Swiftplay)**.
-- Posição ajustável (esquerda, centro, direita) e opacidade nas configurações. Atalho **Ctrl+Shift+O** para mostrar/esconder.
+- **Campos da selva marcados no app** e inibidores voltando, numa linha extra que só aparece quando precisa.
+- **Avisos falados** em português no fone: "Dragão em 30 segundos", "Barão nasceu", "Seu azul volta em 15 segundos". Funcionam com o jogo em tela cheia.
+- Posição ajustável (esquerda, centro, direita) e opacidade nas configurações. Atalho **Ctrl+Shift+O** para mostrar/esconder o overlay e **Ctrl+Shift+R** para trazer o app por cima do jogo (e voltar).
 
 ## Fim de partida
 
@@ -163,6 +165,7 @@ Quando a partida acaba, o Rift Companion monta uma análise completa:
 - **Pódio** com os 3 melhores jogadores da partida.
 - **Gráficos comparativos**: dano causado, dano recebido, ouro, CS e visão — todos os 10 jogadores lado a lado.
 - **Destaques**: quem deu mais dano, quem mais farmou, quem mais participou de abates, maior multikill.
+- **Card para compartilhar**: uma imagem 1080×1080 com a arte do campeão, nota, KDA e destaques, pronta para colar no WhatsApp, Discord ou Instagram.
 
 <p align="center">
   <img src="docs/screenshots/postgame.png" alt="Tela de fim de partida" width="860" />
