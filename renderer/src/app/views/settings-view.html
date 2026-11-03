@@ -94,6 +94,13 @@
     @if (!android) {
       <div class="divider"></div>
       <app-switch
+        label="Trazer o app para a frente na seleção"
+        description="Quando a seleção de campeões começa, o Rift Companion aparece na frente, no monitor em que ele está, mesmo minimizado ou na bandeja."
+        [checked]="prefs.preferences().focusOnChampSelect"
+        (toggled)="prefs.set({ focusOnChampSelect: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
         label="Modo partida"
         description="Da seleção ao fim de jogo o app usa a tela toda: menu só com ícones, telas mais largas e, no topo, a sua vez na seleção e os próximos objetivos. Volta ao normal sozinho quando você sai do fim de jogo."
         [checked]="prefs.preferences().matchMode"

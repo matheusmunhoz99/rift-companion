@@ -77,6 +77,11 @@ export class MatchWindow {
     return true;
   }
 
+  /** O modo partida está com a janela aumentada ou em tela cheia (não é a posição que você escolheu). */
+  managing(): boolean {
+    return this.saved !== null || this.fullscreenApplied;
+  }
+
   private applyFullscreen(win: BrowserWindow): void {
     if (!this.fullscreenWanted || win.isDestroyed() || win.isFullScreen()) return;
     win.setFullScreen(true);

@@ -21,6 +21,7 @@ export class PreferencesService {
     matchMode: true,
     matchModeWindow: true,
     matchModeFullscreen: true,
+    focusOnChampSelect: true,
     autoRunes: false,
     minimizeToTray: true,
     startWithWindows: false,

@@ -31,6 +31,7 @@ export interface Preferences {
   matchMode: boolean;
   matchModeWindow: boolean;
   matchModeFullscreen: boolean;
+  focusOnChampSelect: boolean;
   autoRunes: boolean;
   minimizeToTray: boolean;
   startWithWindows: boolean;

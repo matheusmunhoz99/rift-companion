@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, screen, shell } from 'electron';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
 import { appLog, onAppLog, startAppLog } from './app-log';
@@ -19,6 +19,7 @@ import { RIFT_API_URL, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
 import { MatchWindow } from './match-window';
+import { WindowStateKeeper, fitsSomeDisplay, loadWindowState } from './window-state';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
 import { removeOldVersions, repointShortcuts, Updater } from './updater';
@@ -56,6 +57,8 @@ let appTray: AppTray | null = null;
 let invisibleMode: InvisibleModeProxy | null = null;
 let androidLink: AndroidLink | null = null;
 let quitting = false;
+/** O modo partida está mexendo na janela (não grava esse tamanho como o lugar escolhido). */
+let matchManaging: () => boolean = () => false;
 
 /**
  * Com o chat do LoL passando pelo proxy, fechar o app derruba o chat até o
@@ -96,9 +99,12 @@ function loadRenderer(window: BrowserWindow, hash = ''): void {
 function createWindow(): void {
   // Só no desenvolvimento: tamanho da janela para revisar o layout (ex.: RIFT_SIZE=760x560).
   const [width, height] = (devOnly('RIFT_SIZE') ?? '1320x840').split('x').map(Number);
+  // Abre no monitor e no lugar em que estava da última vez (se esse monitor ainda existir).
+  const stateFile = path.join(app.getPath('userData'), 'window-state.json');
+  const saved = capturing || devOnly('RIFT_SIZE') ? null : loadWindowState(stateFile);
+  const place = saved && fitsSomeDisplay(saved, screen.getAllDisplays().map((d) => d.workArea)) ? saved : null;
   mainWindow = new BrowserWindow({
-    width,
-    height,
+    ...(place ? { x: place.x, y: place.y, width: place.width, height: place.height } : { width, height }),
     minWidth: 760,
     minHeight: 560,
     backgroundColor: BACKGROUND,
@@ -112,8 +118,12 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // Prints de revisão: a janela escondida continua animando e carregando (sem pausa do Chromium).
+      backgroundThrottling: !capturing,
     },
   });
+  if (place?.maximized) mainWindow.maximize();
+  if (!capturing) new WindowStateKeeper(stateFile, () => matchManaging()).attach(mainWindow);
 
   // Links externos abrem no navegador do sistema, nunca dentro do app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -162,11 +172,30 @@ function createWindow(): void {
   });
 }
 
+/** Roda na página dos prints: espera <img> e imagens de fundo (CSS) visíveis carregarem. */
+const WAIT_FOR_IMAGES = `(async () => {
+  const urls = new Set();
+  for (const el of document.querySelectorAll('*')) {
+    for (const m of getComputedStyle(el).backgroundImage.matchAll(/url\\("?([^")]+)"?\\)/g)) urls.add(m[1]);
+  }
+  const load = (src) => new Promise((done) => { const i = new Image(); i.onload = i.onerror = done; i.src = src; });
+  const pending = [...document.images].filter((img) => !img.complete)
+    .map((img) => new Promise((done) => { img.onload = img.onerror = done; }));
+  await Promise.race([
+    Promise.all([...[...urls].map(load), ...pending]),
+    new Promise((done) => setTimeout(done, 20000)),
+  ]);
+  await new Promise((done) => setTimeout(done, 400));
+})()`;
+
 function scheduleCapture(window: BrowserWindow): void {
   const target = devOnly('RIFT_CAPTURE');
   if (!target) return;
   window.webContents.once('did-finish-load', () => {
     setTimeout(async () => {
+      // Espera as imagens da tela (artes dos campeões, ícones) terminarem de carregar: um
+      // print com o card sem arte não serve. No máximo 20 s; depois tira assim mesmo.
+      await window.webContents.executeJavaScript(WAIT_FOR_IMAGES).catch(() => undefined);
       const image = await window.capturePage();
       writeFileSync(target, image.toPNG());
       app.quit();
@@ -475,6 +504,19 @@ void acquireInstance().then((acquired) => {
       void restartLeagueInvisible(true).catch((error) => showError('Não foi possível reiniciar o LoL invisível', error));
     };
 
+    // Seleção de campeões começou: o app vem para a frente (uma vez por seleção).
+    let lastFocusPhase = connector.getState().gameflowPhase;
+    connector.on('state', () => {
+      const phase = connector.getState().gameflowPhase;
+      if (phase === lastFocusPhase) return;
+      const entered = phase === 'ChampSelect' && lastFocusPhase !== 'ChampSelect';
+      lastFocusPhase = phase;
+      if (entered && !capturing && prefs.getPreferences().focusOnChampSelect) {
+        bringToFront();
+        appLog('seleção de campeões: app trazido para a frente');
+      }
+    });
+
     // Cliente aberto por fora com o modo ligado, ou partida que acabou com o reinício pendente.
     let lastLcuStatus = connector.getState().status;
     connector.on('state', () => {
@@ -622,6 +664,7 @@ void acquireInstance().then((acquired) => {
     // Modo partida: a janela cresce na seleção, fica em tela cheia no carregamento e no jogo,
     // e volta ao tamanho de antes no fim de jogo. 'fullscreen' | true (aumentada) | false.
     const matchWindow = new MatchWindow(() => mainWindow);
+    matchManaging = () => matchWindow.managing();
     ipcMain.handle('app:match-window', (_event, mode: unknown) => {
       // Prints de revisão (RIFT_CAPTURE) ficam sempre no tamanho pedido (RIFT_SIZE).
       if (capturing) return;
@@ -732,6 +775,23 @@ function showMainWindow(): void {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+}
+
+/**
+ * Traz o app para a frente (seleção de campeões começou), mesmo minimizado ou na bandeja.
+ * O Windows não deixa um app em segundo plano roubar o foco; "sempre no topo" por um
+ * instante faz a janela aparecer na frente do cliente do LoL, no monitor em que ela está.
+ */
+function bringToFront(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.setAlwaysOnTop(true);
+  mainWindow.show();
+  mainWindow.moveTop();
+  mainWindow.focus();
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setAlwaysOnTop(false);
+  }, 600);
 }
 
 /** No .exe portátil, o caminho estável é o do arquivo original, não o da pasta temporária. */

@@ -28,6 +28,8 @@ export interface Preferences {
   matchModeWindow: boolean;
   /** No carregamento e no jogo, tela cheia de verdade (sem borda nem barra de tarefas), como a do LoL. */
   matchModeFullscreen: boolean;
+  /** Quando a seleção de campeões começa, o app vem para a frente (mesmo minimizado ou na bandeja). */
+  focusOnChampSelect: boolean;
   /** Importa runas e feitiços recomendados ao travar o campeão. */
   autoRunes: boolean;
   /** Fechar a janela mantém o app na bandeja (aceite automático continua funcionando). */
@@ -64,6 +66,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   matchMode: true,
   matchModeWindow: true,
   matchModeFullscreen: true,
+  focusOnChampSelect: true,
   autoRunes: false,
   minimizeToTray: true,
   startWithWindows: false,
@@ -93,6 +96,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   matchMode: isBoolean,
   matchModeWindow: isBoolean,
   matchModeFullscreen: isBoolean,
+  focusOnChampSelect: isBoolean,
   autoRunes: isBoolean,
   minimizeToTray: isBoolean,
   startWithWindows: isBoolean,
