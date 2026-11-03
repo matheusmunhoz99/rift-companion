@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "android:sync": "npm run build -- --base-href ./ && cap sync android",
-    "android:apk": "npm run android:sync && cd android && gradlew.bat --no-daemon assembleDebug",
+    "android:apk": "npm run android:sync && cd android && .\\gradlew.bat --no-daemon assembleDebug",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
