@@ -78,7 +78,13 @@ const TRIGGER_LABEL: Record<LiveReadRequest['trigger'], string> = {
               }
             </div>
           }
-          <p class="note">Opções para você escolher, lidas do placar do jogo. A decisão é sua.</p>
+          <p class="note">
+            Opções para você escolher, lidas do placar{{ s.minimap ? ' e do minimapa' : '' }}. A decisão é sua.
+            @if (blackScreen()) {
+              <br />A IA não conseguiu ver o minimapa: com o jogo em Tela cheia o Windows entrega a tela preta. Em
+              Configurações › Vídeo do LoL, escolha Sem bordas (mesmo desempenho).
+            }
+          </p>
         } @else if (loading()) {
           <p class="muted">Lendo o placar da partida…</p>
         } @else if (failed()) {
@@ -219,10 +225,12 @@ export class LiveReadPanel {
   private readonly voice = inject(VoiceService);
 
   protected readonly enabled = computed(() => this.prefs.preferences().liveRead && !!window.riot?.getLiveRead);
-  protected readonly shown = signal<{ read: LiveRead; at: number; trigger: LiveReadRequest['trigger'] } | null>(null);
+  protected readonly shown = signal<{ read: LiveRead; at: number; trigger: LiveReadRequest['trigger']; minimap: boolean } | null>(null);
   protected readonly loading = signal(false);
   protected readonly failed = signal(false);
   protected readonly cooling = signal(false);
+  /** A captura do minimapa veio preta: o jogo está em tela cheia exclusiva. */
+  protected readonly blackScreen = signal(false);
   private mark: ReadMark = { at: null, deaths: 0 };
   private session: string | null = null;
   private lastManual = 0;
@@ -275,10 +283,16 @@ export class LiveReadPanel {
     this.failed.set(false);
     let ok = false;
     try {
+      // A IA vê o minimapa (o que você vê); captura preta (tela cheia exclusiva) não vai.
+      if (this.prefs.preferences().screenVision) {
+        const minimap = await window.app?.visionMinimap?.().catch(() => null);
+        if (minimap && !minimap.black) request.minimap = minimap.jpeg;
+        this.blackScreen.set(minimap?.black === true);
+      }
       const response = await window.riot.getLiveRead(request);
       if (!this.live.data()) return;
       if (response?.read) {
-        this.shown.set({ read: response.read, at: data.gameTime, trigger });
+        this.shown.set({ read: response.read, at: data.gameTime, trigger, minimap: !!request.minimap });
         this.live.rememberRead(data.gameTime, response.read.opcoes.map((o) => o.titulo), response.read.itens);
         ok = true;
         if (trigger === 'death') this.speak(response.read);

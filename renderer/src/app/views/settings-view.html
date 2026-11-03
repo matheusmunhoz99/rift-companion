@@ -280,6 +280,38 @@
         (toggled)="prefs.set({ liveReadVoice: $event })"
       />
     }
+    @if (prefs.preferences().liveRead) {
+      <div class="divider"></div>
+      <app-switch
+        label="A IA vê o minimapa"
+        description="Em cada leitura o app recorta só o canto do minimapa da tela e manda junto: a IA passa a ver o que você vê (inimigos visíveis, sentinelas, campos limpos e os timers do próprio LoL). O resto da tela não sai do seu PC. Só lê a tela, como um programa de gravação."
+        [checked]="prefs.preferences().screenVision"
+        (toggled)="prefs.set({ screenVision: $event })"
+      />
+    }
+    <div class="divider"></div>
+    <app-switch
+      label="Gravar amostras do minimapa"
+      description="Durante a partida, guarda um recorte do minimapa a cada 15 segundos neste PC. Com uma partida gravada dá para calibrar a detecção automática dos campos da selva (o app percebe sozinho quando um campo some do minimapa). Nada é enviado."
+      [checked]="prefs.preferences().visionSamples"
+      (toggled)="prefs.set({ visionSamples: $event })"
+    />
+    @if (prefs.preferences().visionSamples || visionStatus()?.samples) {
+      <div class="row">
+        <span class="row-label">
+          @if (visionStatus(); as v) {
+            {{ v.samples ? v.samples + ' amostras nesta partida' : 'As amostras aparecem durante a partida' }}
+          }
+        </span>
+        <button type="button" class="btn ghost small" (click)="openVisionSamples()">Abrir pasta das amostras</button>
+      </div>
+    }
+    @if (visionStatus()?.black) {
+      <div class="notice warning">
+        <strong>A captura do minimapa veio preta.</strong> Com o jogo em Tela cheia o Windows não deixa ver a tela.
+        No LoL, vá em <em>Configurações › Vídeo › Modo de janela</em> e escolha <strong>Sem bordas</strong> (mesmo desempenho).
+      </div>
+    }
 
     @switch (prefs.gameWindowMode()) {
       @case ('fullscreen') {

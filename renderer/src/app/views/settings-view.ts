@@ -82,6 +82,7 @@ export class SettingsView {
 
   constructor() {
     void this.prefs.refreshGameWindowMode();
+    void window.app?.visionStatus?.().then((s) => this.visionStatus.set(s)).catch(() => undefined);
     void window.telegram?.status().then((s) => this.telegram.set(s.connected ? 'connected' : 'disconnected'));
   }
 
@@ -140,6 +141,13 @@ export class SettingsView {
     this.updateMessage.set(
       status.state === 'available' ? `Versão ${status.release.version} disponível: use o aviso no topo para atualizar.` : 'Você está na versão mais recente.',
     );
+  }
+
+  /** Visão da tela: amostras gravadas e se a captura veio preta (tela cheia exclusiva). */
+  protected readonly visionStatus = signal<{ black: boolean | null; samples: number; folder: string } | null>(null);
+
+  protected openVisionSamples(): void {
+    void window.app?.openVisionSamples?.();
   }
 
   protected setVoiceVolume(value: string): void {

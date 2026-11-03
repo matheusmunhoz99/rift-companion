@@ -165,6 +165,8 @@ export interface LiveReadRequest {
   players: LiveReadPlayer[];
   teams: { ally: Omit<LiveTeam, 'atakhan'>; enemy: Omit<LiveTeam, 'atakhan'> };
   objectives: string[];
+  /** Recorte do minimapa (JPEG em base64): a IA vê o que você vê. */
+  minimap?: string;
   /** Diário da partida (mortes, compras, evolução, leituras anteriores). */
   history?: {
     deaths: Array<{ t: number; killer: string }>;

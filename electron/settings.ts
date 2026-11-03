@@ -51,6 +51,10 @@ export interface Preferences {
   liveReadVoice: boolean;
   /** Na partida, Ctrl+Alt+1..6 marcam azul, vermelho e caranguejos (seus e do inimigo). */
   jungleHotkeys: boolean;
+  /** A leitura da IA leva junto o recorte do minimapa (o que você vê na tela). */
+  screenVision: boolean;
+  /** Guarda recortes do minimapa durante a partida (para calibrar os timers automáticos da selva). */
+  visionSamples: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -90,6 +94,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   liveRead: true,
   liveReadVoice: true,
   jungleHotkeys: true,
+  screenVision: true,
+  visionSamples: false,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -126,6 +132,8 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   liveRead: isBoolean,
   liveReadVoice: isBoolean,
   jungleHotkeys: isBoolean,
+  screenVision: isBoolean,
+  visionSamples: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,

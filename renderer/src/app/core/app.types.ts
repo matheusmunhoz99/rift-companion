@@ -43,6 +43,8 @@ export interface Preferences {
   liveRead: boolean;
   liveReadVoice: boolean;
   jungleHotkeys: boolean;
+  screenVision: boolean;
+  visionSamples: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
@@ -161,6 +163,10 @@ export interface AppBridge {
   onSpeak?(callback: (text: string) => void): () => void;
   /** Atalho da selva apertado no jogo ("ally:red"). Só no PC. */
   onJungleMark?(callback: (camp: string) => void): () => void;
+  /** Recorte do minimapa agora (JPEG em base64); null fora da partida. Só no PC. */
+  visionMinimap?(): Promise<{ jpeg: string; black: boolean } | null>;
+  visionStatus?(): Promise<{ black: boolean | null; samples: number; folder: string }>;
+  openVisionSamples?(): Promise<void>;
   /** Campos da selva marcados, para o overlay mostrar a contagem por cima do jogo. Só no PC. */
   setCampTimers?(camps: CampTimer[]): void;
   /** Copia (ou salva) como imagem um pedaço da janela. false = cancelado. Só no PC. */

@@ -62,3 +62,16 @@ test('selva: tempos do patch 26.1 e volta mais rápida na Partida Rápida', () =
   assert.equal(swift.campRespawn, 120);
   assert.equal(timingsForQueue(DEFAULT_TIMINGS_CONFIG, 420).campRespawn, 135);
 });
+
+test('visão: recorte do minimapa no canto certo (escala e lado) e quadro preto detectado', () => {
+  const { minimapRegion, isBlack } = require('../dist-electron/vision/screen-vision.js');
+  const right = minimapRegion({ width: 1920, height: 1080, scale: 1.44, flipped: false }, 1920, 1080);
+  assert.deepEqual(right, { x: 1587, y: 747, width: 333, height: 333 });
+  const left = minimapRegion({ width: 1920, height: 1080, scale: 1.44, flipped: true }, 1920, 1080);
+  assert.equal(left.x, 0);
+  assert.ok(minimapRegion({ scale: 3, flipped: false }, 1920, 1080).width <= 540, 'nunca passa de meia tela');
+  const black = Buffer.alloc(100 * 100 * 4, 2);
+  assert.equal(isBlack(black, 100, 100), true);
+  const map = Buffer.alloc(100 * 100 * 4, 90);
+  assert.equal(isBlack(map, 100, 100), false);
+});

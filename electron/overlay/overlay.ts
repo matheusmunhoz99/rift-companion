@@ -5,7 +5,7 @@ import { fetchRawGameData, toOverlayData, type OverlayData } from './live-client
 import type { ObjectiveTimings } from './live-dashboard';
 import { appLog } from '../app-log';
 
-const POLL_MS = 2_000;
+const POLL_MS = 1_000;
 export const OVERLAY_WIDTH = 980;
 export const OVERLAY_HEIGHT = 84;
 const WIDTH = OVERLAY_WIDTH;
@@ -75,7 +75,19 @@ export class OverlayController {
     if (this.window && !this.window.isDestroyed()) this.window.hide();
   }
 
+  private polling = false;
+
   private async poll(): Promise<void> {
+    if (this.polling) return;
+    this.polling = true;
+    try {
+      await this.read();
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  private async read(): Promise<void> {
     const raw = await fetchRawGameData();
     if (!raw?.allPlayers?.length || !this.timer) return;
     const data = { ...toOverlayData(raw, await this.timings()), camps: this.camps() };

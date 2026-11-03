@@ -2,10 +2,20 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.18';
+const RELEASE = '1.19';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'display',
+    title: 'A IA vê o seu minimapa',
+    text: 'Em cada leitura o app recorta só o canto do minimapa da tela e manda junto: a IA vê inimigos visíveis, sentinelas e os timers que o próprio LoL desenha. Precisa do jogo em Sem bordas (em Tela cheia o Windows entrega a tela preta).',
+  },
+  {
+    icon: 'refresh',
+    title: 'Timers mais rápidos',
+    text: 'O app lê o jogo a cada 1 segundo (antes 2 a 3): objetivos, inibidores, overlay e avisos falados saem quase na hora.',
+  },
   {
     icon: 'eye',
     title: 'A IA acompanha a sua partida',

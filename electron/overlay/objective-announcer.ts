@@ -3,7 +3,7 @@ import { fetchRawGameData } from './live-client';
 import { toLiveDashboard, type ObjectiveTimings, type RawDashboardData } from './live-dashboard';
 import { objectiveAlerts } from './objective-alerts';
 
-const POLL_MS = 3_000;
+const POLL_MS = 1_000;
 
 /** Onde os avisos saem: chat do LoL e voz. Cada um liga e desliga nas configurações. */
 export interface AnnouncerOutputs {
@@ -47,7 +47,19 @@ export class ObjectiveAnnouncer {
     }
   }
 
+  private polling = false;
+
   private async poll(): Promise<void> {
+    if (this.polling) return;
+    this.polling = true;
+    try {
+      await this.read();
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  private async read(): Promise<void> {
     const chat = this.outputs.chatEnabled() && this.outputs.chat.hasActiveChat();
     const voice = this.outputs.voiceEnabled();
     if (!chat && !voice) return;

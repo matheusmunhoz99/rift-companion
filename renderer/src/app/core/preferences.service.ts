@@ -33,6 +33,8 @@ export class PreferencesService {
     liveRead: true,
     liveReadVoice: true,
     jungleHotkeys: true,
+    screenVision: true,
+    visionSamples: false,
     sendErrorReports: true,
     detailedDiagnostics: false,
     telegramReadyCheck: true,

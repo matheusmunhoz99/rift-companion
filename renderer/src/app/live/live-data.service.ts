@@ -4,7 +4,7 @@ import type { LiveDashboard, LivePlayer } from '../history/riot.types';
 import { LcuService } from '../lcu/lcu.service';
 import { emptyJournal, rememberRead, updateJournal, type Journal } from './match-journal';
 
-const POLL_MS = 2_000;
+const POLL_MS = 1_000;
 /** Um ponto do gráfico de vantagem a cada 20 s de jogo. */
 const SAMPLE_EVERY_S = 20;
 
@@ -114,8 +114,14 @@ export class LiveDataService {
     this.journal.set(emptyJournal());
   }
 
+  private polling = false;
+
   private async poll(): Promise<void> {
+    // Leitura a cada 1 s: uma resposta lenta não empilha outra em cima.
+    if (this.polling) return;
+    this.polling = true;
     const data = await window.riot?.getLiveDashboard().catch(() => null);
+    this.polling = false;
     if (!data) return;
     const previous = this.data();
     // Tempo voltou: outra partida (ou replay); o gráfico recomeça.

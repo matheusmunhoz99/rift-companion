@@ -1,6 +1,7 @@
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electronIpc, nativeImage, screen, shell } from 'electron';
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
+import { VisionController } from './vision/controller';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
 import { appLog, onAppLog, startAppLog } from './app-log';
@@ -60,6 +61,7 @@ let invisibleMode: InvisibleModeProxy | null = null;
 let androidLink: AndroidLink | null = null;
 let appShortcut: AppShortcut | null = null;
 let jungleHotkeys: JungleHotkeys | null = null;
+let visionSync: () => void = () => undefined;
 /** Campos da selva marcados na tela do app, para o overlay mostrar por cima do jogo. */
 let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
 let quitting = false;
@@ -350,6 +352,7 @@ void acquireInstance().then((acquired) => {
       if ('showAsRiftUser' in changes) announceRiftUser();
       appShortcut?.apply(preferences.appShortcut && !capturing);
       jungleHotkeys?.sync();
+      visionSync();
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
       mainWindow?.webContents.send('prefs:changed', preferences);
@@ -635,6 +638,19 @@ void acquireInstance().then((acquired) => {
     // Ctrl+Shift+R: mostra e esconde o app de qualquer lugar (também por cima do jogo).
     appShortcut = new AppShortcut(toggleFromShortcut);
     appShortcut.apply(prefs.getPreferences().appShortcut && !capturing);
+    // Visão da tela: o minimapa vai junto na leitura da IA; o gravador guarda amostras para calibrar.
+    const vision = new VisionController(connector, path.join(app.getPath('userData'), 'vision-samples'), () => prefs.getPreferences());
+    ipcMain.handle('vision:minimap', async () => {
+      const capture = await vision.minimap();
+      return capture ? { jpeg: capture.jpeg.toString('base64'), black: capture.black } : null;
+    });
+    ipcMain.handle('vision:status', () => vision.getStatus());
+    ipcMain.handle('vision:open-samples', async () => {
+      const folder = vision.folder();
+      await import('node:fs/promises').then((fs) => fs.mkdir(folder, { recursive: true }));
+      await shell.openPath(folder);
+    });
+    visionSync = () => vision.sync();
     // Ctrl+Alt+1..6 na partida: marca azul, vermelho e caranguejos sem sair do jogo.
     if (!capturing) jungleHotkeys = new JungleHotkeys(
       connector,
