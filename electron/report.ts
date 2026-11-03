@@ -46,6 +46,9 @@ export class ErrorReporter {
       },
     });
     if (!this.settings.getPreferences().sendErrorReports) return;
+    // Só do app instalado: a versão de desenvolvimento e os testes (que encerram o app à
+    // força) não podem misturar erros de laboratório com os dos usuários.
+    if (!app.isPackaged) return;
     if (this.seen.size >= MAX_PER_SESSION) return;
 
     const message = scrub(this.clean(describe(error))).slice(0, MAX_MESSAGE);
