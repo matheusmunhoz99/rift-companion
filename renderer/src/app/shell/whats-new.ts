@@ -2,14 +2,19 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.17';
+const RELEASE = '1.18';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
     icon: 'eye',
-    title: 'Leitura da partida por IA',
-    text: 'Na aba Ao vivo a IA lê o placar (KDA, itens, ouro, objetivos) quando você morre, a cada 4 minutos ou no botão "Ler agora": como está a partida e 2 ou 3 caminhos possíveis, com o motivo. Morto, ouve as opções no fone.',
+    title: 'A IA acompanha a sua partida',
+    text: 'Ela anota suas mortes (e quem te matou), os itens que você comprou, o CS e o ouro contra o oponente e a média Mestre+ no mesmo minuto. A cada leitura diz o que você está acertando, onde dá para melhorar e os caminhos possíveis.',
+  },
+  {
+    icon: 'plan',
+    title: 'Selva no tempo certo e atalhos no jogo',
+    text: 'Tempos dos campos do patch 26.1 (e da Partida Rápida, que volta mais rápido). Matou o vermelho? Ctrl+Alt+2 sem sair do jogo: o app conta e a voz confirma. Ctrl+Alt+1 a 6 marcam buffs e caranguejos.',
   },
   {
     icon: 'chat',
@@ -56,7 +61,7 @@ const HIGHLIGHTS = [
           <header class="hero">
             <span class="badge">Novidades</span>
             <h2 id="whats-new-title">Rift Companion <span class="num">{{ release }}</span></h2>
-            <p>A IA lendo a sua partida, voz no fone e um card para mostrar o jogo: veja o que mudou.</p>
+            <p>A IA acompanhando a sua partida, a selva no tempo certo e atalhos dentro do jogo: veja o que mudou.</p>
           </header>
           <ul class="highlights">
             @for (item of highlights; track item.title) {

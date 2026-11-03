@@ -139,7 +139,8 @@ Os dois times aparecem **logo no carregamento**, direto do jogo, sem esperar a R
 - **"Já jogaram com você"**: quem esteve nas suas últimas 10 partidas, no seu time ou contra você, com os campeões e o KDA de cada um.
 - **Chance de vitória** baseada no elo, na maestria e no histórico recente dos 10 jogadores.
 - A **sua build para esta partida**, já ajustada ao oponente e ao perfil de dano do time inimigo.
-- **Leitura da partida por IA**: quando você morre, a cada 4 minutos ou no botão "Ler agora", a IA lê o placar (KDA, itens, ouro, objetivos) e mostra como está a partida e 2 ou 3 caminhos possíveis, com o motivo de cada um. Morto, você ouve as opções no fone. A decisão é sua.
+- **Leitura da partida por IA**: quando você morre, a cada 4 minutos ou no botão "Ler agora", a IA lê o placar (KDA, itens, ouro, objetivos) e mostra como está a partida e 2 ou 3 caminhos possíveis, com o motivo de cada um. Ela acompanha a partida inteira (suas mortes e quem te matou, os itens que você comprou, o CS e o ouro contra o oponente e a média Mestre+ no mesmo minuto) e diz **o que você está acertando e onde dá para melhorar**. Morto, você ouve no fone. A decisão é sua.
+- **Timers da selva** com os tempos do patch 26.1 (e da Partida Rápida). Dentro do jogo, **Ctrl+Alt+1 a 6** marcam seu azul, seu vermelho, os buffs inimigos e os caranguejos, e a voz confirma quando volta.
 
 ## Overlay em tempo real
 

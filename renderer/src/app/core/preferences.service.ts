@@ -32,6 +32,7 @@ export class PreferencesService {
     appShortcut: true,
     liveRead: true,
     liveReadVoice: true,
+    jungleHotkeys: true,
     sendErrorReports: true,
     detailedDiagnostics: false,
     telegramReadyCheck: true,

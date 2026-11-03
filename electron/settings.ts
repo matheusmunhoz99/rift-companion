@@ -49,6 +49,8 @@ export interface Preferences {
   liveRead: boolean;
   /** Quando você morre, a voz lê as opções da leitura (precisa dos avisos falados ligados). */
   liveReadVoice: boolean;
+  /** Na partida, Ctrl+Alt+1..6 marcam azul, vermelho e caranguejos (seus e do inimigo). */
+  jungleHotkeys: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -87,6 +89,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   appShortcut: true,
   liveRead: true,
   liveReadVoice: true,
+  jungleHotkeys: true,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -122,6 +125,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   appShortcut: isBoolean,
   liveRead: isBoolean,
   liveReadVoice: isBoolean,
+  jungleHotkeys: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,

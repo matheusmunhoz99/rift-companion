@@ -1,5 +1,6 @@
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electronIpc, nativeImage, screen, shell } from 'electron';
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
+import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
 import { appLog, onAppLog, startAppLog } from './app-log';
@@ -58,6 +59,7 @@ let appTray: AppTray | null = null;
 let invisibleMode: InvisibleModeProxy | null = null;
 let androidLink: AndroidLink | null = null;
 let appShortcut: AppShortcut | null = null;
+let jungleHotkeys: JungleHotkeys | null = null;
 /** Campos da selva marcados na tela do app, para o overlay mostrar por cima do jogo. */
 let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
 let quitting = false;
@@ -347,6 +349,7 @@ void acquireInstance().then((acquired) => {
       }, 50);
       if ('showAsRiftUser' in changes) announceRiftUser();
       appShortcut?.apply(preferences.appShortcut && !capturing);
+      jungleHotkeys?.sync();
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
       mainWindow?.webContents.send('prefs:changed', preferences);
@@ -632,6 +635,12 @@ void acquireInstance().then((acquired) => {
     // Ctrl+Shift+R: mostra e esconde o app de qualquer lugar (também por cima do jogo).
     appShortcut = new AppShortcut(toggleFromShortcut);
     appShortcut.apply(prefs.getPreferences().appShortcut && !capturing);
+    // Ctrl+Alt+1..6 na partida: marca azul, vermelho e caranguejos sem sair do jogo.
+    if (!capturing) jungleHotkeys = new JungleHotkeys(
+      connector,
+      () => prefs.getPreferences().jungleHotkeys,
+      (camp) => mainWindow?.webContents.send('jungle:mark', camp),
+    );
     // Card de compartilhar: copia ou salva como imagem um pedaço da janela.
     ipcMain.handle('app:capture-image', async (_event, rect: unknown, action: unknown, fileName: unknown) => {
       const win = mainWindow;
@@ -712,6 +721,7 @@ void acquireInstance().then((acquired) => {
       version: app.getVersion(),
       overlayShortcut: OVERLAY_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
       appShortcut: APP_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
+      jungleHotkeys: JUNGLE_HOTKEYS.map((h) => ({ keys: h.accelerator.replace('Control', 'Ctrl'), label: h.label })),
       buildsDirectory: path.join(app.getPath('userData'), 'builds'),
     }));
     ipcMain.handle('app:open-builds-folder', async () => {
@@ -786,6 +796,7 @@ void acquireInstance().then((acquired) => {
     appLog('app fechando');
     overlay?.dispose();
     appShortcut?.dispose();
+    jungleHotkeys?.dispose();
     invisibleMode?.dispose();
   });
 

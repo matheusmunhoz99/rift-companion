@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('app', {
   onUpdateStatus: (callback: (status: unknown) => void) => subscribe('update:status', callback),
   onFullscreenChanged: (callback: (fullscreen: unknown) => void) => subscribe('window:fullscreen', callback),
   onSpeak: (callback: (text: unknown) => void) => subscribe('voice:say', callback),
+  onJungleMark: (callback: (camp: unknown) => void) => subscribe('jungle:mark', callback),
   setCampTimers: (camps: unknown) => ipcRenderer.send('app:camp-timers', camps),
   captureImage: (rect: unknown, action: unknown, fileName: unknown) => ipcRenderer.invoke('app:capture-image', rect, action, fileName),
 });

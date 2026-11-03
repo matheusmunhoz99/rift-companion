@@ -22,3 +22,43 @@ test('leitura por IA: a partida vai ao servidor com um hash, não com o Riot ID'
   assert.notEqual(key, sessionKey('Eu era o Jungle#jung', 29000001), 'outra partida, outra chave');
   assert.ok(!key.includes('jung'));
 });
+
+test('diário da partida: mortes com quem matou, compras de itens completos e evolução contra o oponente', () => {
+  const { emptyJournal, updateJournal, rememberRead, journalForRequest } = loadTs('live/match-journal');
+  const player = (riotId, championName, ally, isMe, extra = {}) => ({
+    riotId, championName, championKey: championName, ally, isMe, position: 'JUNGLE', level: 10, kills: 2, deaths: 1, assists: 3, cs: 100,
+    wardScore: 0, isDead: false, respawnTimer: 0, items: [], spellKeys: [], keystoneId: 0, ...extra,
+  });
+  const data = (gameTime, myItems, events) => ({
+    gameTime, gameMode: 'CLASSIC', me: { riotId: 'Eu#br1', currentGold: 500, stats: null },
+    players: [player('Eu#br1', 'Warwick', true, true, { items: myItems }), player('Rival#br1', 'Nocturne', false, false, { cs: 90 })],
+    teams: {}, timers: null, objectives: [], events,
+  });
+  const cost = (id) => ({ 6672: 3000, 1036: 350, 3047: 1100 })[id] ?? 0;
+  const value = (p) => p.items.reduce((t, i) => t + cost(i.id), 0);
+  let j = emptyJournal();
+  j = updateJournal(j, data(300, [{ id: 1036, count: 1 }], [{ time: 280, kind: 'kill', ally: false, killer: 'Rival', victim: 'Eu', detail: '' }]), cost, value);
+  assert.deepEqual(j.deaths, [{ t: 280, killer: 'Nocturne' }]);
+  assert.deepEqual(j.purchases, [], 'componente não conta');
+  j = updateJournal(j, data(302, [{ id: 6672, count: 1 }, { id: 3047, count: 1 }], [{ time: 280, kind: 'kill', ally: false, killer: 'Rival', victim: 'Eu', detail: '' }]), cost, value);
+  assert.equal(j.deaths.length, 1, 'mesma morte não repete');
+  assert.deepEqual(j.purchases.map((p) => p.itemId), [6672, 3047]);
+  assert.equal(j.trend.length, 1);
+  assert.equal(j.trend[0].csDiff, 10);
+  j = rememberRead(j, 302, ['a', 'b'], [3143]);
+  assert.equal(journalForRequest(j).previous[0].itens[0], 3143);
+  j = updateJournal(j, data(10, [], []), cost, value);
+  assert.equal(j.deaths.length, 0, 'tempo voltou: partida nova');
+});
+
+test('selva: tempos do patch 26.1 e volta mais rápida na Partida Rápida', () => {
+  const { campTiming, DEFAULT_JUNGLE } = loadTs('live/jungle-timings');
+  assert.deepEqual(campTiming('buff', DEFAULT_JUNGLE), { first: 55, respawn: 300 });
+  assert.deepEqual(campTiming('large', DEFAULT_JUNGLE), { first: 67, respawn: 135 });
+  assert.deepEqual(campTiming('scuttle', DEFAULT_JUNGLE), { first: 175, respawn: 150 });
+  const { timingsForQueue, DEFAULT_TIMINGS_CONFIG } = require('../dist-electron/overlay/live-dashboard.js');
+  const swift = timingsForQueue(DEFAULT_TIMINGS_CONFIG, 480);
+  assert.equal(swift.buffRespawn, 270);
+  assert.equal(swift.campRespawn, 120);
+  assert.equal(timingsForQueue(DEFAULT_TIMINGS_CONFIG, 420).campRespawn, 135);
+});

@@ -165,10 +165,20 @@ export interface LiveReadRequest {
   players: LiveReadPlayer[];
   teams: { ally: Omit<LiveTeam, 'atakhan'>; enemy: Omit<LiveTeam, 'atakhan'> };
   objectives: string[];
+  /** Diário da partida (mortes, compras, evolução, leituras anteriores). */
+  history?: {
+    deaths: Array<{ t: number; killer: string }>;
+    purchases: Array<{ t: number; itemId: number }>;
+    trend: Array<{ t: number; kda: string; cs: number; csDiff: number | null; goldDiff: number | null }>;
+    previous: Array<{ t: number; opcoes: string[]; itens: number[] }>;
+  };
 }
 
 export interface LiveRead {
   situacao: string;
+  /** Servidor antigo não manda. */
+  acertos?: string[];
+  erros?: string[];
   opcoes: Array<{ titulo: string; motivo: string }>;
   atencao: string | null;
   itens: number[];
@@ -308,7 +318,20 @@ export interface LiveDashboard {
     state: 'upcoming' | 'alive' | 'done';
     at: number;
   }>;
+  /** Tempos dos campos da selva da fila em andamento; ausente em app antigo ou fora do Summoner's Rift. */
+  jungle?: JungleTimings | null;
   events: LiveEvent[];
+}
+
+/** Espelha JungleTimings de electron/overlay/live-dashboard.ts (segundos de jogo). */
+export interface JungleTimings {
+  buffFirst: number;
+  buffRespawn: number;
+  smallCampFirst: number;
+  largeCampFirst: number;
+  campRespawn: number;
+  scuttleFirst: number;
+  scuttleRespawn: number;
 }
 
 // Espelha electron/lcu/postgame.ts.

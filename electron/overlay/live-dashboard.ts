@@ -147,6 +147,8 @@ export interface LiveDashboard {
    * pelos tempos fixos da temporada (`ObjectiveTimings`). Vazio fora do modo clássico.
    */
   objectives: ObjectiveTimer[];
+  /** Tempos dos campos da selva para a fila em andamento; null fora do Summoner's Rift. */
+  jungle: JungleTimings | null;
   /** Mais recentes primeiro. */
   events: LiveEvent[];
 }
@@ -185,7 +187,18 @@ export interface ObjectiveTimings {
   atakhanSpawn: number;
   baronFirst: number;
   baronRespawn: number;
+  /** Campos da selva (patch 26.1): azul e vermelho, lobos e aves, sapo e krugs, caranguejos. */
+  buffFirst: number;
+  buffRespawn: number;
+  smallCampFirst: number;
+  largeCampFirst: number;
+  campRespawn: number;
+  scuttleFirst: number;
+  scuttleRespawn: number;
 }
+
+/** Tempos dos campos que a tela do app usa (a API do jogo não avisa quando um campo morre). */
+export type JungleTimings = Pick<ObjectiveTimings, 'buffFirst' | 'buffRespawn' | 'smallCampFirst' | 'largeCampFirst' | 'campRespawn' | 'scuttleFirst' | 'scuttleRespawn'>;
 
 /** Summoner's Rift, temporada 2026 (patch 26.1): sem Atakhan, Barão aos 20:00. */
 export const DEFAULT_TIMINGS: ObjectiveTimings = {
@@ -203,6 +216,14 @@ export const DEFAULT_TIMINGS: ObjectiveTimings = {
   atakhanSpawn: 0,
   baronFirst: 20 * 60,
   baronRespawn: 6 * 60,
+  // Patch 26.1: campos nascem mais cedo (0:55 e 1:07; caranguejos 2:55); a volta não mudou.
+  buffFirst: 55,
+  buffRespawn: 5 * 60,
+  smallCampFirst: 55,
+  largeCampFirst: 67,
+  campRespawn: 135,
+  scuttleFirst: 2 * 60 + 55,
+  scuttleRespawn: 150,
 };
 
 /** Partida Rápida (Swiftplay, fila 480): 2 dragões, Ancião aos 15:00, Barão aos 12:00. */
@@ -215,6 +236,9 @@ export const SWIFTPLAY_TIMINGS: ObjectiveTimings = {
   heraldSpawn: 0,
   atakhanSpawn: 0,
   baronFirst: 12 * 60,
+  // Progressão rápida: campos voltam mais cedo (buffs 4:30, os outros 2:00).
+  buffRespawn: 270,
+  campRespawn: 120,
 };
 
 export interface TimingsConfig {
@@ -225,7 +249,8 @@ export interface TimingsConfig {
 
 export const DEFAULT_TIMINGS_CONFIG: TimingsConfig = {
   default: DEFAULT_TIMINGS,
-  queues: { 480: SWIFTPLAY_TIMINGS },
+  // 480 = Partida Rápida; 870/880/890 = Contra a IA, que usa as mesmas regras de progressão rápida.
+  queues: { 480: SWIFTPLAY_TIMINGS, 870: SWIFTPLAY_TIMINGS, 880: SWIFTPLAY_TIMINGS, 890: SWIFTPLAY_TIMINGS },
 };
 
 /** Aceita só números conhecidos entre 0 e 2 h; o resto fica com `base`. */
@@ -504,6 +529,17 @@ export function toLiveDashboard(raw: RawDashboardData, timings: ObjectiveTimings
     teams,
     timers,
     objectives,
+    jungle: classic
+      ? {
+          buffFirst: timings.buffFirst,
+          buffRespawn: timings.buffRespawn,
+          smallCampFirst: timings.smallCampFirst,
+          largeCampFirst: timings.largeCampFirst,
+          campRespawn: timings.campRespawn,
+          scuttleFirst: timings.scuttleFirst,
+          scuttleRespawn: timings.scuttleRespawn,
+        }
+      : null,
     events: events.sort((a, b) => b.time - a.time).slice(0, MAX_EVENTS),
   };
 }

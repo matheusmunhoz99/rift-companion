@@ -1,6 +1,7 @@
 import { Injectable, effect, inject, untracked } from '@angular/core';
 import { PreferencesService } from '../core/preferences.service';
-import { campNames } from './jungle-timers';
+import { CAMPS, RIVER, campNames } from './jungle-timers';
+import { DEFAULT_JUNGLE, campTiming } from './jungle-timings';
 import { LiveDataService } from './live-data.service';
 
 /** Aviso do campo da selva marcado: quantos segundos antes de ele voltar. */
@@ -21,6 +22,8 @@ export class VoiceService {
 
   constructor() {
     window.app?.onSpeak?.((text) => this.say(text));
+    // Ctrl+Alt+1..6 no jogo: marca o campo (ou desmarca) e a voz confirma, sem sair do jogo.
+    window.app?.onJungleMark?.((key) => this.markCamp(key));
 
     // O overlay (outra janela) mostra a contagem dos campos marcados aqui.
     effect(() => {
@@ -46,6 +49,30 @@ export class VoiceService {
         }
       });
     });
+  }
+
+  /** Atalho da selva: marca o campo como morto agora com o tempo da fila e confirma em voz alta. */
+  markCamp(key: string): void {
+    const [side, id] = key.split(':');
+    const camp = (side === 'river' ? RIVER : CAMPS).find((c) => c.id === id);
+    const names = campNames(key);
+    if (!camp || !names || !this.live.data()) return;
+    const { first, respawn } = campTiming(camp.kind, this.live.data()?.jungle ?? DEFAULT_JUNGLE);
+    const now = this.live.clock();
+    // A confirmação sai mesmo com os avisos falados desligados: foi você que apertou.
+    if (now < first) {
+      this.say(`${names.spoken} ainda não nasceu`, true);
+      return;
+    }
+    this.live.toggleCamp(key, respawn);
+    const backAt = this.live.campTimers().get(key);
+    if (backAt !== undefined && backAt > now) {
+      const s = Math.round(backAt);
+      const seconds = s % 60;
+      this.say(`${names.spoken} volta aos ${Math.floor(s / 60)}${seconds ? ` e ${seconds}` : ''}`, true);
+    } else {
+      this.say(`${names.spoken} desmarcado`, true);
+    }
   }
 
   /** Fala a frase (respeita a opção e o volume). `force`: exemplo nas configurações. */

@@ -6,7 +6,8 @@ import { LcuService } from '../lcu/lcu.service';
 import { ChampionDamageService } from '../stats/champion-damage.service';
 import { enemyDamageRead } from './adaptive-build';
 import { LiveDataService } from './live-data.service';
-import { readTrigger, sessionKey, type ReadMark } from './live-read-trigger';
+import { PERIODIC_EVERY_S, readTrigger, sessionKey, type ReadMark } from './live-read-trigger';
+import { journalForRequest } from './match-journal';
 import { VoiceService } from './voice.service';
 
 /** O botão "Ler agora" espera isso entre um pedido e outro. */
@@ -42,6 +43,23 @@ const TRIGGER_LABEL: Record<LiveReadRequest['trigger'], string> = {
           @if (s.read.atencao) {
             <p class="warn">{{ s.read.atencao }}</p>
           }
+          @if (s.read.acertos?.length || s.read.erros?.length) {
+            <div class="review">
+              @if (s.read.acertos?.length) {
+                <div class="review-col good">
+                  <span class="review-title">Você está acertando</span>
+                  @for (a of s.read.acertos; track $index) {<p>{{ a }}</p>}
+                </div>
+              }
+              @if (s.read.erros?.length) {
+                <div class="review-col bad">
+                  <span class="review-title">Onde dá para melhorar</span>
+                  @for (e of s.read.erros; track $index) {<p>{{ e }}</p>}
+                </div>
+              }
+            </div>
+          }
+          <span class="review-title">Caminhos possíveis</span>
           <ol class="options">
             @for (o of s.read.opcoes; track $index) {
               <li>
@@ -120,6 +138,33 @@ const TRIGGER_LABEL: Record<LiveReadRequest['trigger'], string> = {
       border-radius: var(--radius-xs);
       background: color-mix(in srgb, var(--warning) 12%, transparent);
       font-size: 13px;
+    }
+    .review {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    .review-col {
+      display: grid;
+      align-content: start;
+      gap: 4px;
+      padding: 8px 10px;
+      border-radius: var(--radius-xs);
+      background: var(--surface-2);
+      font-size: 13px;
+    }
+    .review-col.good {
+      border-left: 3px solid var(--success);
+    }
+    .review-col.bad {
+      border-left: 3px solid var(--danger);
+    }
+    .review-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
     .options {
       display: grid;
@@ -219,16 +264,23 @@ export class LiveReadPanel {
   private async request(data: LiveDashboard, trigger: LiveReadRequest['trigger']): Promise<void> {
     const me = data.players.find((p) => p.isMe);
     if (!me || !window.riot?.getLiveRead) return;
-    // Marca antes do pedido: a leitura do jogo chega a cada 2 s e não deve repetir o pedido.
-    this.mark = { at: data.gameTime, deaths: me.deaths };
     this.session ??= sessionKey(data.me?.riotId ?? me.riotId, Math.round((Date.now() / 1000 - data.gameTime) / 60));
+    const request = this.toRequest(data, trigger, this.session);
+    // Campeões ainda carregando (Data Dragon): tenta na próxima leitura do jogo, sem gastar a vez.
+    if (request.players.length < 2 || !request.players.some((p) => p.me)) return;
+    // Marca antes do pedido: a leitura do jogo chega a cada 2 s e não deve repetir o pedido.
+    const previousMark = this.mark;
+    this.mark = { at: data.gameTime, deaths: me.deaths };
     this.loading.set(true);
     this.failed.set(false);
+    let ok = false;
     try {
-      const response = await window.riot.getLiveRead(this.toRequest(data, trigger, this.session));
+      const response = await window.riot.getLiveRead(request);
       if (!this.live.data()) return;
       if (response?.read) {
         this.shown.set({ read: response.read, at: data.gameTime, trigger });
+        this.live.rememberRead(data.gameTime, response.read.opcoes.map((o) => o.titulo), response.read.itens);
+        ok = true;
         if (trigger === 'death') this.speak(response.read);
       } else {
         this.failed.set(true);
@@ -237,6 +289,10 @@ export class LiveReadPanel {
       this.failed.set(true);
     } finally {
       this.loading.set(false);
+      // Falhou (servidor fora, internet): a leitura de rotina tenta de novo em 1 min, não em 4.
+      if (!ok && trigger !== 'manual' && this.mark.at !== null) {
+        this.mark = { at: Math.max(previousMark.at ?? 0, this.mark.at - PERIODIC_EVERY_S + 60), deaths: this.mark.deaths };
+      }
     }
   }
 
@@ -245,7 +301,8 @@ export class LiveReadPanel {
     const { voiceAlerts, liveReadVoice } = this.prefs.preferences();
     if (!voiceAlerts || !liveReadVoice || !read.opcoes.length) return;
     const options = read.opcoes.map((o, i) => `${i === 0 ? 'Uma opção' : 'Outra'}: ${o.titulo}`).join('. ');
-    this.voice.say(`Leitura da partida. ${options}.`);
+    const fix = read.erros?.[0] ? ` Um ponto para melhorar: ${read.erros[0]}.` : '';
+    this.voice.say(`Leitura da partida.${fix} ${options}.`);
   }
 
   private toRequest(data: LiveDashboard, trigger: LiveReadRequest['trigger'], session: string): LiveReadRequest {
@@ -294,6 +351,7 @@ export class LiveReadPanel {
         .filter((p) => p.championId > 0),
       teams: { ally: team(data.teams.ally), enemy: team(data.teams.enemy) },
       objectives: objectives.slice(0, 6),
+      history: journalForRequest(this.live.journal()),
     };
   }
 

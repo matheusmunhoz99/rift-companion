@@ -1,15 +1,14 @@
 import { Component, computed, inject } from '@angular/core';
+import { DEFAULT_JUNGLE, campTiming, type CampKind } from './jungle-timings';
 import { LiveDataService } from './live-data.service';
 
 interface Camp {
   id: string;
   name: string;
+  kind: CampKind;
   /** Para a voz: "Seu azul", "Azul inimigo". */
   mine?: string;
   theirs?: string;
-  /** Primeiro surgimento e volta depois de morto (segundos de jogo). */
-  first: number;
-  respawn: number;
 }
 
 /**
@@ -17,21 +16,22 @@ interface Camp {
  * então cada um é um toque: "morreu agora" e o app conta até ele voltar.
  */
 export const CAMPS: Camp[] = [
-  { id: 'blue', name: 'Azul', first: 90, respawn: 300, mine: 'Seu azul', theirs: 'Azul inimigo' },
-  { id: 'red', name: 'Vermelho', first: 90, respawn: 300, mine: 'Seu vermelho', theirs: 'Vermelho inimigo' },
-  { id: 'gromp', name: 'Sapo', first: 102, respawn: 135, mine: 'Seu sapo', theirs: 'Sapo inimigo' },
-  { id: 'wolves', name: 'Lobos', first: 90, respawn: 135, mine: 'Seus lobos', theirs: 'Lobos inimigos' },
-  { id: 'raptors', name: 'Aves', first: 90, respawn: 135, mine: 'Suas aves', theirs: 'Aves inimigas' },
-  { id: 'krugs', name: 'Krugs', first: 102, respawn: 135, mine: 'Seus krugs', theirs: 'Krugs inimigos' },
+  { id: 'blue', name: 'Azul', kind: 'buff', mine: 'Seu azul', theirs: 'Azul inimigo' },
+  { id: 'red', name: 'Vermelho', kind: 'buff', mine: 'Seu vermelho', theirs: 'Vermelho inimigo' },
+  { id: 'gromp', name: 'Sapo', kind: 'large', mine: 'Seu sapo', theirs: 'Sapo inimigo' },
+  { id: 'wolves', name: 'Lobos', kind: 'small', mine: 'Seus lobos', theirs: 'Lobos inimigos' },
+  { id: 'raptors', name: 'Aves', kind: 'small', mine: 'Suas aves', theirs: 'Aves inimigas' },
+  { id: 'krugs', name: 'Krugs', kind: 'large', mine: 'Seus krugs', theirs: 'Krugs inimigos' },
 ];
 export const RIVER: Camp[] = [
-  { id: 'scuttle-top', name: 'Caranguejo de cima', first: 210, respawn: 150 },
-  { id: 'scuttle-bot', name: 'Caranguejo de baixo', first: 210, respawn: 150 },
+  { id: 'scuttle-top', name: 'Caranguejo de cima', kind: 'scuttle' },
+  { id: 'scuttle-bot', name: 'Caranguejo de baixo', kind: 'scuttle' },
 ];
 
 interface CampState {
   key: string;
   camp: Camp;
+  respawn: number;
   /** dead = marcado como morto, contando; upcoming = ainda não nasceu; alive = no mapa. */
   state: 'dead' | 'upcoming' | 'alive';
   left: number;
@@ -42,8 +42,8 @@ interface CampState {
   selector: 'app-jungle-timers',
   template: `
     <div class="jungle">
-      <span class="title" title="A API do jogo não avisa quando um campo morre: toque no campo quando ele morrer e o app conta até ele voltar. Toque de novo para desfazer.">
-        Selva <span class="hint">toque no campo quando ele morrer</span>
+      <span class="title" title="A API do jogo não avisa quando um campo morre: toque no campo quando ele morrer e o app conta até ele voltar. Toque de novo para desfazer. No jogo: Ctrl+Alt+1 seu azul, 2 seu vermelho, 3 azul inimigo, 4 vermelho inimigo, 5 caranguejo de cima, 6 de baixo.">
+        Selva <span class="hint">toque quando o campo morrer · no jogo: Ctrl+Alt+1 a 6</span>
       </span>
       <div class="sides">
         @for (group of groups(); track group.side) {
@@ -193,12 +193,14 @@ export class JungleTimers {
   protected readonly groups = computed(() => {
     const now = this.live.clock();
     const marks = this.live.campTimers();
+    const timings = this.live.data()?.jungle ?? DEFAULT_JUNGLE;
     const state = (side: string, camp: Camp): CampState => {
       const key = `${side}:${camp.id}`;
+      const { first, respawn } = campTiming(camp.kind, timings);
       const backAt = marks.get(key);
-      if (backAt !== undefined && backAt > now) return { key, camp, state: 'dead', left: backAt - now };
-      if (now < camp.first) return { key, camp, state: 'upcoming', left: camp.first - now };
-      return { key, camp, state: 'alive', left: 0 };
+      if (backAt !== undefined && backAt > now) return { key, camp, respawn, state: 'dead', left: backAt - now };
+      if (now < first) return { key, camp, respawn, state: 'upcoming', left: first - now };
+      return { key, camp, respawn, state: 'alive', left: 0 };
     };
     return [
       { title: 'Sua selva', side: 'ally', camps: CAMPS.map((c) => state('ally', c)) },
@@ -210,7 +212,7 @@ export class JungleTimers {
   protected toggle(c: CampState): void {
     // Antes de nascer não há o que marcar.
     if (c.state === 'upcoming') return;
-    this.live.toggleCamp(c.key, c.camp.respawn);
+    this.live.toggleCamp(c.key, c.respawn);
   }
 
   protected clock(seconds: number): string {

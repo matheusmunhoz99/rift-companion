@@ -108,6 +108,20 @@
       />
       <div class="divider"></div>
       <app-switch
+        label="Atalhos da selva dentro do jogo"
+        description="Matou um campo? Aperte o atalho sem sair do jogo (funciona em tela cheia): o app conta até ele voltar, com o tempo certo do modo, e a voz confirma. Apertar de novo desmarca."
+        [checked]="prefs.preferences().jungleHotkeys"
+        (toggled)="prefs.set({ jungleHotkeys: $event })"
+      />
+      @if (prefs.preferences().jungleHotkeys && prefs.info()?.jungleHotkeys; as keys) {
+        <ul class="hotkeys">
+          @for (k of keys; track k.keys) {
+            <li><code>{{ k.keys }}</code> {{ k.label }}</li>
+          }
+        </ul>
+      }
+      <div class="divider"></div>
+      <app-switch
         label="Modo partida"
         description="Da seleção ao fim de jogo o app usa a tela toda: menu só com ícones, telas mais largas e, no topo, a sua vez na seleção e os próximos objetivos. Volta ao normal sozinho quando você sai do fim de jogo."
         [checked]="prefs.preferences().matchMode"

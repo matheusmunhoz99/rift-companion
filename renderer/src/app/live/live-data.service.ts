@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } f
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveDashboard, LivePlayer } from '../history/riot.types';
 import { LcuService } from '../lcu/lcu.service';
+import { emptyJournal, rememberRead, updateJournal, type Journal } from './match-journal';
 
 const POLL_MS = 2_000;
 /** Um ponto do gráfico de vantagem a cada 20 s de jogo. */
@@ -39,6 +40,14 @@ export class LiveDataService {
       else next.set(key, this.clock() + cooldown);
       return next;
     });
+  }
+
+  /** Diário da partida (mortes, compras, evolução, leituras da IA): a IA aprende com ele. */
+  readonly journal = signal<Journal>(emptyJournal());
+
+  /** Guarda as opções de uma leitura da IA para a próxima. */
+  rememberRead(t: number, opcoes: string[], itens: number[]): void {
+    this.journal.update((j) => rememberRead(j, t, opcoes, itens));
   }
 
   /** Campos da selva marcados como mortos: id do campo -> tempo de jogo em que voltam. */
@@ -102,6 +111,7 @@ export class LiveDataService {
     this.history.set([]);
     this.spellTimers.set(new Map());
     this.campTimers.set(new Map());
+    this.journal.set(emptyJournal());
   }
 
   private async poll(): Promise<void> {
@@ -113,6 +123,7 @@ export class LiveDataService {
     this.data.set(data);
     this.fetchedAt.set(Date.now());
     this.sample(data);
+    this.journal.update((j) => updateJournal(j, data, (id) => this.ddragon.itemCost(id), (p) => this.itemValue(p)));
   }
 
   private sample(data: LiveDashboard): void {

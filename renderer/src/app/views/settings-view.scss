@@ -268,3 +268,23 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+.hotkeys {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 16px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 13px;
+
+  code {
+    margin-right: 6px;
+    padding: 1px 6px;
+    border-radius: var(--radius-xs);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 12px;
+  }
+}

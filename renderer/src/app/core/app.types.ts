@@ -42,6 +42,7 @@ export interface Preferences {
   appShortcut: boolean;
   liveRead: boolean;
   liveReadVoice: boolean;
+  jungleHotkeys: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
@@ -55,6 +56,8 @@ export interface AppInfo {
   overlayShortcut: string;
   /** Mostra e esconde o app de qualquer lugar ("Ctrl+Shift+R"). Ausente em versões antigas. */
   appShortcut?: string;
+  /** Atalhos da selva na partida ("Ctrl+Alt+1" -> "Seu azul"). */
+  jungleHotkeys?: Array<{ keys: string; label: string }>;
   buildsDirectory: string;
 }
 
@@ -156,6 +159,8 @@ export interface AppBridge {
   onFullscreenChanged?(callback: (fullscreen: boolean) => void): () => void;
   /** Frase para falar em voz alta (avisos de objetivos da partida). Só no PC. */
   onSpeak?(callback: (text: string) => void): () => void;
+  /** Atalho da selva apertado no jogo ("ally:red"). Só no PC. */
+  onJungleMark?(callback: (camp: string) => void): () => void;
   /** Campos da selva marcados, para o overlay mostrar a contagem por cima do jogo. Só no PC. */
   setCampTimers?(camps: CampTimer[]): void;
   /** Copia (ou salva) como imagem um pedaço da janela. false = cancelado. Só no PC. */
