@@ -2,14 +2,24 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.14';
+const RELEASE = '1.15';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
     icon: 'live',
-    title: 'Modo partida',
-    text: 'Da seleção ao fim de jogo o app usa a tela toda: menu só com ícones, telas mais largas e, no topo, a sua vez na seleção e os próximos objetivos. Desliga em Configurações.',
+    title: 'Tela cheia na partida',
+    text: 'No carregamento e no jogo o app fica em tela cheia como a do LoL: sem borda nem barra de tarefas. No segundo monitor entra na hora; no mesmo do jogo, quando você vem para o app. Esc sai.',
+  },
+  {
+    icon: 'plan',
+    title: 'Timers da selva',
+    text: 'Na aba Ao vivo, toque no campo quando ele morrer (azul, vermelho, caranguejo...) e o app conta até ele voltar, da sua selva e da inimiga.',
+  },
+  {
+    icon: 'book',
+    title: 'Build que se adapta',
+    text: 'Durante a partida o app lê o dano do time inimigo agora e mostra os próximos itens que jogadores Mestre+ do seu campeão compram contra ele. E avisa quem está forte.',
   },
   {
     icon: 'swords',
@@ -25,16 +35,6 @@ const HIGHLIGHTS = [
     icon: 'linked',
     title: 'Duo e Trio com certeza',
     text: 'Lido do próprio cliente do LoL, nos dois times, e marcado também na lista do histórico, sem abrir a partida.',
-  },
-  {
-    icon: 'plan',
-    title: 'Análise por modo de jogo',
-    text: 'Em ARAM, ARAM: Desordem, URF e Arena o plano e o coach falam das regras do modo, sem selva nem rotas onde não existem.',
-  },
-  {
-    icon: 'refresh',
-    title: 'Mais rápido',
-    text: 'O app abre mais leve, a partida ao vivo e os grupos aparecem em segundos e dá para atualizar até no meio da partida.',
   },
 ];
 

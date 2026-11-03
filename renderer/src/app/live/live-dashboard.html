@@ -142,6 +142,10 @@
           }
         </div>
       }
+      @if (!aram() && game.objectives.length) {
+        <!-- Campos da selva: um toque quando morre e o app conta até voltar. -->
+        <app-jungle-timers />
+      }
     </section>
 
     <!-- Timers: objetivos, inibidores e quem está morto. -->
@@ -274,6 +278,8 @@
             <span><strong>{{ s.moveSpeed }}</strong> Vel. de movimento</span>
           </div>
         }
+        <!-- Build adaptativa: o dano inimigo agora e os próximos itens contra ele. -->
+        <app-adaptive-build />
       </section>
     }
 

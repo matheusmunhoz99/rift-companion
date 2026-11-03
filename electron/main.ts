@@ -623,6 +623,8 @@ void acquireInstance().then((acquired) => {
     // e volta ao tamanho de antes no fim de jogo. 'fullscreen' | true (aumentada) | false.
     const matchWindow = new MatchWindow(() => mainWindow);
     ipcMain.handle('app:match-window', (_event, mode: unknown) => {
+      // Prints de revisão (RIFT_CAPTURE) ficam sempre no tamanho pedido (RIFT_SIZE).
+      if (capturing) return;
       const fullscreen = mode === 'fullscreen';
       if (matchWindow.fullscreen(fullscreen)) appLog(`modo partida: tela cheia ${fullscreen ? 'pedida' : 'desligada'}`);
       const changed = mode === true || fullscreen ? matchWindow.enter() : matchWindow.leave();

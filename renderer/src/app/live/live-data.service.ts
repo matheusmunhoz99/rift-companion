@@ -41,6 +41,20 @@ export class LiveDataService {
     });
   }
 
+  /** Campos da selva marcados como mortos: id do campo -> tempo de jogo em que voltam. */
+  readonly campTimers = signal<ReadonlyMap<string, number>>(new Map());
+
+  /** Marca o campo como morto agora (conta até voltar); marcar de novo desfaz. */
+  toggleCamp(key: string, respawn: number): void {
+    this.campTimers.update((current) => {
+      const next = new Map(current);
+      const backAt = next.get(key);
+      if (backAt !== undefined && backAt > this.clock()) next.delete(key);
+      else next.set(key, this.clock() + respawn);
+      return next;
+    });
+  }
+
   /** Tempo de jogo corrente: o último lido mais o tempo desde a leitura (o jogo não pausa). */
   readonly clock = computed(() => {
     const data = this.data();
@@ -87,6 +101,7 @@ export class LiveDataService {
     this.data.set(null);
     this.history.set([]);
     this.spellTimers.set(new Map());
+    this.campTimers.set(new Map());
   }
 
   private async poll(): Promise<void> {
