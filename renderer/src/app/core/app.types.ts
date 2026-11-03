@@ -46,6 +46,7 @@ export interface Preferences {
   screenVision: boolean;
   visionSamples: boolean;
   autoJungle: boolean;
+  minimapOverlay: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;

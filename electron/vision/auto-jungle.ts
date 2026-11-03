@@ -15,11 +15,13 @@ export interface AutoJungleDeps {
   emit(key: string, backAt: number, exact: boolean): void;
   /** Tempo de volta do campo nesta fila (segundos). */
   respawnOf(key: string): number;
+  /** Primeiro nascimento do campo (antes disso o número no minimapa é a contagem de nascimento). */
+  firstSpawnOf?(key: string): number;
   now?(): number;
 }
 
-/** Sem novidade, ainda relê os timers aproximados ("2m+") a cada tanto. */
-const REFRESH_INEXACT_MS = 8_000;
+/** Campo com leitura sem confirmação: relê em 2 s (a segunda leitura confirma o horário). */
+const REFRESH_UNSURE_MS = 2_000;
 /** Releitura geral de segurança enquanto houver timers na tela. */
 const REFRESH_ALL_MS = 30_000;
 
@@ -53,12 +55,18 @@ export class AutoJungle {
     return this.deps.now?.() ?? Date.now();
   }
 
+  /** Onde está o mapa no recorte (achado pela borda preta); null antes do primeiro quadro bom. */
+  get mapBox(): MapBox | null {
+    return this.box;
+  }
+
   reset(): void {
     this.box = null;
     this.frames = 0;
     this.previous = new Set();
     this.absent = new Map();
     this.known = new Map();
+    this.pending = new Map();
     this.lastOcr = 0;
   }
 
@@ -83,8 +91,9 @@ export class AutoJungle {
     if (this.busy || !candidates.length) return;
 
     const now = this.now();
-    const inexact = candidates.some((key) => !this.known.get(key)?.exact);
-    const due = fresh.length > 0 || (inexact && now - this.lastOcr >= REFRESH_INEXACT_MS) || now - this.lastOcr >= REFRESH_ALL_MS;
+    // Sem horário confirmado (ou com leitura esperando a segunda): relê logo, para confirmar.
+    const unsure = candidates.some((key) => !this.known.get(key)?.exact || this.pending.has(key));
+    const due = fresh.length > 0 || (unsure && now - this.lastOcr >= REFRESH_UNSURE_MS) || now - this.lastOcr >= REFRESH_ALL_MS;
     if (!due) return;
 
     const byKey = new Map(points.map((p) => [p.key, p]));
@@ -102,20 +111,31 @@ export class AutoJungle {
     }
   }
 
-  private apply(key: string, text: string | null, gameTime: number, justAppeared: boolean): void {
+  /** Leitura nova que ainda não foi confirmada por uma segunda (a IA às vezes troca um dígito). */
+  private pending = new Map<string, number>();
+
+  private apply(key: string, text: string | null, gameTime: number, _justAppeared: boolean): void {
+    // Antes de os campos nascerem, o minimapa mostra a contagem de nascimento, não de volta.
+    if (gameTime < (this.deps.firstSpawnOf?.(key) ?? 0) + 3) return;
     const seconds = timerSeconds(text);
+    // "2m+" não diz o segundo: espera o número exato (aparece com menos de 2 min).
+    if (seconds === null) return;
+    // Impossível: mais do que o tempo de volta do campo (leitura errada ou texto do vizinho).
+    if (seconds < 1 || seconds > this.deps.respawnOf(key) + 3) return;
+    const backAt = Math.round(gameTime + seconds);
     const current = this.known.get(key);
-    if (seconds !== null) {
-      const backAt = Math.round(gameTime + seconds);
-      if (!current || !current.exact || Math.abs(current.backAt - backAt) > 2) this.deps.emit(key, backAt, true);
-      this.known.set(key, { backAt, exact: true });
+    const agrees = (a: number | undefined) => a !== undefined && Math.abs(a - backAt) <= 2;
+    if (agrees(current?.backAt)) {
+      this.pending.delete(key);
       return;
     }
-    // "2m+": mais de 2 min, sem o segundo. Se o texto acabou de aparecer, o campo acabou de morrer.
-    if (text && /m\+$/.test(text) && justAppeared && !current) {
-      const backAt = Math.round(gameTime + this.deps.respawnOf(key));
-      this.known.set(key, { backAt, exact: false });
-      this.deps.emit(key, backAt, false);
+    // Vale quando duas leituras seguidas concordam; uma só pode ser um dígito trocado.
+    if (!agrees(this.pending.get(key))) {
+      this.pending.set(key, backAt);
+      return;
     }
+    this.pending.delete(key);
+    this.known.set(key, { backAt, exact: true });
+    this.deps.emit(key, backAt, true);
   }
 }

@@ -57,6 +57,8 @@ export interface Preferences {
   visionSamples: boolean;
   /** Marca os campos da selva sozinho, lendo os timers que o LoL desenha no minimapa. */
   autoJungle: boolean;
+  /** Timers da selva e dos objetivos desenhados em cima do minimapa (overlay transparente). */
+  minimapOverlay: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -99,6 +101,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   screenVision: true,
   visionSamples: false,
   autoJungle: true,
+  minimapOverlay: true,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -138,6 +141,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   screenVision: isBoolean,
   visionSamples: isBoolean,
   autoJungle: isBoolean,
+  minimapOverlay: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,

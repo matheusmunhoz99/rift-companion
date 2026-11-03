@@ -36,6 +36,7 @@ export class PreferencesService {
     screenVision: true,
     visionSamples: false,
     autoJungle: true,
+    minimapOverlay: true,
     sendErrorReports: true,
     detailedDiagnostics: false,
     telegramReadyCheck: true,

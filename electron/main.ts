@@ -2,6 +2,8 @@ import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electr
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
 import { VisionController } from './vision/controller';
+import { MinimapOverlay, buildMarks } from './overlay/minimap-overlay';
+import { campPoints } from './vision/camp-detector';
 import { setBorderless } from './lcu/window-mode';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
@@ -16,6 +18,7 @@ import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
+import { fetchRawGameData, toOverlayData } from './overlay/live-client';
 import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController, overlayRows } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
@@ -673,6 +676,37 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(folder);
     });
     visionSync = () => vision.sync();
+    // Timers em cima do minimapa (selva e objetivos), a cada 1 s durante a partida.
+    if (!capturing) {
+      const minimap = new MinimapOverlay(path.join(__dirname, 'preload.js'));
+      const minimapTimings = createTimingsSource(connector, app.isPackaged);
+      let minimapBusy = false;
+      setInterval(async () => {
+        const phase = connector.getState().gameflowPhase;
+        if (!prefs.getPreferences().minimapOverlay || (phase !== 'InProgress' && phase !== 'Reconnect')) {
+          minimap.hide();
+          return;
+        }
+        if (minimapBusy) return;
+        minimapBusy = true;
+        try {
+          const raw = await fetchRawGameData();
+          // Seu time: o da visão ou o do próprio jogo (quem é você na lista de jogadores).
+          const r = raw as { activePlayer?: { riotId?: string }; allPlayers?: Array<{ riotId?: string; team?: string }> };
+          const mine = r.allPlayers?.find((p) => p.riotId === r.activePlayer?.riotId)?.team;
+          const team = vision.team() ?? (mine === 'ORDER' || mine === 'CHAOS' ? mine : null);
+          if (!raw?.allPlayers?.length || !team) return;
+          const data = toOverlayData(raw, await minimapTimings());
+          minimap.place(vision.screenMapBox());
+          minimap.update(buildMarks(data.gameTime, campTimers, data.upcoming, campPoints(team)));
+        } catch (error) {
+          appLog(`overlay do minimapa: ${error instanceof Error ? error.message : error}`);
+        } finally {
+          minimapBusy = false;
+        }
+      }, 1000);
+      app.on('will-quit', () => minimap.dispose());
+    }
     // Ctrl+Alt+1..6 na partida: marca azul, vermelho e caranguejos sem sair do jogo.
     if (!capturing) jungleHotkeys = new JungleHotkeys(
       connector,

@@ -291,6 +291,13 @@
     }
     <div class="divider"></div>
     <app-switch
+      label="Timers em cima do minimapa"
+      description="Uma camada transparente exatamente em cima do minimapa mostra quanto falta para cada campo da selva (seu em azul, do inimigo em vermelho, caranguejos em verde-água) e para dragão, Barão, Arauto e Larvas, no lugar de cada um. Fica verde nos últimos segundos. É uma janela separada: não injeta nada no jogo."
+      [checked]="prefs.preferences().minimapOverlay"
+      (toggled)="prefs.set({ minimapOverlay: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
       label="Selva automática pela tela"
       description="O LoL escreve no minimapa quanto falta para cada campo que o seu time viu morrer (1:57, 40, 2m+). O app lê esse número na tela, uma vez por segundo, e conta sozinho até o campo voltar, sem você apertar nada. Só lê a tela, como um gravador: não toca no jogo. Precisa do jogo em Sem bordas."
       [checked]="prefs.preferences().autoJungle"

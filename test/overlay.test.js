@@ -98,3 +98,15 @@ test('overlay: a leitura da IA ganha uma linha própria por 90 s de jogo', () =>
   assert.equal(overlayRows({ gameTime: 600, camps: [], inhibitors: [], ai: { text: 'x', at: 590 } }), 3);
   assert.equal(overlayRows({ gameTime: 700, camps: [], inhibitors: [], ai: { text: 'x', at: 590 } }), 2, 'passou de 90 s');
 });
+
+test('overlay do minimapa: cada timer no lugar do campo ou do objetivo, verde no fim', () => {
+  const { buildMarks } = require('../dist-electron/overlay/minimap-overlay.js');
+  const { campPoints } = require('../dist-electron/vision/camp-detector.js');
+  const marks = buildMarks(814, [{ key: 'ally:wolves', backAt: 931 }, { key: 'ally:raptors', backAt: 826 }, { key: 'enemy:red', backAt: 700 }],
+    [{ key: 'dragon', state: 'upcoming', at: 900 }, { key: 'herald', state: 'upcoming', at: 900 }, { key: 'baron', state: 'upcoming', at: 1200 }, { key: 'grubs', state: 'done', at: 480 }],
+    campPoints('CHAOS'));
+  assert.deepEqual(marks.map((m) => [m.kind, m.text, m.soon]), [
+    ['ally', '1:57', false], ['ally', '12', true], ['objective', '1:26', false], ['objective', '1:26', false],
+  ], 'campo que já voltou some; Barão fica atrás do Arauto no mesmo poço');
+  assert.ok(marks.every((m) => m.u > 0 && m.u < 1 && m.v > 0 && m.v < 1));
+});

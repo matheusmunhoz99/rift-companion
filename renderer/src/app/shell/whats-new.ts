@@ -2,10 +2,20 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.21';
+const RELEASE = '1.22';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'eye',
+    title: 'Timers em cima do minimapa',
+    text: 'Uma camada transparente em cima do minimapa mostra quanto falta para cada campo da selva e para dragão, Barão, Arauto e Larvas, no lugar de cada um. Funciona por cima do jogo e não injeta nada.',
+  },
+  {
+    icon: 'check',
+    title: 'Selva automática mais precisa',
+    text: 'Cada horário só entra depois de duas leituras que concordam, sem estimativas e sem confundir a contagem de nascimento do começo da partida.',
+  },
   {
     icon: 'plan',
     title: 'Selva automática pela tela',

@@ -103,7 +103,8 @@ export class OverlayController {
     window.webContents.send('overlay:data', data);
     if (this.hiddenByUser || !this.ready) return;
     if (!window.isVisible()) window.showInactive();
-    window.setAlwaysOnTop(true, 'pop-up-menu');
+    // Nível mais alto de "sempre por cima": aparece também sobre o jogo em tela cheia otimizada do Windows.
+    window.setAlwaysOnTop(true, 'screen-saver');
   }
 
   private toggleByUser(): void {
@@ -135,7 +136,7 @@ export class OverlayController {
         sandbox: true,
       },
     });
-    window.setAlwaysOnTop(true, 'pop-up-menu');
+    window.setAlwaysOnTop(true, 'screen-saver');
     window.setIgnoreMouseEvents(true);
     window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     window.webContents.on('render-process-gone', (_event, details) => {

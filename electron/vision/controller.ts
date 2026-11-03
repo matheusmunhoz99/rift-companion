@@ -62,6 +62,8 @@ export class VisionController {
   private gamePoll: NodeJS.Timeout | null = null;
   private jungle: AutoJungle;
   private timings: JungleTimings | null = null;
+  /** Recorte do minimapa na tela (pixels físicos). */
+  private region: { x: number; y: number; width: number; height: number } | null = null;
 
   constructor(
     private readonly connector: LcuConnector,
@@ -81,6 +83,7 @@ export class VisionController {
         this.onCamp(key, backAt, exact);
       },
       respawnOf: (key) => this.respawnOf(key),
+      firstSpawnOf: (key) => this.firstSpawnOf(key),
     });
     connector.on('state', () => this.sync());
   }
@@ -109,7 +112,7 @@ export class VisionController {
       this.layout ??= await readMinimapLayout(this.connector.getCredentials()?.installDirectory ?? null);
       this.timings = await this.jungleTimings().catch(() => null);
       const layout = this.layout;
-      await this.stream.start((w, h) => minimapRegion(layout, w, h));
+      await this.stream.start((w, h) => (this.region = minimapRegion(layout, w, h)));
       this.gamePoll ??= setInterval(() => void this.pollGame(), GAME_POLL_MS);
       void this.pollGame();
     } catch (error) {
@@ -166,6 +169,15 @@ export class VisionController {
     }
   }
 
+  private firstSpawnOf(key: string): number {
+    const t = this.timings ?? { buffFirst: 55, smallCampFirst: 55, largeCampFirst: 67, scuttleFirst: 175 };
+    const id = key.split(':')[1];
+    if (id === 'blue' || id === 'red') return t.buffFirst;
+    if (id === 'gromp' || id === 'krugs') return t.largeCampFirst;
+    if (id?.startsWith('scuttle')) return t.scuttleFirst;
+    return t.smallCampFirst;
+  }
+
   private respawnOf(key: string): number {
     const t = this.timings ?? { buffRespawn: 300, campRespawn: 135, scuttleRespawn: 150 };
     const id = key.split(':')[1];
@@ -189,6 +201,21 @@ export class VisionController {
     } catch {
       return null;
     }
+  }
+
+  /** O mapa na tela (pixels físicos): o overlay do minimapa fica exatamente em cima dele. */
+  screenMapBox(): { x: number; y: number; size: number } | null {
+    const region = this.region;
+    if (!region) return null;
+    const box = this.jungle.mapBox;
+    // Sem a moldura achada ainda: a medida das amostras (mapa a 52/49 px de um recorte de 333).
+    const b = box ?? { left: Math.round(region.width * 0.156), top: Math.round(region.height * 0.147), size: Math.round(region.width * 0.78) };
+    return { x: region.x + b.left, y: region.y + b.top, size: b.size };
+  }
+
+  /** Seu time na partida (ORDER embaixo à esquerda, CHAOS em cima à direita). */
+  team(): Team | null {
+    return this.game.team;
   }
 
   folder(): string {

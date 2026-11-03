@@ -13,6 +13,11 @@ function subscribe<T>(channel: string, callback: (value: T) => void): () => void
   return () => ipcRenderer.removeListener(channel, listener);
 }
 
+// Overlay transparente do minimapa (só aquela janela escuta).
+contextBridge.exposeInMainWorld('minimapOverlay', {
+  onMarks: (callback: (marks: unknown) => void) => subscribe('minimap-overlay:marks', callback),
+});
+
 contextBridge.exposeInMainWorld('lcu', {
   getState: () => ipcRenderer.invoke('lcu:get-state'),
   onState: (callback: (state: unknown) => void) => subscribe('lcu:state', callback),
