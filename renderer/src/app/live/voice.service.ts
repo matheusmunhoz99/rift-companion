@@ -24,6 +24,10 @@ export class VoiceService {
     window.app?.onSpeak?.((text) => this.say(text));
     // Ctrl+Alt+1..6 no jogo: marca o campo (ou desmarca) e a voz confirma, sem sair do jogo.
     window.app?.onJungleMark?.((key) => this.markCamp(key));
+    // Selva automática: o app leu no minimapa o timer de um campo que morreu.
+    window.app?.onJungleAuto?.((camp) => {
+      if (this.live.data() && camp?.key && typeof camp.backAt === 'number') this.live.setCamp(camp.key, camp.backAt);
+    });
 
     // O overlay (outra janela) mostra a contagem dos campos marcados aqui.
     effect(() => {

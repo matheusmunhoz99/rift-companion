@@ -2,10 +2,15 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.20';
+const RELEASE = '1.21';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'plan',
+    title: 'Selva automática pela tela',
+    text: 'O LoL escreve no minimapa quanto falta para cada campo que o seu time viu morrer (1:57, 40, 2m+). O app lê esse número na tela a cada segundo e conta sozinho até o campo voltar, sem você apertar nada. Só lê a tela, não toca no jogo.',
+  },
   {
     icon: 'eye',
     title: 'Overlay com a IA por cima do jogo',

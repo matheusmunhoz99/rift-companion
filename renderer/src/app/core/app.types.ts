@@ -45,6 +45,7 @@ export interface Preferences {
   jungleHotkeys: boolean;
   screenVision: boolean;
   visionSamples: boolean;
+  autoJungle: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
@@ -165,6 +166,8 @@ export interface AppBridge {
   onSpeak?(callback: (text: string) => void): () => void;
   /** Atalho da selva apertado no jogo ("ally:red"). Só no PC. */
   onJungleMark?(callback: (camp: string) => void): () => void;
+  /** Campo da selva que o app viu morrer pela tela (timer lido do minimapa). Só no PC. */
+  onJungleAuto?(callback: (camp: { key: string; backAt: number; exact: boolean }) => void): () => void;
   /** Recorte do minimapa agora (JPEG em base64); null fora da partida. Só no PC. */
   visionMinimap?(): Promise<{ jpeg: string; black: boolean } | null>;
   /** Manda a leitura da IA para o overlay (frase curta). Só no PC. */

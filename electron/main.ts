@@ -19,7 +19,7 @@ import { readGameWindowMode } from './overlay/game-settings';
 import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController, overlayRows } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
-import { RIFT_API_URL, registerRiotHandlers } from './riot/ipc';
+import { RIFT_API_URL, apiPost, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
 import { MatchWindow } from './match-window';
@@ -652,7 +652,16 @@ void acquireInstance().then((acquired) => {
     appShortcut = new AppShortcut(toggleFromShortcut);
     appShortcut.apply(prefs.getPreferences().appShortcut && !capturing);
     // Visão da tela: o minimapa vai junto na leitura da IA; o gravador guarda amostras para calibrar.
-    const vision = new VisionController(connector, path.join(app.getPath('userData'), 'vision-samples'), () => prefs.getPreferences());
+    const visionTimings = createTimingsSource(connector, app.isPackaged);
+    const vision = new VisionController(
+      connector,
+      path.join(app.getPath('userData'), 'vision-samples'),
+      () => prefs.getPreferences(),
+      // A IA do servidor lê o número de cada recorte ("1:57"); falha -> null (tenta no próximo quadro).
+      (crops) => apiPost<{ results: Array<{ id: string; text: string | null }> }>('/v1/camp-ocr', { crops }).then((r) => r.results).catch(() => null),
+      (key, backAt, exact) => mainWindow?.webContents.send('jungle:auto', { key, backAt, exact }),
+      () => visionTimings(),
+    );
     ipcMain.handle('vision:minimap', async () => {
       const capture = await vision.minimap();
       return capture ? { jpeg: capture.jpeg.toString('base64'), black: capture.black } : null;

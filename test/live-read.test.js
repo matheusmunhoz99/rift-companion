@@ -75,3 +75,29 @@ test('visão: recorte do minimapa no canto certo (escala e lado) e quadro preto 
   const map = Buffer.alloc(100 * 100 * 4, 90);
   assert.equal(isBlack(map, 100, 100), false);
 });
+
+test('selva pela tela: posições espelhadas por time, leitura do número e moldura do mapa', () => {
+  const { campPoints, timerSeconds, findMapBox, cropAround } = require('../dist-electron/vision/camp-detector.js');
+  const red = campPoints('CHAOS');
+  const blue = campPoints('ORDER');
+  const ally = (list, id) => list.find((p) => p.key === `ally:${id}`);
+  assert.ok(Math.abs(ally(red, 'blue').u - (1 - ally(blue, 'blue').u)) < 0.01, 'lado vermelho é o espelho do azul');
+  assert.equal(red.filter((p) => p.key.startsWith('river:')).length, 2);
+  assert.equal(timerSeconds('1:57'), 117);
+  assert.equal(timerSeconds('40'), 40);
+  assert.equal(timerSeconds('2m+'), null);
+  assert.equal(timerSeconds(null), null);
+  // Recorte 120x120: borda preta de 6 px em volta de um mapa claro de 100x100.
+  const w = 120;
+  const px = Buffer.alloc(w * w * 4, 0);
+  for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) {
+    const inMap = x >= 10 && x < 110 && y >= 10 && y < 110;
+    const border = !inMap && x >= 4 && x < 116 && y >= 4 && y < 116;
+    const v = inMap ? 80 : border ? 0 : 40;
+    px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3);
+  }
+  const box = findMapBox(px, w, w);
+  assert.ok(box && Math.abs(box.left - 10) <= 1 && Math.abs(box.size - 99) <= 2, JSON.stringify(box));
+  const rect = cropAround(box, ally(red, 'krugs'), w, w);
+  assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= w && rect.y + rect.height <= w);
+});

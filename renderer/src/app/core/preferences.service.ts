@@ -35,6 +35,7 @@ export class PreferencesService {
     jungleHotkeys: true,
     screenVision: true,
     visionSamples: false,
+    autoJungle: true,
     sendErrorReports: true,
     detailedDiagnostics: false,
     telegramReadyCheck: true,

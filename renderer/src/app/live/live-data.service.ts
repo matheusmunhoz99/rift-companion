@@ -64,6 +64,11 @@ export class LiveDataService {
     });
   }
 
+  /** Campo visto morrer pela tela: volta em `backAt` (tempo de jogo), lido do minimapa. */
+  setCamp(key: string, backAt: number): void {
+    this.campTimers.update((current) => new Map(current).set(key, backAt));
+  }
+
   /** Tempo de jogo corrente: o último lido mais o tempo desde a leitura (o jogo não pausa). */
   readonly clock = computed(() => {
     const data = this.data();

@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('app', {
   onFullscreenChanged: (callback: (fullscreen: unknown) => void) => subscribe('window:fullscreen', callback),
   onSpeak: (callback: (text: unknown) => void) => subscribe('voice:say', callback),
   onJungleMark: (callback: (camp: unknown) => void) => subscribe('jungle:mark', callback),
+  onJungleAuto: (callback: (camp: unknown) => void) => subscribe('jungle:auto', callback),
   visionMinimap: () => ipcRenderer.invoke('vision:minimap'),
   setOverlayRead: (read: unknown) => ipcRenderer.send('app:overlay-read', read),
   setBorderless: () => ipcRenderer.invoke('app:set-borderless'),

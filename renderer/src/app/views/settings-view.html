@@ -291,6 +291,13 @@
     }
     <div class="divider"></div>
     <app-switch
+      label="Selva automática pela tela"
+      description="O LoL escreve no minimapa quanto falta para cada campo que o seu time viu morrer (1:57, 40, 2m+). O app lê esse número na tela, uma vez por segundo, e conta sozinho até o campo voltar, sem você apertar nada. Só lê a tela, como um gravador: não toca no jogo. Precisa do jogo em Sem bordas."
+      [checked]="prefs.preferences().autoJungle"
+      (toggled)="prefs.set({ autoJungle: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
       label="Gravar amostras do minimapa"
       description="Durante a partida, guarda um recorte do minimapa a cada 15 segundos neste PC. Com uma partida gravada dá para calibrar a detecção automática dos campos da selva (o app percebe sozinho quando um campo some do minimapa). Nada é enviado."
       [checked]="prefs.preferences().visionSamples"

@@ -43,7 +43,7 @@ interface CampState {
   template: `
     <div class="jungle">
       <span class="title" title="A API do jogo não avisa quando um campo morre: toque no campo quando ele morrer e o app conta até ele voltar. Toque de novo para desfazer. No jogo: Ctrl+Alt+1 seu azul, 2 seu vermelho, 3 azul inimigo, 4 vermelho inimigo, 5 caranguejo de cima, 6 de baixo.">
-        Selva <span class="hint">toque quando o campo morrer · no jogo: Ctrl+Alt+1 a 6</span>
+        Selva <span class="hint">automática pelo minimapa · ou toque / Ctrl+Alt+1 a 6</span>
       </span>
       <div class="sides">
         @for (group of groups(); track group.side) {

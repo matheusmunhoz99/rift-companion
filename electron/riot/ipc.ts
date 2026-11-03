@@ -217,7 +217,7 @@ async function apiGet<T>(path: string, notFoundMessage?: string): Promise<T> {
   throw new Error(body?.error ?? `O servidor de partidas respondeu com erro ${response.status}.`);
 }
 
-async function apiPost<T>(path: string, data: unknown): Promise<T> {
+export async function apiPost<T>(path: string, data: unknown): Promise<T> {
   let response: Response;
   const started = Date.now();
   try {
