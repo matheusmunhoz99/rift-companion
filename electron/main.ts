@@ -172,11 +172,24 @@ function createWindow(): void {
   });
 }
 
-/** Roda na página dos prints: espera <img> e imagens de fundo (CSS) visíveis carregarem. */
+/**
+ * Roda na página dos prints: espera o app terminar de abrir (a tela de abertura sair) e
+ * depois as <img> e as imagens de fundo, inclusive de ::before/::after (artes dos cards).
+ */
 const WAIT_FOR_IMAGES = `(async () => {
+  const until = (check, ms) => new Promise((done) => {
+    const start = Date.now();
+    const tick = () => (check() || Date.now() - start > ms ? done() : setTimeout(tick, 100));
+    tick();
+  });
+  await until(() => !document.getElementById('boot') && document.querySelector('app-shell'), 30000);
+  await new Promise((done) => setTimeout(done, 1500));
   const urls = new Set();
   for (const el of document.querySelectorAll('*')) {
-    for (const m of getComputedStyle(el).backgroundImage.matchAll(/url\\("?([^")]+)"?\\)/g)) urls.add(m[1]);
+    for (const pseudo of [null, '::before', '::after']) {
+      const image = getComputedStyle(el, pseudo).backgroundImage;
+      for (const m of image.matchAll(/url\\("?([^")]+)"?\\)/g)) urls.add(m[1]);
+    }
   }
   const load = (src) => new Promise((done) => { const i = new Image(); i.onload = i.onerror = done; i.src = src; });
   const pending = [...document.images].filter((img) => !img.complete)
