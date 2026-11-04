@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import type { InvisibleStartupStatus, InvisibleStatus, OverlayPosition } from '../core/app.types';
+import type { InvisibleStartupStatus, InvisibleStatus } from '../core/app.types';
 import { PreferencesService } from '../core/preferences.service';
 import { VoiceService } from '../live/voice.service';
 import { ToastService, errorText } from '../core/toast.service';
@@ -23,11 +23,7 @@ declare global {
   }
 }
 
-const POSITIONS: Array<{ value: OverlayPosition; label: string }> = [
-  { value: 'left', label: 'Esquerda' },
-  { value: 'center', label: 'Centro' },
-  { value: 'right', label: 'Direita' },
-];
+type SettingsTab = 'invisivel' | 'jogo' | 'avisos' | 'app';
 
 // Espelha electron/tray.ts.
 const STATUSES: Array<{ value: InvisibleStatus; label: string; description: string }> = [
@@ -58,9 +54,17 @@ export class SettingsView {
     void setGameWatch(enabled, isLinked());
   }
   protected readonly prefs = inject(PreferencesService);
-  protected readonly positions = POSITIONS;
   protected readonly statuses = STATUSES;
   protected readonly startupStatuses = STARTUP_STATUSES;
+
+  /** Aba aberta: agrupa as configurações para a tela não virar um scroll só. */
+  protected readonly tab = signal<SettingsTab>('invisivel');
+  protected readonly tabs: Array<{ key: SettingsTab; label: string; icon: string }> = [
+    { key: 'invisivel', label: 'Invisível', icon: 'eye-off' },
+    { key: 'jogo', label: 'Partida', icon: 'swords' },
+    { key: 'avisos', label: 'Avisos', icon: 'chat' },
+    { key: 'app', label: 'App', icon: 'settings' },
+  ];
 
   /** Como os amigos veem você agora; desativado conta como online. */
   protected readonly currentStatus = computed<InvisibleStatus | 'disabled'>(() => {
@@ -149,7 +153,7 @@ export class SettingsView {
   protected readonly canSetBorderless = !!window.app?.setBorderless;
   protected readonly switchingWindow = signal(false);
 
-  /** Troca o jogo para Sem bordas pela API do cliente (o overlay e a visão da IA passam a funcionar). */
+  /** Troca o jogo para Sem bordas pela API do cliente (a leitura do minimapa passa a funcionar). */
   protected async switchToBorderless(): Promise<void> {
     this.switchingWindow.set(true);
     try {
@@ -181,10 +185,6 @@ export class SettingsView {
   /** Exemplo com o volume escolhido (fala mesmo fora da partida). */
   protected testVoice(): void {
     this.voice.say('Barão em 30 segundos', true);
-  }
-
-  protected setOpacity(value: string): void {
-    void this.prefs.set({ overlayOpacity: Math.round(Number(value)) / 100 });
   }
 
   protected openBuildsFolder(): void {

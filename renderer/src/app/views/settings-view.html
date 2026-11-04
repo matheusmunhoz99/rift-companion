@@ -1,5 +1,22 @@
 <div class="settings">
   <app-mobile-link />
+
+  <nav class="settings-tabs" role="tablist" aria-label="Configurações">
+    @for (t of tabs; track t.key) {
+      <button
+        type="button"
+        role="tab"
+        [class.active]="tab() === t.key"
+        [attr.aria-selected]="tab() === t.key"
+        (click)="tab.set(t.key)"
+      >
+        <app-icon [name]="t.icon" [size]="16" />
+        <span class="tab-label">{{ t.label }}</span>
+      </button>
+    }
+  </nav>
+
+  @if (tab() === 'invisivel') {
   <section class="card invisible">
     <div class="invisible-head">
       <h3 class="section-title">Modo invisível</h3>
@@ -68,7 +85,9 @@
       amigos veem. Mantenha o Rift Companion aberto ou na bandeja enquanto jogar.
     </p>
   </section>
+  }
 
+  @if (tab() === 'jogo') {
   <section class="card">
     <h3 class="section-title">Fila e seleção</h3>
     <app-switch
@@ -146,93 +165,9 @@
     }
   </section>
 
-  @if (android) {
-  <section class="card">
-    <h3 class="section-title">Avisos no celular</h3>
-    <app-switch
-      label="Avisar quando a partida carregar e começar"
-      description="Chega uma notificação na tela de carregamento e outra quando o jogo começa, mesmo com o app fechado. Fica uma notificação discreta enquanto o aviso está ligado."
-      [checked]="gameWatch()"
-      (toggled)="toggleGameWatch($event)"
-    />
-    @if (gameWatchError(); as message) {
-      <p class="notice warning">{{ message }}</p>
-    }
-  </section>
-  }
-
   @if (!android) {
   <section class="card">
-    <h3 class="section-title">Avisos no Telegram</h3>
-    @switch (telegram()) {
-      @case ('connected') {
-        <div class="telegram-row">
-          <p><span class="status-dot"></span> Conectado. Mande <strong>/jogar</strong> no bot para começar pelo celular. Funciona com o app na bandeja.</p>
-          <div class="telegram-actions">
-            <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="testTelegram()">Enviar teste</button>
-            <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="disconnectTelegram()">Desconectar</button>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <app-switch
-          label="Partida encontrada"
-          description="Com botões para aceitar ou recusar a fila pelo celular."
-          [checked]="prefs.preferences().telegramReadyCheck"
-          (toggled)="prefs.set({ telegramReadyCheck: $event })"
-        />
-        <div class="divider"></div>
-        <app-switch
-          label="Seleção e campeão"
-          description="Avisa quando a seleção começa e o seu campeão, com a arte. No ARAM, o campeão que você pegou e o banco."
-          [checked]="prefs.preferences().telegramChampion"
-          (toggled)="prefs.set({ telegramChampion: $event })"
-        />
-        <div class="divider"></div>
-        <app-switch
-          label="Início da partida"
-          description="Quando o jogo carrega e a partida começa."
-          [checked]="prefs.preferences().telegramGameStart"
-          (toggled)="prefs.set({ telegramGameStart: $event })"
-        />
-        <div class="divider"></div>
-        <app-switch
-          label="Resultado"
-          description="Vitória ou derrota, com KDA, CS e duração."
-          [checked]="prefs.preferences().telegramGameEnd"
-          (toggled)="prefs.set({ telegramGameEnd: $event })"
-        />
-      }
-      @case ('waiting') {
-        <div class="telegram-row">
-          <p>Abrimos o bot no Telegram. Toque em <strong>Iniciar</strong> lá para terminar de conectar…</p>
-          <button type="button" class="btn ghost small" (click)="cancelTelegram()">Cancelar</button>
-        </div>
-      }
-      @default {
-        <div class="telegram-row">
-          <p class="muted">
-            Controle o LoL pelo celular: mande /jogar para escolher a fila e as rotas e entrar na fila, aceite a partida,
-            escolha e bana campeões (por botão ou digitando o nome), troque com o banco no ARAM e importe runas e
-            feitiços. Também avisa o início e o resultado de cada partida. Grátis, pelo bot do Rift Companion.
-          </p>
-          <button type="button" class="btn" (click)="connectTelegram()">Conectar Telegram</button>
-        </div>
-      }
-    }
-  </section>
-
-  }
-
-  @if (!android) {
-  <section class="card">
-    <h3 class="section-title">Overlay no jogo</h3>
-    <app-switch
-      label="Mostrar overlay durante a partida"
-      description="Barra no topo com tempo, KDA, CS por minuto, ouro, abates, objetivos, inibidores voltando e os campos da selva que você marcar no app."
-      [checked]="prefs.preferences().overlayEnabled"
-      (toggled)="prefs.set({ overlayEnabled: $event })"
-    />
-    <div class="divider"></div>
+    <h3 class="section-title">Durante a partida</h3>
     <app-switch
       label="Avisar dos objetivos no chat do LoL"
       [description]="prefs.preferences().appearOffline
@@ -280,181 +215,185 @@
         (toggled)="prefs.set({ liveReadVoice: $event })"
       />
     }
-    @if (prefs.preferences().liveRead) {
-      <div class="divider"></div>
-      <app-switch
-        label="A IA vê o minimapa"
-        description="Em cada leitura o app recorta só o canto do minimapa da tela e manda junto: a IA passa a ver o que você vê (inimigos visíveis, sentinelas, campos limpos e os timers do próprio LoL). O resto da tela não sai do seu PC. Só lê a tela, como um programa de gravação."
-        [checked]="prefs.preferences().screenVision"
-        (toggled)="prefs.set({ screenVision: $event })"
-      />
-    }
-    <div class="divider"></div>
-    <app-switch
-      label="Timers em cima do minimapa"
-      description="Uma camada transparente exatamente em cima do minimapa mostra quanto falta para cada campo da selva (seu em azul, do inimigo em vermelho, caranguejos em verde-água) e para dragão, Barão, Arauto e Larvas, no lugar de cada um. Fica verde nos últimos segundos. É uma janela separada: não injeta nada no jogo."
-      [checked]="prefs.preferences().minimapOverlay"
-      (toggled)="prefs.set({ minimapOverlay: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Selva automática pela tela"
-      description="O LoL escreve no minimapa quanto falta para cada campo que o seu time viu morrer (1:57, 40, 2m+). O app lê esse número na tela, uma vez por segundo, e conta sozinho até o campo voltar, sem você apertar nada. Só lê a tela, como um gravador: não toca no jogo. Precisa do jogo em Sem bordas."
-      [checked]="prefs.preferences().autoJungle"
-      (toggled)="prefs.set({ autoJungle: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Gravar amostras do minimapa"
-      description="Durante a partida, guarda um recorte do minimapa a cada 15 segundos neste PC. Com uma partida gravada dá para calibrar a detecção automática dos campos da selva (o app percebe sozinho quando um campo some do minimapa). Nada é enviado."
-      [checked]="prefs.preferences().visionSamples"
-      (toggled)="prefs.set({ visionSamples: $event })"
-    />
-    @if (prefs.preferences().visionSamples || visionStatus()?.samples) {
-      <div class="row">
-        <span class="row-label">
-          @if (visionStatus(); as v) {
-            {{ v.samples ? v.samples + ' amostras nesta partida' : 'As amostras aparecem durante a partida' }}
-          }
-        </span>
-        <button type="button" class="btn ghost small" (click)="openVisionSamples()">Abrir pasta das amostras</button>
-      </div>
-    }
-    @if (visionStatus()?.black) {
-      <div class="notice warning">
-        <strong>A captura do minimapa veio preta.</strong> Com o jogo em Tela cheia o Windows não deixa ver a tela.
-        No LoL, vá em <em>Configurações › Vídeo › Modo de janela</em> e escolha <strong>Sem bordas</strong> (mesmo desempenho).
-      </div>
-    }
 
     @switch (prefs.gameWindowMode()) {
       @case ('fullscreen') {
         <div class="notice warning">
-          <strong>Seu jogo está em Tela cheia.</strong>
-          Nesse modo o Windows pode não deixar nada aparecer por cima do jogo. Para o overlay funcionar sempre,
-          no jogo vá em <em>Configurações › Vídeo › Modo de janela</em> e escolha <strong>Sem bordas</strong>:
-          fica igual à tela cheia, com o mesmo desempenho.
+          <strong>Seu jogo está em Tela Cheia Exclusiva.</strong>
+          No modo exclusivo, a captura do minimapa vem preta e a selva automática não consegue ler os timers.
+          Escolha <strong>Sem bordas</strong> no jogo (100% da tela, mesma resolução e taxa de quadros).
           @if (canSetBorderless) {
             <div class="notice-actions">
               <button type="button" class="btn small" [disabled]="switchingWindow()" (click)="switchToBorderless()">
-                {{ switchingWindow() ? 'Mudando…' : 'Mudar para Sem bordas agora' }}
+                {{ switchingWindow() ? 'Mudando…' : 'Mudar para Tela Cheia Sem Bordas' }}
               </button>
-              <span class="muted">Pelo próprio cliente do LoL, fora da partida. Vale a partir da próxima partida.</span>
+              <span class="muted">Configurado pelo cliente do LoL, vale para a próxima partida.</span>
             </div>
           }
         </div>
       }
       @case ('borderless') {
-        <div class="notice ok">Seu jogo está em modo Sem bordas: o overlay vai aparecer normalmente.</div>
+        <div class="notice ok">
+          <strong>Seu jogo está em Tela Cheia (Sem Bordas):</strong> ocupa 100% da tela com resolução total e máximo desempenho, e a selva automática consegue ler o minimapa.
+        </div>
       }
       @case ('windowed') {
-        <div class="notice ok">Seu jogo está em modo Janela: o overlay aparece no topo da tela.</div>
+        <div class="notice ok">
+          Seu jogo está em Modo Janela: a selva automática consegue ler o minimapa normalmente.
+        </div>
       }
     }
+  </section>
+  }
+  }
 
-    <div class="row">
-      <span class="row-label">Posição</span>
-      <div class="segmented">
-        @for (option of positions; track option.value) {
-          <button
-            type="button"
-            [class.active]="prefs.preferences().overlayPosition === option.value"
-            (click)="prefs.set({ overlayPosition: option.value })"
-          >
-            {{ option.label }}
-          </button>
+  @if (tab() === 'avisos') {
+    @if (android) {
+    <section class="card">
+      <h3 class="section-title">Avisos no celular</h3>
+      <app-switch
+        label="Avisar quando a partida carregar e começar"
+        description="Chega uma notificação na tela de carregamento e outra quando o jogo começa, mesmo com o app fechado. Fica uma notificação discreta enquanto o aviso está ligado."
+        [checked]="gameWatch()"
+        (toggled)="toggleGameWatch($event)"
+      />
+      @if (gameWatchError(); as message) {
+        <p class="notice warning">{{ message }}</p>
+      }
+    </section>
+    } @else {
+    <section class="card">
+      <h3 class="section-title">Avisos no Telegram</h3>
+      @switch (telegram()) {
+        @case ('connected') {
+          <div class="telegram-row">
+            <p><span class="status-dot"></span> Conectado. Mande <strong>/jogar</strong> no bot para começar pelo celular. Funciona com o app na bandeja.</p>
+            <div class="telegram-actions">
+              <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="testTelegram()">Enviar teste</button>
+              <button type="button" class="btn ghost small" [disabled]="telegramBusy()" (click)="disconnectTelegram()">Desconectar</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <app-switch
+            label="Partida encontrada"
+            description="Com botões para aceitar ou recusar a fila pelo celular."
+            [checked]="prefs.preferences().telegramReadyCheck"
+            (toggled)="prefs.set({ telegramReadyCheck: $event })"
+          />
+          <div class="divider"></div>
+          <app-switch
+            label="Seleção e campeão"
+            description="Avisa quando a seleção começa e o seu campeão, com a arte. No ARAM, o campeão que você pegou e o banco."
+            [checked]="prefs.preferences().telegramChampion"
+            (toggled)="prefs.set({ telegramChampion: $event })"
+          />
+          <div class="divider"></div>
+          <app-switch
+            label="Início da partida"
+            description="Quando o jogo carrega e a partida começa."
+            [checked]="prefs.preferences().telegramGameStart"
+            (toggled)="prefs.set({ telegramGameStart: $event })"
+          />
+          <div class="divider"></div>
+          <app-switch
+            label="Resultado"
+            description="Vitória ou derrota, com KDA, CS e duração."
+            [checked]="prefs.preferences().telegramGameEnd"
+            (toggled)="prefs.set({ telegramGameEnd: $event })"
+          />
+        }
+        @case ('waiting') {
+          <div class="telegram-row">
+            <p>Abrimos o bot no Telegram. Toque em <strong>Iniciar</strong> lá para terminar de conectar…</p>
+            <button type="button" class="btn ghost small" (click)="cancelTelegram()">Cancelar</button>
+          </div>
+        }
+        @default {
+          <div class="telegram-row">
+            <p class="muted">
+              Controle o LoL pelo celular: mande /jogar para escolher a fila e as rotas e entrar na fila, aceite a partida,
+              escolha e bana campeões (por botão ou digitando o nome), troque com o banco no ARAM e importe runas e
+              feitiços. Também avisa o início e o resultado de cada partida. Grátis, pelo bot do Rift Companion.
+            </p>
+            <button type="button" class="btn" (click)="connectTelegram()">Conectar Telegram</button>
+          </div>
+        }
+      }
+    </section>
+    }
+  }
+
+  @if (tab() === 'app') {
+    @if (!android) {
+    <section class="card">
+      <h3 class="section-title">Aplicativo</h3>
+      <app-switch
+        label="Manter na bandeja ao fechar"
+        description="Fechar a janela deixa o app rodando ao lado do relógio (aceite automático e avisos continuam)."
+        [checked]="prefs.preferences().minimizeToTray"
+        (toggled)="prefs.set({ minimizeToTray: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
+        label="Iniciar com o Windows"
+        description="Abre o Rift Companion junto com o computador."
+        [checked]="prefs.preferences().startWithWindows"
+        (toggled)="prefs.set({ startWithWindows: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
+        label="Mostrar que eu uso o Rift Companion"
+        description="Outros usuários veem um ícone no seu nick na seleção e na partida ao vivo. Só um código do seu Riot ID vai ao servidor, nunca o nick."
+        [checked]="prefs.preferences().showAsRiftUser"
+        (toggled)="prefs.set({ showAsRiftUser: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
+        label="Enviar relatórios de erro anônimos"
+        description="Quando algo quebra, o app manda só a mensagem do erro, a versão e o sistema para eu corrigir. Nunca vai nick, Riot ID nem nada da sua conta."
+        [checked]="prefs.preferences().sendErrorReports"
+        (toggled)="prefs.set({ sendErrorReports: $event })"
+      />
+      <div class="divider"></div>
+      <app-switch
+        label="Diagnóstico detalhado das partidas"
+        description="Para eu achar e corrigir falhas que acontecem com você: manda ao servidor o que o app fez em cada partida (fases, pedidos, tempos, erros) com o seu Riot ID. Fica guardado por 30 dias. Desligue quando quiser."
+        [checked]="prefs.preferences().detailedDiagnostics"
+        (toggled)="prefs.set({ detailedDiagnostics: $event })"
+      />
+    </section>
+
+    <section class="card">
+      <h3 class="section-title">Builds de itens</h3>
+      <p class="muted">Adicione suas próprias builds em JSON na pasta do app. Elas aparecem junto com as de exemplo.</p>
+      <button type="button" class="btn ghost" (click)="openBuildsFolder()">
+        <app-icon name="folder" [size]="16" /> Abrir pasta de builds
+      </button>
+    </section>
+    }
+
+    <section class="card">
+      <h3 class="section-title">Sobre</h3>
+      <div class="about-row">
+        <p><strong>Rift Companion</strong> · versão {{ prefs.info()?.version }}</p>
+        @if (!android) {
+        <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
+          {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
+        </button>
         }
       </div>
-    </div>
-    <div class="row">
-      <span class="row-label">Opacidade</span>
-      <input
-        class="slider"
-        type="range"
-        min="40"
-        max="100"
-        step="5"
-        [value]="prefs.preferences().overlayOpacity * 100"
-        (change)="setOpacity($any($event.target).value)"
-      />
-      <span class="value">{{ (prefs.preferences().overlayOpacity * 100).toFixed(0) }}%</span>
-    </div>
-    <p class="hint">
-      Mostrar/ocultar durante a partida: <code>{{ prefs.info()?.overlayShortcut ?? 'Ctrl+Shift+O' }}</code>.
-      O overlay é uma janela separada: não injeta nada no jogo (sem risco com o Vanguard).
-    </p>
-  </section>
-  }
-
-  @if (!android) {
-  <section class="card">
-    <h3 class="section-title">Aplicativo</h3>
-    <app-switch
-      label="Manter na bandeja ao fechar"
-      description="Fechar a janela deixa o app rodando ao lado do relógio (aceite automático e overlay continuam)."
-      [checked]="prefs.preferences().minimizeToTray"
-      (toggled)="prefs.set({ minimizeToTray: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Iniciar com o Windows"
-      description="Abre o Rift Companion junto com o computador."
-      [checked]="prefs.preferences().startWithWindows"
-      (toggled)="prefs.set({ startWithWindows: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Mostrar que eu uso o Rift Companion"
-      description="Outros usuários veem um ícone no seu nick na seleção e na partida ao vivo. Só um código do seu Riot ID vai ao servidor, nunca o nick."
-      [checked]="prefs.preferences().showAsRiftUser"
-      (toggled)="prefs.set({ showAsRiftUser: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Enviar relatórios de erro anônimos"
-      description="Quando algo quebra, o app manda só a mensagem do erro, a versão e o sistema para eu corrigir. Nunca vai nick, Riot ID nem nada da sua conta."
-      [checked]="prefs.preferences().sendErrorReports"
-      (toggled)="prefs.set({ sendErrorReports: $event })"
-    />
-    <div class="divider"></div>
-    <app-switch
-      label="Diagnóstico detalhado das partidas"
-      description="Para eu achar e corrigir falhas que acontecem com você: manda ao servidor o que o app fez em cada partida (fases, pedidos, tempos, erros) com o seu Riot ID. Fica guardado por 30 dias. Desligue quando quiser."
-      [checked]="prefs.preferences().detailedDiagnostics"
-      (toggled)="prefs.set({ detailedDiagnostics: $event })"
-    />
-  </section>
-
-  <section class="card">
-    <h3 class="section-title">Builds de itens</h3>
-    <p class="muted">Adicione suas próprias builds em JSON na pasta do app. Elas aparecem junto com as de exemplo.</p>
-    <button type="button" class="btn ghost" (click)="openBuildsFolder()">
-      <app-icon name="folder" [size]="16" /> Abrir pasta de builds
-    </button>
-  </section>
-
-  }
-  <section class="card">
-    <h3 class="section-title">Sobre</h3>
-    <div class="about-row">
-      <p><strong>Rift Companion</strong> · versão {{ prefs.info()?.version }}</p>
-      @if (!android) {
-      <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
-        {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
-      </button>
+      @if (updateMessage(); as message) {
+        <p class="muted">{{ message }}</p>
       }
-    </div>
-    @if (updateMessage(); as message) {
-      <p class="muted">{{ message }}</p>
-    }
-    <p class="muted">
-      Os dados da sua conta vêm do cliente do LoL no seu PC. Buscas de jogadores e partidas passam pelo servidor do
-      Rift Companion, que consulta a Riot API. Nenhuma senha é lida ou enviada.
-    </p>
-    <p class="muted small">
-      Rift Companion não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de qualquer pessoa
-      envolvida na produção ou gestão de propriedades da Riot Games. Riot Games e todas as propriedades associadas
-      são marcas comerciais ou marcas registradas da Riot Games, Inc.
-    </p>
-  </section>
+      <p class="muted">
+        Os dados da sua conta vêm do cliente do LoL no seu PC. Buscas de jogadores e partidas passam pelo servidor do
+        Rift Companion, que consulta a Riot API. Nenhuma senha é lida ou enviada.
+      </p>
+      <p class="muted small">
+        Rift Companion não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de qualquer pessoa
+        envolvida na produção ou gestão de propriedades da Riot Games. Riot Games e todas as propriedades associadas
+        são marcas comerciais ou marcas registradas da Riot Games, Inc.
+      </p>
+    </section>
+  }
 </div>

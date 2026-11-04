@@ -1,9 +1,7 @@
-import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain as electronIpc, nativeImage, screen, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ClipboardItem, dialog, nativeImage, screen, shell } from 'electron';
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
 import { VisionController } from './vision/controller';
-import { MinimapOverlay, buildMarks } from './overlay/minimap-overlay';
-import { campPoints } from './vision/camp-detector';
 import { setBorderless } from './lcu/window-mode';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
@@ -18,8 +16,6 @@ import { registerChampSelectHandlers } from './lcu/champ-select-ipc';
 import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
-import { fetchRawGameData, toOverlayData } from './overlay/live-client';
-import { OVERLAY_HEIGHT, OVERLAY_SHORTCUT, OVERLAY_WIDTH, OverlayController, overlayRows } from './overlay/overlay';
 import { createTimingsSource } from './overlay/timings-source';
 import { ObjectiveAnnouncer } from './overlay/objective-announcer';
 import { RIFT_API_URL, apiPost, registerRiotHandlers } from './riot/ipc';
@@ -58,7 +54,6 @@ const GREETING_INTERVAL_MS = 30 * 60 * 1000;
 
 const connector = new LcuConnector();
 let mainWindow: BrowserWindow | null = null;
-let overlay: OverlayController | null = null;
 let settings: Settings | null = null;
 let appTray: AppTray | null = null;
 let invisibleMode: InvisibleModeProxy | null = null;
@@ -66,10 +61,35 @@ let androidLink: AndroidLink | null = null;
 let appShortcut: AppShortcut | null = null;
 let jungleHotkeys: JungleHotkeys | null = null;
 let visionSync: () => void = () => undefined;
-/** Campos da selva marcados na tela do app, para o overlay mostrar por cima do jogo. */
+/** Campos da selva marcados (atalhos e leitura automática). */
 let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
-/** Última leitura da IA (frase curta), para o overlay mostrar por cima do jogo. */
-let overlayRead: { text: string; at: number } | null = null;
+
+const CAMP_NAMES: Record<string, string> = {
+  'ally:blue': 'Azul',
+  'ally:gromp': 'Grompe',
+  'ally:wolves': 'Lobos',
+  'ally:raptors': 'Acuâminas',
+  'ally:red': 'Vermelho',
+  'ally:krugs': 'Krugues',
+  'enemy:blue': 'Azul inim.',
+  'enemy:gromp': 'Grompe inim.',
+  'enemy:wolves': 'Lobos inim.',
+  'enemy:raptors': 'Acuâminas inim.',
+  'enemy:red': 'Vermelho inim.',
+  'enemy:krugs': 'Krugues inim.',
+  'river:scuttle-top': 'Caranguejo topo',
+  'river:scuttle-bot': 'Caranguejo bot',
+};
+
+function upsertCampTimer(key: string, backAt: number): void {
+  const name = CAMP_NAMES[key] ?? key;
+  const idx = campTimers.findIndex((c) => c.key === key);
+  if (idx >= 0) {
+    campTimers[idx] = { key, name, backAt };
+  } else {
+    campTimers = [...campTimers, { key, name, backAt }].slice(0, 20);
+  }
+}
 let quitting = false;
 /** O modo partida está mexendo na janela (não grava esse tamanho como o lugar escolhido). */
 let matchManaging: () => boolean = () => false;
@@ -181,7 +201,7 @@ function createWindow(): void {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-    // O overlay é uma janela à parte; fechar a principal encerra o app.
+    // Fechar a principal encerra o app.
     app.quit();
   });
 }
@@ -230,25 +250,6 @@ function scheduleCapture(window: BrowserWindow): void {
   });
 }
 
-/** Só no desenvolvimento: abre o overlay com dados de um arquivo e captura a janela. */
-function captureDemoOverlay(dataFile: string): void {
-  const data = JSON.parse(readFileSync(dataFile, 'utf8'));
-  const window = new BrowserWindow({
-    width: OVERLAY_WIDTH,
-    height: OVERLAY_HEIGHT + (overlayRows({ camps: [], inhibitors: [], ...data }) - 2) * 28,
-    frame: false,
-    transparent: true,
-    show: true,
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true },
-  });
-  loadRenderer(window, 'overlay');
-  // Repete o envio: a página só escuta depois que o Angular sobe (o did-finish-load vem antes).
-  const resend = setInterval(() => {
-    if (window.isDestroyed()) clearInterval(resend);
-    else window.webContents.send('overlay:data', data);
-  }, 1000);
-  scheduleCapture(window);
-}
 
 function currentState() {
   const demo = devOnly('RIFT_DEMO_STATE');
@@ -344,17 +345,12 @@ void acquireInstance().then((acquired) => {
     invisible.configure(invisibleState(prefs.getPreferences()));
 
     let onInvisibleEnabled = (): void => undefined;
-    /** Toda mudança de preferência passa por aqui: proxy, overlay, bandeja e janela ficam em sincronia. */
+    /** Toda mudança de preferência passa por aqui: proxy, bandeja e janela ficam em sincronia. */
     const applyPreferences = (changes: Partial<Preferences>): Preferences => {
       const wasInvisible = prefs.getPreferences().appearOffline;
       const preferences = prefs.updatePreferences(changes);
       if (!wasInvisible && preferences.appearOffline) setImmediate(() => onInvisibleEnabled());
       invisible.configure(invisibleState(preferences));
-      if ('overlayEnabled' in changes) appLog(`overlay ${preferences.overlayEnabled ? 'ligado' : 'desligado'} pelo usuário`);
-      // Fora do handler do IPC: criar/esconder a janela do overlay no meio da resposta ao renderer pode travar a pintura da janela principal.
-      setTimeout(() => {
-        try { overlay?.sync(); } catch (error) { appLog(`overlay.sync erro: ${error}`); }
-      }, 50);
       if ('showAsRiftUser' in changes) announceRiftUser();
       appShortcut?.apply(preferences.appShortcut && !capturing);
       jungleHotkeys?.sync();
@@ -433,7 +429,7 @@ void acquireInstance().then((acquired) => {
     /** Para onde vai o chat do Riot Client aberto; 'unknown' vira espera até o chat conectar. */
     const chatRoute = async (configUrl: string, patienceMs: number) => {
       const deadline = Date.now() + patienceMs;
-      for (;;) {
+      for (; ;) {
         if (invisible.hasActiveChat()) return 'proxied' as const;
         const route = await riotChatRoute(configUrl, invisible.chatPort());
         if (route !== 'unknown') return route;
@@ -613,32 +609,17 @@ void acquireInstance().then((acquired) => {
       () => prefs.getPreferences().autoRunes,
       (result) => mainWindow?.webContents.send('auto-runes:applied', result),
     );
-
-    if (!capturing) overlay = new OverlayController(
-      connector,
-      () => prefs.getPreferences(),
-      (window) => loadRenderer(window, 'overlay'),
-      path.join(__dirname, 'preload.js'),
-      createTimingsSource(connector, app.isPackaged),
-      () => campTimers,
-      () => overlayRead,
-    );
-    electronIpc.on('app:overlay-read', (_event, read: unknown) => {
-      const r = read as { text?: unknown; at?: unknown } | null;
-      overlayRead = r && typeof r.text === 'string' && typeof r.at === 'number' ? { text: r.text.slice(0, 160), at: r.at } : null;
+    connector.on('state', () => {
+      const phase = connector.getState().gameflowPhase;
+      if (phase !== 'InProgress' && phase !== 'Reconnect' && campTimers.length > 0) {
+        campTimers = [];
+      }
     });
+
     ipcMain.handle('app:set-borderless', async () => {
       const result = await setBorderless(connector.getCredentials(), connector.getState().gameflowPhase);
       appLog(`modo de janela do jogo: ${result}`);
       return result;
-    });
-    electronIpc.on('app:camp-timers', (_event, camps: unknown) => {
-      campTimers = Array.isArray(camps)
-        ? camps
-            .filter((c): c is { key: string; name: string; backAt: number } =>
-              !!c && typeof c.key === 'string' && typeof c.name === 'string' && typeof c.backAt === 'number')
-            .slice(0, 20)
-        : [];
     });
     // Avisos de objetivos no chat do LoL (contato Rift Companion, precisa do modo invisível) e em voz alta.
     if (!capturing) new ObjectiveAnnouncer(
@@ -662,7 +643,10 @@ void acquireInstance().then((acquired) => {
       () => prefs.getPreferences(),
       // A IA do servidor lê o número de cada recorte ("1:57"); falha -> null (tenta no próximo quadro).
       (crops) => apiPost<{ results: Array<{ id: string; text: string | null }> }>('/v1/camp-ocr', { crops }).then((r) => r.results).catch(() => null),
-      (key, backAt, exact) => mainWindow?.webContents.send('jungle:auto', { key, backAt, exact }),
+      (key, backAt, exact) => {
+        upsertCampTimer(key, backAt);
+        mainWindow?.webContents.send('jungle:auto', { key, backAt, exact });
+      },
       () => visionTimings(),
     );
     ipcMain.handle('vision:minimap', async () => {
@@ -676,37 +660,6 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(folder);
     });
     visionSync = () => vision.sync();
-    // Timers em cima do minimapa (selva e objetivos), a cada 1 s durante a partida.
-    if (!capturing) {
-      const minimap = new MinimapOverlay(path.join(__dirname, 'preload.js'));
-      const minimapTimings = createTimingsSource(connector, app.isPackaged);
-      let minimapBusy = false;
-      setInterval(async () => {
-        const phase = connector.getState().gameflowPhase;
-        if (!prefs.getPreferences().minimapOverlay || (phase !== 'InProgress' && phase !== 'Reconnect')) {
-          minimap.hide();
-          return;
-        }
-        if (minimapBusy) return;
-        minimapBusy = true;
-        try {
-          const raw = await fetchRawGameData();
-          // Seu time: o da visão ou o do próprio jogo (quem é você na lista de jogadores).
-          const r = raw as { activePlayer?: { riotId?: string }; allPlayers?: Array<{ riotId?: string; team?: string }> };
-          const mine = r.allPlayers?.find((p) => p.riotId === r.activePlayer?.riotId)?.team;
-          const team = vision.team() ?? (mine === 'ORDER' || mine === 'CHAOS' ? mine : null);
-          if (!raw?.allPlayers?.length || !team) return;
-          const data = toOverlayData(raw, await minimapTimings());
-          minimap.place(vision.screenMapBox());
-          minimap.update(buildMarks(data.gameTime, campTimers, data.upcoming, campPoints(team)));
-        } catch (error) {
-          appLog(`overlay do minimapa: ${error instanceof Error ? error.message : error}`);
-        } finally {
-          minimapBusy = false;
-        }
-      }, 1000);
-      app.on('will-quit', () => minimap.dispose());
-    }
     // Ctrl+Alt+1..6 na partida: marca azul, vermelho e caranguejos sem sair do jogo.
     if (!capturing) jungleHotkeys = new JungleHotkeys(
       connector,
@@ -791,7 +744,6 @@ void acquireInstance().then((acquired) => {
     );
     ipcMain.handle('app:info', () => ({
       version: app.getVersion(),
-      overlayShortcut: OVERLAY_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
       appShortcut: APP_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
       jungleHotkeys: JUNGLE_HOTKEYS.map((h) => ({ keys: h.accelerator.replace('Control', 'Ctrl'), label: h.label })),
       buildsDirectory: path.join(app.getPath('userData'), 'builds'),
@@ -817,11 +769,6 @@ void acquireInstance().then((acquired) => {
     mobileOverride('app:launch-league', () => openLeague(false));
     if (!capturing) androidLink = new AndroidLink(connector);
 
-    const demoOverlay = devOnly('RIFT_DEMO_OVERLAY');
-    if (demoOverlay) {
-      captureDemoOverlay(demoOverlay);
-      return;
-    }
 
     createWindow();
     // A tela avisa quando a janela entra ou sai da tela cheia (o topo usa a largura toda; Esc sai).
@@ -866,7 +813,6 @@ void acquireInstance().then((acquired) => {
   app.on('will-quit', () => {
     androidLink?.stop();
     appLog('app fechando');
-    overlay?.dispose();
     appShortcut?.dispose();
     jungleHotkeys?.dispose();
     invisibleMode?.dispose();

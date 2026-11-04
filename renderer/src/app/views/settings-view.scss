@@ -4,6 +4,61 @@
   max-width: 780px;
 }
 
+.settings-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(10px);
+
+  button {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s;
+
+    app-icon {
+      opacity: 0.75;
+    }
+
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+
+      app-icon {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .settings-tabs .tab-label {
+    display: none;
+  }
+}
+
 .divider {
   height: 1px;
   margin: 14px 0;
