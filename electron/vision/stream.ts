@@ -28,7 +28,8 @@ const PAGE = `<!doctype html><meta charset="utf-8"><body><video muted></video><c
 (async () => {
   try {
     const { sourceId, width, height, region, everyMs } = await window.visionStream.config();
-    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: false, video: { frameRate: 2 } });
+    // 1 quadro/s é tudo que a detecção lê (everyMs = 1000); capturar mais só gastaria GPU do jogo à toa.
+    const stream = await navigator.mediaDevices.getDisplayMedia({ audio: false, video: { frameRate: 1 } });
     const video = document.querySelector('video');
     video.srcObject = stream;
     await video.play();
@@ -82,9 +83,10 @@ export class MinimapStream {
   }
 
   private polling: NodeJS.Timeout | null = null;
+  private starting = false;
 
   get running(): boolean {
-    return !!this.window || !!this.polling;
+    return this.starting || !!this.window || !!this.polling;
   }
 
   private startPolling(): void {
@@ -128,45 +130,51 @@ export class MinimapStream {
 
   /** Começa a capturar o recorte `region` (pixels da tela principal). */
   async start(region: (screenWidth: number, screenHeight: number) => Region): Promise<void> {
-    if (this.window) return;
-    const primary = screen.getPrimaryDisplay();
-    this.size = {
-      width: Math.round(primary.size.width * primary.scaleFactor),
-      height: Math.round(primary.size.height * primary.scaleFactor),
-    };
-    this.region = region(this.size.width, this.size.height);
-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } });
-    const source = sources.find((s) => s.display_id === String(primary.id)) ?? sources[0];
-    this.sourceId = source?.id ?? null;
-    if (!source) return;
-    // Sessão só da captura: a tela principal (onde o jogo abre) é entregue sem perguntar.
-    const captureSession = session.fromPartition('rift-vision');
-    captureSession.setDisplayMediaRequestHandler((_request, callback) => callback({ video: source }));
-    const window = new BrowserWindow({
-      show: false,
-      width: 320,
-      height: 240,
-      skipTaskbar: true,
-      webPreferences: {
-        session: captureSession,
-        preload: path.join(__dirname, 'capture-preload.js'),
-        contextIsolation: true,
-        sandbox: true,
-        backgroundThrottling: false,
-      },
-    });
-    this.window = window;
-    window.on('closed', () => {
-      if (this.window === window) this.window = null;
-    });
-    // Arquivo local (contexto seguro): numa página data: o navegador não libera a captura de tela.
-    const page = path.join(app.getPath('temp'), 'rift-companion-vision.html');
-    writeFileSync(page, PAGE);
-    await window.loadFile(page);
-    appLog('visão: captura contínua do minimapa ligada (1 quadro por segundo)');
+    if (this.running) return;
+    this.starting = true;
+    try {
+      const primary = screen.getPrimaryDisplay();
+      this.size = {
+        width: Math.round(primary.size.width * primary.scaleFactor),
+        height: Math.round(primary.size.height * primary.scaleFactor),
+      };
+      this.region = region(this.size.width, this.size.height);
+      const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } });
+      const source = sources.find((s) => s.display_id === String(primary.id)) ?? sources[0];
+      this.sourceId = source?.id ?? null;
+      if (!source || !this.starting) return;
+      // Sessão só da captura: a tela principal (onde o jogo abre) é entregue sem perguntar.
+      const captureSession = session.fromPartition('rift-vision');
+      captureSession.setDisplayMediaRequestHandler((_request, callback) => callback({ video: source }));
+      const window = new BrowserWindow({
+        show: false,
+        width: 320,
+        height: 240,
+        skipTaskbar: true,
+        webPreferences: {
+          session: captureSession,
+          preload: path.join(__dirname, 'capture-preload.js'),
+          contextIsolation: true,
+          sandbox: true,
+          backgroundThrottling: false,
+        },
+      });
+      this.window = window;
+      window.on('closed', () => {
+        if (this.window === window) this.window = null;
+      });
+      // Arquivo local (contexto seguro): numa página data: o navegador não libera a captura de tela.
+      const page = path.join(app.getPath('temp'), 'rift-companion-vision.html');
+      writeFileSync(page, PAGE);
+      await window.loadFile(page);
+      appLog('visão: captura contínua do minimapa ligada (1 quadro por segundo)');
+    } finally {
+      this.starting = false;
+    }
   }
 
   stop(): void {
+    this.starting = false;
     if (this.polling) clearInterval(this.polling);
     this.polling = null;
     const window = this.window;
