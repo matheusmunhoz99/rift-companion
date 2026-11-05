@@ -334,12 +334,23 @@
         (toggled)="prefs.set({ minimizeToTray: $event })"
       />
       <div class="divider"></div>
-      <app-switch
-        label="Iniciar com o Windows"
-        description="Abre o Rift Companion junto com o computador."
-        [checked]="prefs.preferences().startWithWindows"
-        (toggled)="prefs.set({ startWithWindows: $event })"
-      />
+      @if (store()) {
+        <!-- Versão da Store: o Windows liga e desliga a inicialização do pacote. -->
+        <div class="store-startup">
+          <div>
+            <strong>Iniciar com o Windows</strong>
+            <p class="muted">Na versão da Microsoft Store, isso é ligado nas configurações de inicialização do Windows.</p>
+          </div>
+          <button type="button" class="btn ghost small" (click)="openStartupSettings()">Abrir inicialização</button>
+        </div>
+      } @else {
+        <app-switch
+          label="Iniciar com o Windows"
+          description="Abre o Rift Companion junto com o computador."
+          [checked]="prefs.preferences().startWithWindows"
+          (toggled)="prefs.set({ startWithWindows: $event })"
+        />
+      }
       <div class="divider"></div>
       <app-switch
         label="Mostrar que eu uso o Rift Companion"
@@ -376,7 +387,9 @@
       <h3 class="section-title">Sobre</h3>
       <div class="about-row">
         <p><strong>Rift Companion</strong> · versão {{ prefs.info()?.version }}</p>
-        @if (!android) {
+        @if (store()) {
+        <span class="muted small">Atualizado pela Microsoft Store</span>
+        } @else if (!android) {
         <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
           {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
         </button>

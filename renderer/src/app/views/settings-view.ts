@@ -190,4 +190,11 @@ export class SettingsView {
   protected openBuildsFolder(): void {
     void window.app?.openBuildsFolder();
   }
+
+  /** Instalado pela Microsoft Store (a Store atualiza; o Windows cuida da inicialização). */
+  protected readonly store = computed(() => this.prefs.info()?.store === true);
+
+  protected openStartupSettings(): void {
+    void window.app?.openStartupSettings?.();
+  }
 }

@@ -355,3 +355,25 @@ p {
     font-size: 12px;
   }
 }
+
+// Versão da Store: o "iniciar com o Windows" é um atalho para as configurações do Windows.
+.store-startup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  strong {
+    display: block;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+  }
+
+  .btn {
+    flex: none;
+  }
+}

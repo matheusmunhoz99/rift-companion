@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: November 1, 2026_
+_Last updated: November 4, 2026_
 
 Rift Companion is a free desktop app for League of Legends. This policy explains what data the app uses and what it doesn't.
 
@@ -32,6 +32,19 @@ On the server:
 - Riot API responses are **cached temporarily** to reduce requests to Riot.
 - Build and tier list statistics are stored only as **aggregated numbers** per champion, role and patch, such as games played, wins and item choices. They are not linked to individual players.
 - The web server keeps standard access logs (IP address, time and requested path) for security and abuse prevention. They are deleted automatically after 14 days.
+- To detect duos and premade groups, the server keeps pairs of public player identifiers (PUUIDs) that played together, for up to 90 days.
+
+## Post-game coach
+
+After a game, the app sends our server the numbers from your game (KDA, CS, gold, vision, damage, duration), your champion, the result and the match ID. The server may add the early-game timeline from the Riot API and asks Anthropic (Claude AI) to write the coaching text. Anthropic receives only a summary with those numbers and the champion name — never your name, Riot ID or account identifier. Nothing from the coach is stored.
+
+## "Show that I use Rift Companion" (optional)
+
+When this setting is on, the app sends a code derived from your Riot ID (never the name itself) so other users see an icon next to your nick. Codes leave the list after 30 days without opening the app, or as soon as you turn the setting off.
+
+## Phone link (optional)
+
+If you link the Android app, our server stores the device name you chose and random pairing codes. The PC app's state is relayed through the server to your phone and is not stored. The link stays until you unlink the device.
 
 ## Telegram (optional)
 
@@ -71,12 +84,21 @@ status and timing. This data is used only to fix bugs, is never sold or shared, 
 automatically after 30 days. Turn the option off at any time to stop sending; to have existing
 data deleted sooner, contact us.
 
+## Other services
+
+- **Riot Games:** our server calls the Riot API with the identifiers above. The app loads champion and item images from Riot's Data Dragon.
+- **Anthropic:** only for the post-game coach, as described above.
+- **Telegram:** only if you connect it.
+- **Cloudflare:** network provider that protects and delivers our server.
+
 ## Updates
 
-The app checks our server for new versions. This request does not include any personal data.
+The `.exe` version checks our server for new versions. This request does not include any personal data. The Microsoft Store version is updated by the Store, and uninstalling it removes the app's local data. In the `.exe` version, local data stays in `%APPDATA%\Rift Companion` until you delete it.
 
 ## Contact
 
-Questions or removal requests: open an issue in this repository.
+Questions or data removal requests: use the support contact listed on the Rift Companion page in the Microsoft Store.
+
+A Portuguese version of this policy is available at https://rift-api.workscanner.com.br/downloads/privacidade.html.
 
 Rift Companion isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.

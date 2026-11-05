@@ -25,7 +25,7 @@ import { MatchWindow } from './match-window';
 import { WindowStateKeeper, fitsSomeDisplay, loadWindowState } from './window-state';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
-import { removeOldVersions, repointShortcuts, Updater } from './updater';
+import { isStoreInstall, removeOldVersions, repointShortcuts, Updater } from './updater';
 import { RiftUsers } from './riot/rift-users';
 import { compareVersions } from './version';
 import { introduction, statusLine, type InvisibleState } from './invisible/buddy';
@@ -730,7 +730,8 @@ void acquireInstance().then((acquired) => {
     });
     if (!capturing) updater.start();
     // Versão nova aberta pela atualização: apaga o .exe antigo da mesma pasta.
-    if (app.isPackaged && !capturing) {
+    // (Na Store não há .exe solto nem atalho próprio: o Windows cuida de tudo.)
+    if (app.isPackaged && !capturing && !isStoreInstall()) {
       // Antes de apagar o .exe antigo, o atalho da área de trabalho passa a abrir esta versão.
       const shortcuts = repointShortcuts();
       if (shortcuts.length) appLog(`atalhos atualizados para esta versão: ${shortcuts.length}`);
@@ -747,7 +748,11 @@ void acquireInstance().then((acquired) => {
       appShortcut: APP_SHORTCUT.replace('CommandOrControl', 'Ctrl'),
       jungleHotkeys: JUNGLE_HOTKEYS.map((h) => ({ keys: h.accelerator.replace('Control', 'Ctrl'), label: h.label })),
       buildsDirectory: path.join(app.getPath('userData'), 'builds'),
+      store: isStoreInstall(),
     }));
+    // Na versão da Store, o "iniciar com o Windows" é a tarefa de inicialização do pacote,
+    // ligada e desligada pela pessoa nas configurações do Windows.
+    ipcMain.handle('app:open-startup-settings', () => shell.openExternal('ms-settings:startupapps'));
     ipcMain.handle('app:open-builds-folder', async () => {
       const directory = path.join(app.getPath('userData'), 'builds');
       await import('node:fs/promises').then((fs) => fs.mkdir(directory, { recursive: true }));
@@ -927,7 +932,8 @@ function bringToFront(): void {
 
 /** No .exe portátil, o caminho estável é o do arquivo original, não o da pasta temporária. */
 function applyStartWithWindows(enabled: boolean): void {
-  if (!app.isPackaged) return;
+  // No pacote da Store a entrada no registro não vale: a inicialização é do Windows.
+  if (!app.isPackaged || isStoreInstall()) return;
   app.setLoginItemSettings({
     openAtLogin: enabled,
     path: process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,

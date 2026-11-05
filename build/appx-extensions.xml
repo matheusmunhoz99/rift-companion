@@ -1,0 +1,5 @@
+        <!-- Iniciar com o Windows (versão Store): desligado por padrão; a pessoa liga em
+             Configurações > Aplicativos > Inicialização. -->
+        <desktop:Extension Category="windows.startupTask" Executable="app\Rift Companion.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="RiftCompanionStartup" Enabled="false" DisplayName="Rift Companion" />
+        </desktop:Extension>

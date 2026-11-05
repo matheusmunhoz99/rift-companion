@@ -18,7 +18,8 @@
     "test": "npm run build:electron && node --test \"test/**/*.test.js\"",
     "release": "npm run dist && node scripts/publish-release.js",
     "release:android": "npm --prefix renderer run android:apk && node scripts/publish-android.js",
-    "review": "node scripts/visual-review.cjs"
+    "review": "node scripts/visual-review.cjs",
+    "dist:store": "npm run build && node scripts/dist-store.js"
   },
   "dependencies": {
     "@blamejs/pki": "^0.9.5",
@@ -69,6 +70,21 @@
     },
     "portable": {
       "artifactName": "RiftCompanion-${version}.exe"
+    },
+    "appx": {
+      "identityName": "MatheusMunhoz.RiftCompanion",
+      "publisher": "CN=7E66A870-83C4-4ECB-9F96-9178C2D1CF44",
+      "publisherDisplayName": "Matheus Munhoz",
+      "applicationId": "RiftCompanion",
+      "displayName": "Rift Companion",
+      "backgroundColor": "transparent",
+      "languages": [
+        "pt-BR"
+      ],
+      "customExtensionsPath": "build/appx-extensions.xml",
+      "artifactName": "RiftCompanion-${version}.${ext}",
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0"
     }
   }
 }

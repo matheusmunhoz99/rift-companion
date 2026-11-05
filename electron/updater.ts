@@ -10,6 +10,12 @@ const DOWNLOADS_URL =
   (process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br') + '/downloads/';
 const CHECK_INTERVAL_MS = 6 * 60 * 60_000;
 
+/**
+ * Instalado pela Microsoft Store (pacote MSIX): quem atualiza é a Store. O pacote
+ * nem pode sobrescrever a própria pasta, então o atualizador fica desligado.
+ */
+export const isStoreInstall = (): boolean => process.windowsStore === true;
+
 export interface ReleaseInfo {
   version: string;
   file: string;
@@ -36,7 +42,7 @@ export class Updater {
   constructor(private readonly onStatus: (status: UpdateStatus) => void) {}
 
   start(): void {
-    if (!app.isPackaged) return;
+    if (!app.isPackaged || isStoreInstall()) return;
     void this.check();
     this.timer = setInterval(() => void this.check(), CHECK_INTERVAL_MS);
   }
@@ -50,7 +56,7 @@ export class Updater {
   }
 
   async check(): Promise<UpdateStatus> {
-    if (this.status.state === 'downloading') return this.status;
+    if (isStoreInstall() || this.status.state === 'downloading') return this.status;
     try {
       const response = await fetch(DOWNLOADS_URL + 'latest.json', { cache: 'no-store', signal: AbortSignal.timeout(15_000) });
       if (!response.ok) return this.status;

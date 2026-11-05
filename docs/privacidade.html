@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Política de Privacidade · Rift Companion</title>
+<meta name="description" content="Quais dados o Rift Companion usa, para quê, por quanto tempo e com quem." />
+<style>
+  :root {
+    --bg: #0f1219;
+    --surface: #161b25;
+    --border: #262d3b;
+    --text: #e6e9ef;
+    --muted: #9aa3b5;
+    --accent: #c8a45a;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --border: #dfe3ea;
+      --text: #161b25;
+      --muted: #566074;
+      --accent: #8a6a24;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 19px; margin: 34px 0 8px; color: var(--accent); }
+  p, li { color: var(--text); }
+  .muted { color: var(--muted); }
+  ul { padding-left: 22px; }
+  li + li { margin-top: 6px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  footer { margin-top: 44px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Política de Privacidade</h1>
+  <p class="muted">Rift Companion · última atualização: 4 de novembro de 2026</p>
+
+  <div class="card">
+    <strong>Resumo:</strong> o Rift Companion não tem anúncios, não vende dados e não usa rastreadores de terceiros.
+    Ele não lê nem envia sua senha. O que vai para o nosso servidor serve para buscar dados públicos de partidas na
+    Riot Games e para os recursos que você escolhe ligar.
+  </div>
+
+  <h2>1. O que fica só no seu computador</h2>
+  <p>
+    O app conversa com o cliente do League of Legends instalado no seu PC (a API local do próprio cliente) para saber
+    sua conta, sala, fila, seleção de campeões e partida. Ele guarda no seu computador as suas preferências, o histórico
+    de PDL, o último placar de fim de jogo e as builds que você cria. Esses dados não saem do seu PC, exceto quando
+    um recurso abaixo precisar deles.
+  </p>
+  <p>
+    O app <strong>não</strong> lê a memória do jogo, não altera arquivos do jogo e não cria contas.
+  </p>
+
+  <h2>Modo invisível (opcional)</h2>
+  <p>
+    Se você ligar o modo invisível e abrir o LoL pelo Rift Companion, o app roda um proxy TLS no seu próprio
+    computador. Ele altera só a sua presença global no chat (aparecer offline). As mensagens do chat passam sem
+    alteração, não são guardadas e nunca vão para o servidor do Rift Companion.
+  </p>
+  <p>
+    Para criar essa conexão local, o app baixa e guarda o certificado público de <code>localhost</code> usado pelo
+    projeto de código aberto <a href="https://github.com/molenzwiebel/Deceive">Deceive</a>, a partir de
+    <code>mln.cx</code>. Esse download expõe só os dados comuns de qualquer conexão (endereço IP e horário), sem
+    Riot ID, dados da conta ou mensagens.
+  </p>
+
+  <h2>2. O que passa pelo servidor do Rift Companion</h2>
+  <p>
+    O servidor (<code>rift-api.workscanner.com.br</code>) consulta a API oficial da Riot Games por você.
+  </p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Recurso</th><th>O que é enviado</th><th>Por quanto tempo fica</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Perfis, histórico e partida ao vivo</td>
+        <td>Riot ID (nick#tag), região e identificador público (PUUID) dos jogadores que você pesquisa ou que estão na sua partida.</td>
+        <td>Perfis ficam em memória por minutos. Partidas terminadas (dados públicos da Riot) ficam em cache.</td>
+      </tr>
+      <tr>
+        <td>Detecção de duo e grupo</td>
+        <td>Pares de identificadores públicos (PUUID) de jogadores que jogaram juntos.</td>
+        <td>Até 90 dias.</td>
+      </tr>
+      <tr>
+        <td>Coach do fim de jogo</td>
+        <td>Números da sua partida (KDA, CS, ouro, visão, dano, duração), campeão, resultado e o identificador da partida.</td>
+        <td>Não é guardado. A análise é gerada e devolvida na hora.</td>
+      </tr>
+      <tr>
+        <td>"Mostrar que eu uso o Rift Companion" (opcional)</td>
+        <td>Um código calculado a partir do seu Riot ID, nunca o nick em si.</td>
+        <td>Sai da lista após 30 dias sem abrir o app, ou na hora em que você desliga.</td>
+      </tr>
+      <tr>
+        <td>Relatórios de erro anônimos (opcional)</td>
+        <td>Mensagem do erro, versão do app e versão do Windows. Sem nick, Riot ID ou dados da conta.</td>
+        <td>30 dias.</td>
+      </tr>
+      <tr>
+        <td>Diagnóstico detalhado das partidas (opcional)</td>
+        <td>O seu Riot ID e um código aleatório da sessão; o que o app fez em cada partida (fases, pedidos ao servidor, partida ao vivo, duo/trio, coach e erros, incluindo os Riot IDs dos jogadores como aparecem no app); o registro de eventos do app (nunca senhas, tokens ou mensagens de chat); versão do app e do Windows.</td>
+        <td>30 dias.</td>
+      </tr>
+      <tr>
+        <td>Celular vinculado (opcional)</td>
+        <td>Nome que você deu ao aparelho e códigos de vínculo. O estado do app no PC passa pelo servidor até o celular.</td>
+        <td>O vínculo fica até você desvincular. O estado repassado não é guardado.</td>
+      </tr>
+      <tr>
+        <td>Avisos pelo Telegram (opcional)</td>
+        <td>O vínculo entre o app e a sua conversa com o bot, e o texto dos avisos.</td>
+        <td>O vínculo fica até você desconectar.</td>
+      </tr>
+      <tr>
+        <td>Estatísticas de builds e tier list</td>
+        <td>Calculadas pelo servidor a partir de partidas públicas de Mestre+, guardadas só como números agregados por campeão, rota e patch. Não ficam ligadas a jogadores.</td>
+        <td>Enquanto forem úteis para os patches recentes.</td>
+      </tr>
+      <tr>
+        <td>Verificação de atualização (só na versão <code>.exe</code>)</td>
+        <td>O app consulta se existe versão nova. Não envia dados pessoais. Na versão da Microsoft Store, quem atualiza é a Store.</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Segurança do servidor</td>
+        <td>Endereço IP, horário, rota acessada e resultado da requisição, para limitar abusos.</td>
+        <td>Registros técnicos apagados em até 14 dias.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>3. Com quem os dados são compartilhados</h2>
+  <ul>
+    <li><strong>Riot Games:</strong> o servidor consulta a API da Riot com os identificadores acima para buscar perfis e partidas.</li>
+    <li><strong>Anthropic (IA Claude):</strong> só para o coach do fim de jogo. Recebe apenas um resumo com os números da partida e o nome do campeão. Não recebe nick, Riot ID nem identificador da conta.</li>
+    <li><strong>Telegram:</strong> só se você ligar os avisos pelo Telegram.</li>
+    <li><strong>Cloudflare:</strong> rede que protege e entrega o servidor.</li>
+    <li><strong>Data Dragon (Riot Games):</strong> o app baixa daí as imagens de campeões e itens.</li>
+  </ul>
+  <p>Não vendemos nem alugamos dados, e não usamos os dados para publicidade.</p>
+
+  <h2>4. Suas escolhas</h2>
+  <ul>
+    <li>Os recursos opcionais podem ser ligados e desligados a qualquer momento em <em>Configurações</em>, no app.</li>
+    <li>Na versão da Microsoft Store, desinstalar o app apaga os dados guardados no seu computador. Na versão <code>.exe</code>, eles ficam na pasta <code>%APPDATA%\Rift Companion</code> e podem ser apagados por você.</li>
+    <li>Para pedir a exclusão de dados do servidor ligados ao seu Riot ID, use o contato de suporte informado na página do Rift Companion na Microsoft Store.</li>
+  </ul>
+
+  <h2>5. Crianças</h2>
+  <p>
+    O Rift Companion é feito para jogadores de League of Legends e segue as regras de idade da própria Riot Games.
+    Não coletamos de propósito dados de crianças além do descrito acima.
+  </p>
+
+  <h2>6. Mudanças nesta política</h2>
+  <p>Quando algo mudar, esta página será atualizada, com a data no topo.</p>
+
+  <footer>
+    Rift Companion não é endossado pela Riot Games e não reflete as opiniões da Riot Games ou de qualquer pessoa
+    envolvida na produção ou gestão de propriedades da Riot Games. Riot Games e todas as propriedades associadas são
+    marcas comerciais ou marcas registradas da Riot Games, Inc.
+  </footer>
+</main>
+</body>
+</html>

@@ -57,6 +57,8 @@ export interface AppInfo {
   /** Atalhos da selva na partida ("Ctrl+Alt+1" -> "Seu azul"). */
   jungleHotkeys?: Array<{ keys: string; label: string }>;
   buildsDirectory: string;
+  /** Instalado pela Microsoft Store: a Store atualiza e o Windows cuida da inicialização. */
+  store?: boolean;
 }
 
 /** Imagem gerada a partir de um pedaço da tela (card de compartilhar). */
@@ -86,6 +88,8 @@ export interface AppBridge {
   getPreferences(): Promise<Preferences>;
   setPreferences(changes: Partial<Preferences>): Promise<Preferences>;
   openBuildsFolder(): Promise<void>;
+  /** Versão da Store: abre Configurações > Aplicativos > Inicialização do Windows. */
+  openStartupSettings?(): Promise<void>;
   /** Envia um erro ao servidor (anônimo), respeitando a preferência da pessoa. */
   report(context: string, message: string, stack?: string): Promise<void>;
   /** Diagnóstico detalhado (só tem efeito com a opção ligada). Ausente no celular. */

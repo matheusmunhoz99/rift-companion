@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('app', {
   getPreferences: () => ipcRenderer.invoke('prefs:get'),
   setPreferences: (changes: unknown) => ipcRenderer.invoke('prefs:set', changes),
   openBuildsFolder: () => ipcRenderer.invoke('app:open-builds-folder'),
+  openStartupSettings: () => ipcRenderer.invoke('app:open-startup-settings'),
   launchLeague: () => ipcRenderer.invoke('app:launch-league'),
   report: (context: string, message: string, stack?: string) => ipcRenderer.invoke('app:report', context, message, stack),
   diagEvent: (kind: string, fields?: unknown) => ipcRenderer.invoke('diag:event', kind, fields),
