@@ -38,6 +38,16 @@ On the server:
 
 After a game, the app sends our server the numbers from your game (KDA, CS, gold, vision, damage, duration), your champion, the result and the match ID. The server may add the early-game timeline from the Riot API and asks Anthropic (Claude AI) to write the coaching text. Anthropic receives only a summary with those numbers and the champion name — never your name, Riot ID or account identifier. Nothing from the coach is stored.
 
+## AI features
+
+Some features send game data to our server, which asks an AI (Claude, by Anthropic) to analyze it. None of them include your name, Riot ID or account data, and nothing is stored: the answer is generated and returned right away.
+
+- **AI game read (on by default; can be turned off in Settings):** the game state (champions, kills, items, gold, objectives and game time) and a random session code, to suggest what to do next.
+- **Screen vision (off by default):** when enabled, the read above also includes an image of the minimap, so the AI sees what you see.
+- **Automatic jungle timers (disabled in this version):** when enabled, small crops of the minimap around camp timers, so the AI can read the number.
+- **Game plan:** once per game, the champions and roles in the game.
+- **Post-game coach:** your game numbers and champion, as described above.
+
 ## "Show that I use Rift Companion" (optional)
 
 When this setting is on, the app sends a code derived from your Riot ID (never the name itself) so other users see an icon next to your nick. Codes leave the list after 30 days without opening the app, or as soon as you turn the setting off.
@@ -87,7 +97,7 @@ data deleted sooner, contact us.
 ## Other services
 
 - **Riot Games:** our server calls the Riot API with the identifiers above. The app loads champion and item images from Riot's Data Dragon.
-- **Anthropic:** only for the post-game coach, as described above.
+- **Anthropic:** only for the AI features described above.
 - **Telegram:** only if you connect it.
 - **Cloudflare:** network provider that protects and delivers our server.
 

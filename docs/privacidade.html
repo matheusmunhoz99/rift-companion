@@ -150,10 +150,27 @@
   </table>
   </div>
 
+  <h2>Recursos com inteligência artificial</h2>
+  <p>
+    Alguns recursos mandam dados da partida ao nosso servidor, que pede a uma IA (Claude, da Anthropic) para
+    analisá-los. Nada disso leva o seu nick, Riot ID ou dados da conta, e nada fica guardado: a resposta é gerada e
+    devolvida na hora.
+  </p>
+  <ul>
+    <li><strong>Leitura da partida por IA (ligada por padrão; pode ser desligada em Configurações):</strong> durante o jogo, o estado da partida (campeões,
+      abates, itens, ouro, objetivos e tempo de jogo) e um código aleatório da sessão, para sugerir o que fazer.</li>
+    <li><strong>Visão da tela (desativada por padrão):</strong> quando ativada, a leitura acima também leva uma imagem
+      do minimapa, para a IA ver o que você vê.</li>
+    <li><strong>Selva automática (desativada nesta versão):</strong> quando ativada, pequenos recortes do minimapa em volta dos timers
+      dos campos, para a IA ler o número.</li>
+    <li><strong>Plano de jogo:</strong> uma vez por partida, os campeões e as rotas da partida.</li>
+    <li><strong>Coach do fim de jogo:</strong> os números da sua partida e o campeão.</li>
+  </ul>
+
   <h2>3. Com quem os dados são compartilhados</h2>
   <ul>
     <li><strong>Riot Games:</strong> o servidor consulta a API da Riot com os identificadores acima para buscar perfis e partidas.</li>
-    <li><strong>Anthropic (IA Claude):</strong> só para o coach do fim de jogo. Recebe apenas um resumo com os números da partida e o nome do campeão. Não recebe nick, Riot ID nem identificador da conta.</li>
+    <li><strong>Anthropic (IA Claude):</strong> só para os recursos com IA descritos acima. Não recebe nick, Riot ID nem identificador da conta.</li>
     <li><strong>Telegram:</strong> só se você ligar os avisos pelo Telegram.</li>
     <li><strong>Cloudflare:</strong> rede que protege e entrega o servidor.</li>
     <li><strong>Data Dragon (Riot Games):</strong> o app baixa daí as imagens de campeões e itens.</li>
