@@ -263,7 +263,13 @@ export function cropAround(box: MapBox, point: CampPoint, width: number, height:
 /** "1:57" -> 117, "40" -> 40; "2m+" -> null (mais de 2 min, sem o segundo exato). */
 export function timerSeconds(text: string | null): number | null {
   if (!text) return null;
-  const clock = /^(\d):([0-5]\d)$/.exec(text);
+  const trimmed = text.trim();
+  const clock = /^(\d):([0-5]\d)$/.exec(trimmed);
   if (clock) return Number(clock[1]) * 60 + Number(clock[2]);
-  return /^\d{1,2}$/.test(text) ? Number(text) : null;
+  return /^\d{1,2}$/.test(trimmed) ? Number(trimmed) : null;
+}
+
+/** "2m+", "3m+", "4m+": timer de minutos inteiros que o LoL mostra para Red/Blue antes de chegar em 1:59. */
+export function isMinutePlus(text: string | null): boolean {
+  return !!text && /^[1-5]m\+$/i.test(text.trim());
 }

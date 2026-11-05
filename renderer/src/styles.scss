@@ -98,12 +98,6 @@ body {
   overflow: hidden;
 }
 
-/* Janela do overlay: fundo transparente sobre o jogo. */
-body.overlay-mode,
-body.overlay-mode app-root {
-  background: transparent;
-}
-
 h1,
 h2,
 h3 {

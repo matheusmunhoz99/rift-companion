@@ -25,12 +25,6 @@ import { Icon } from '../ui/icon';
             Quando a partida começar, esta tela mostra os dois times com elo, maestria, histórico
             recente de cada jogador e a chance de vitória.
           </p>
-          @if (prefs.preferences().overlayEnabled) {
-            <p class="hint">
-              O overlay aparece no topo do jogo em modo <strong>sem bordas</strong>.
-              Mostrar/ocultar: <code>{{ prefs.info()?.overlayShortcut ?? 'Ctrl+Shift+O' }}</code>
-            </p>
-          }
         </div>
       </section>
     }

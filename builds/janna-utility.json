@@ -1,11 +1,11 @@
 {
   "championId": 40,
   "position": "utility",
-  "title": "Janna - Suporte (exemplo)",
+  "title": "Janna · Suporte Mestre+ (16.21)",
   "maps": [11],
   "blocks": [
     { "name": "Inicial", "items": [3865, 2003, 2003, 3340] },
-    { "name": "Núcleo", "items": [3158, 3504, 3107, 3222] },
-    { "name": "Visão", "items": [3364, 2055] }
+    { "name": "Núcleo", "items": [3009, 6617, 3107, 6621] },
+    { "name": "Situacional e Visão", "items": [2065, 3222, 3364, 2055] }
   ]
 }

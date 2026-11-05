@@ -199,10 +199,10 @@ async function postGame() {
       damage: () => window.__api('/v1/stats/damage'),
     });
     window.app = bridge({
-      getPreferences: async () => ({ matchMode: match, matchModeWindow: true, autoAccept: true, appearOffline: false, invisibleStatus: 'offline', invisibleStartupStatus: 'last', invisibleLobbyChat: true, overlayEnabled: true, overlayPosition: 'center', overlayOpacity: 0.9, autoNavigate: false, autoRunes: false, minimizeToTray: true, startWithWindows: false, showAsRiftUser: false, chatObjectiveAlerts: true, sendErrorReports: true, detailedDiagnostics: true, telegramReadyCheck: true, telegramChampion: true, telegramGameStart: true, telegramGameEnd: true }),
-      info: async () => ({ version: '1.12.0', overlayShortcut: 'Ctrl+Shift+O', buildsDirectory: 'C:\\Users\\mathe\\AppData\\Roaming\\Rift Companion\\builds' }),
+      getPreferences: async () => ({ matchMode: match, matchModeWindow: true, autoAccept: true, appearOffline: false, invisibleStatus: 'offline', invisibleStartupStatus: 'last', invisibleLobbyChat: true, autoNavigate: false, autoRunes: false, minimizeToTray: true, startWithWindows: false, showAsRiftUser: false, chatObjectiveAlerts: true, sendErrorReports: true, detailedDiagnostics: true, telegramReadyCheck: true, telegramChampion: true, telegramGameStart: true, telegramGameEnd: true }),
+      info: async () => ({ version: '1.12.0', buildsDirectory: 'C:\\Users\\mathe\\AppData\\Roaming\\Rift Companion\\builds' }),
       updateStatus: async () => ({ state: 'idle' }), gameWindowMode: async () => 'borderless', rankHistory: async () => ranks,
-      onRankUpdated: () => () => {}, onAutoAccepted: () => () => {}, onOverlayData: () => () => {}, onPreferencesChanged: () => () => {}, onAutoRunesApplied: () => () => {}, onUpdateStatus: () => () => {},
+      onRankUpdated: () => () => {}, onAutoAccepted: () => () => {}, onPreferencesChanged: () => () => {}, onAutoRunesApplied: () => () => {}, onUpdateStatus: () => () => {},
     });
     window.builds = bridge({ get: async () => ({ mapId: 11, runePages: [], itemBuilds: [], buildsDirectory: '' }) });
     for (const name of ['lobby', 'telegram', 'mobile', 'riftUsers', 'champSelect']) window[name] = bridge({});

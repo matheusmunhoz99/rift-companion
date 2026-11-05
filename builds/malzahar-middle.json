@@ -1,11 +1,11 @@
 {
   "championId": 90,
   "position": "middle",
-  "title": "Malzahar - Meio (exemplo)",
+  "title": "Malzahar · Meio Mestre+ (16.21)",
   "maps": [11],
   "blocks": [
     { "name": "Inicial", "items": [1056, 2003, 2003, 3340] },
-    { "name": "Núcleo", "items": [3020, 6653, 3116, 3089] },
-    { "name": "Situacional", "items": [3165, 3135, 3157, 3102] }
+    { "name": "Núcleo", "items": [3020, 2503, 3116, 6653] },
+    { "name": "Situacional", "items": [3157, 3089, 3135, 3165] }
   ]
 }

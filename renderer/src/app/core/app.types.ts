@@ -1,5 +1,4 @@
-// Espelha electron/settings.ts, electron/main.ts e electron/overlay/live-client.ts.
-export type OverlayPosition = 'left' | 'center' | 'right';
+// Espelha electron/settings.ts e electron/main.ts.
 export type GameWindowMode = 'fullscreen' | 'windowed' | 'borderless' | 'unknown';
 export type InvisibleStatus = 'online' | 'offline' | 'mobile';
 export type InvisibleStartupStatus = InvisibleStatus | 'last';
@@ -24,9 +23,6 @@ export interface Preferences {
   invisibleStatus: InvisibleStatus;
   invisibleStartupStatus: InvisibleStartupStatus;
   invisibleLobbyChat: boolean;
-  overlayEnabled: boolean;
-  overlayPosition: OverlayPosition;
-  overlayOpacity: number;
   autoNavigate: boolean;
   matchMode: boolean;
   matchModeWindow: boolean;
@@ -46,7 +42,6 @@ export interface Preferences {
   screenVision: boolean;
   visionSamples: boolean;
   autoJungle: boolean;
-  minimapOverlay: boolean;
   sendErrorReports: boolean;
   detailedDiagnostics: boolean;
   telegramReadyCheck: boolean;
@@ -57,58 +52,11 @@ export interface Preferences {
 
 export interface AppInfo {
   version: string;
-  overlayShortcut: string;
   /** Mostra e esconde o app de qualquer lugar ("Ctrl+Shift+R"). Ausente em versões antigas. */
   appShortcut?: string;
   /** Atalhos da selva na partida ("Ctrl+Alt+1" -> "Seu azul"). */
   jungleHotkeys?: Array<{ keys: string; label: string }>;
   buildsDirectory: string;
-}
-
-export interface OverlayPlayer {
-  championName: string;
-  championKey: string;
-  level: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  cs: number;
-  items: Array<{ id: number; count: number }>;
-}
-
-export interface OverlayData {
-  gameTime: number;
-  gameMode: string;
-  me: (OverlayPlayer & {
-    position: string;
-    csPerMinute: number;
-    gold: number;
-    wardScore: number;
-    skills: [number, number, number, number] | null;
-  }) | null;
-  opponent: OverlayPlayer | null;
-  teamKills: { ally: number; enemy: number };
-  objectives: {
-    dragons: { ally: number; enemy: number };
-    barons: { ally: number; enemy: number };
-    heralds: { ally: number; enemy: number };
-    towers: { ally: number; enemy: number };
-  };
-  upcoming: Array<{ key: 'dragon' | 'grubs' | 'herald' | 'atakhan' | 'baron'; name: string; state: 'upcoming' | 'alive'; at: number }>;
-  /** Inibidores derrubados que vão voltar (`ally` = do seu time). */
-  inhibitors?: Array<{ ally: boolean; lane: string; respawnAt: number }>;
-  /** Campos da selva marcados como mortos no app (tempo de jogo em que voltam). */
-  camps?: CampTimer[];
-  /** Última leitura da IA (frase curta) e o tempo de jogo dela. */
-  ai?: { text: string; at: number } | null;
-}
-
-/** Um campo da selva marcado como morto: o app conta até ele voltar. */
-export interface CampTimer {
-  key: string;
-  /** "Azul", "Vermelho inimigo", "Caranguejo de cima"... */
-  name: string;
-  backAt: number;
 }
 
 /** Imagem gerada a partir de um pedaço da tela (card de compartilhar). */
@@ -149,7 +97,6 @@ export interface AppBridge {
     'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
   >;
   onAutoAccepted(callback: (timestamp: number) => void): () => void;
-  onOverlayData(callback: (data: OverlayData) => void): () => void;
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;
   onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;
   gameWindowMode(): Promise<GameWindowMode>;
@@ -171,14 +118,10 @@ export interface AppBridge {
   onJungleAuto?(callback: (camp: { key: string; backAt: number; exact: boolean }) => void): () => void;
   /** Recorte do minimapa agora (JPEG em base64); null fora da partida. Só no PC. */
   visionMinimap?(): Promise<{ jpeg: string; black: boolean } | null>;
-  /** Manda a leitura da IA para o overlay (frase curta). Só no PC. */
-  setOverlayRead?(read: { text: string; at: number }): void;
   /** Troca o jogo para Sem bordas pela API do cliente (vale na próxima partida). Só no PC. */
   setBorderless?(): Promise<'changed' | 'already' | 'in-game' | 'no-client'>;
   visionStatus?(): Promise<{ black: boolean | null; samples: number; folder: string }>;
   openVisionSamples?(): Promise<void>;
-  /** Campos da selva marcados, para o overlay mostrar a contagem por cima do jogo. Só no PC. */
-  setCampTimers?(camps: CampTimer[]): void;
   /** Copia (ou salva) como imagem um pedaço da janela. false = cancelado. Só no PC. */
   captureImage?(rect: CaptureRect, action: 'copy' | 'save', fileName: string): Promise<boolean>;
 }

@@ -1,4 +1,4 @@
-import { cropAround, findMapBox, readCamps, timerSeconds, campPoints, type MapBox, type Team } from './camp-detector';
+import { cropAround, findMapBox, isMinutePlus, readCamps, timerSeconds, campPoints, type MapBox, type Team } from './camp-detector';
 
 export interface OcrCrop {
   id: string;
@@ -37,7 +37,9 @@ export function cropRgba(rgba: Buffer, width: number, rect: { x: number; y: numb
 /**
  * Selva automática pela tela: o detector local (1 quadro por segundo) vê onde apareceu texto
  * perto de um campo; só então os recortes desses campos vão para a IA ler o número. Com o
- * número ("1:57"), o horário de volta é exato: tempo do quadro + o que falta.
+ * número ("1:57"), o horário de volta é exato: tempo do quadro + o que falta. Para Red e Blue
+ * (que mostram "2m+" nos primeiros 3 minutos depois de morrer), inicia a contagem imediatamente
+ * e refina para o segundo exato assim que chega em 1:59.
  */
 export class AutoJungle {
   private box: MapBox | null = null;
@@ -45,6 +47,8 @@ export class AutoJungle {
   private previous = new Set<string>();
   /** Quadros seguidos sem texto em cada campo (um ícone por cima some por 1 ou 2). */
   private absent = new Map<string, number>();
+  /** Instante de jogo em que o texto de timer apareceu depois do campo estar vivo (morreu agora). */
+  private diedAt = new Map<string, number>();
   private known = new Map<string, { backAt: number; exact: boolean }>();
   private busy = false;
   private lastOcr = 0;
@@ -65,8 +69,10 @@ export class AutoJungle {
     this.frames = 0;
     this.previous = new Set();
     this.absent = new Map();
+    this.diedAt = new Map();
     this.known = new Map();
     this.pending = new Map();
+    this.pendingMinutePlus = new Set();
     this.lastOcr = 0;
   }
 
@@ -78,21 +84,31 @@ export class AutoJungle {
     const box = this.box;
     if (!box) return;
     for (const [key, timer] of this.known) if (timer.backAt < gameTime - 5) this.known.delete(key);
+    for (const [key, t] of this.diedAt) if (gameTime - t > 18) this.diedAt.delete(key);
 
     const points = campPoints(team);
     const readings = readCamps(rgba, width, height, box, points);
     const candidates = readings.filter((r) => r.glyphs > 0 && r.pixels >= 6).map((r) => r.key);
     const fresh = candidates.filter((key) => !this.previous.has(key));
-    // "Acabou de morrer": texto novo depois de 5+ quadros sem nada ali, e não nos primeiros
+    // "Acabou de morrer": texto novo depois de 4+ quadros sem nada ali, e não nos primeiros
     // quadros (o que já estava na tela quando o app começou a ver não tem hora de morte).
-    const died = new Set(fresh.filter((key) => this.frames > 3 && (this.absent.get(key) ?? 0) >= 5));
-    for (const r of readings) this.absent.set(r.key, candidates.includes(r.key) ? 0 : (this.absent.get(r.key) ?? 0) + 1);
+    for (const key of fresh) {
+      if (this.frames > 3 && (this.absent.get(key) ?? 0) >= 4) {
+        this.diedAt.set(key, gameTime);
+      }
+    }
+    for (const r of readings) {
+      const isCandidate = candidates.includes(r.key);
+      const nextAbsent = isCandidate ? 0 : (this.absent.get(r.key) ?? 0) + 1;
+      this.absent.set(r.key, nextAbsent);
+      if (nextAbsent >= 4) this.diedAt.delete(r.key);
+    }
     this.previous = new Set(candidates);
     if (this.busy || !candidates.length) return;
 
     const now = this.now();
     // Sem horário confirmado (ou com leitura esperando a segunda): relê logo, para confirmar.
-    const unsure = candidates.some((key) => !this.known.get(key)?.exact || this.pending.has(key));
+    const unsure = candidates.some((key) => !this.known.get(key)?.exact || this.pending.has(key) || this.pendingMinutePlus.has(key));
     const due = fresh.length > 0 || (unsure && now - this.lastOcr >= REFRESH_UNSURE_MS) || now - this.lastOcr >= REFRESH_ALL_MS;
     if (!due) return;
 
@@ -105,7 +121,7 @@ export class AutoJungle {
     this.lastOcr = now;
     try {
       const results = await this.deps.ocr(crops);
-      for (const result of results ?? []) this.apply(result.id, result.text, gameTime, died.has(result.id));
+      for (const result of results ?? []) this.apply(result.id, result.text, gameTime, this.diedAt.get(result.id));
     } finally {
       this.busy = false;
     }
@@ -113,24 +129,47 @@ export class AutoJungle {
 
   /** Leitura nova que ainda não foi confirmada por uma segunda (a IA às vezes troca um dígito). */
   private pending = new Map<string, number>();
+  private pendingMinutePlus = new Set<string>();
 
-  private apply(key: string, text: string | null, gameTime: number, _justAppeared: boolean): void {
+  private apply(key: string, text: string | null, gameTime: number, diedTime?: number): void {
     // Antes de os campos nascerem, o minimapa mostra a contagem de nascimento, não de volta.
     if (gameTime < (this.deps.firstSpawnOf?.(key) ?? 0) + 3) return;
+    const current = this.known.get(key);
     const seconds = timerSeconds(text);
-    // "2m+" não diz o segundo: espera o número exato (aparece com menos de 2 min).
-    if (seconds === null) return;
+
+    // "2m+" (Red e Blue mostram "2m+" de 5:00 até 2:00): inicia a contagem já e ajusta em 1:59.
+    if (seconds === null) {
+      if (isMinutePlus(text) && !current) {
+        if (diedTime !== undefined) {
+          const backAt = Math.round(diedTime + this.deps.respawnOf(key));
+          this.pendingMinutePlus.delete(key);
+          this.known.set(key, { backAt, exact: false });
+          this.deps.emit(key, backAt, false);
+          return;
+        }
+        if (this.pendingMinutePlus.has(key)) {
+          this.pendingMinutePlus.delete(key);
+          const backAt = Math.round(gameTime + this.deps.respawnOf(key));
+          this.known.set(key, { backAt, exact: false });
+          this.deps.emit(key, backAt, false);
+          return;
+        }
+        this.pendingMinutePlus.add(key);
+      }
+      return;
+    }
+
+    this.pendingMinutePlus.delete(key);
     // Impossível: mais do que o tempo de volta do campo (leitura errada ou texto do vizinho).
     if (seconds < 1 || seconds > this.deps.respawnOf(key) + 3) return;
     const backAt = Math.round(gameTime + seconds);
-    const current = this.known.get(key);
     const agrees = (a: number | undefined) => a !== undefined && Math.abs(a - backAt) <= 2;
-    if (agrees(current?.backAt)) {
+    if (current?.exact && agrees(current.backAt)) {
       this.pending.delete(key);
       return;
     }
-    // Vale quando duas leituras seguidas concordam; uma só pode ser um dígito trocado.
-    if (!agrees(this.pending.get(key))) {
+    // Vale quando duas leituras seguidas concordam (ou confirma o horário aproximado do 2m+).
+    if (!agrees(this.pending.get(key)) && !(current && !current.exact && agrees(current.backAt))) {
       this.pending.set(key, backAt);
       return;
     }

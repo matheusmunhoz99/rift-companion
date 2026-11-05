@@ -62,8 +62,8 @@ export class VisionController {
   private gamePoll: NodeJS.Timeout | null = null;
   private jungle: AutoJungle;
   private timings: JungleTimings | null = null;
+  private starting = false;
   /** Recorte do minimapa na tela (pixels físicos). */
-  private region: { x: number; y: number; width: number; height: number } | null = null;
 
   constructor(
     private readonly connector: LcuConnector,
@@ -94,29 +94,38 @@ export class VisionController {
 
   sync(): void {
     const inGame = IN_GAME.has(this.connector.getState().gameflowPhase ?? '');
-    const { screenVision, visionSamples, autoJungle } = this.prefs();
-    const want = inGame && (screenVision || visionSamples || autoJungle);
-    if (!inGame && this.gameKey !== null) {
+    const { visionSamples, autoJungle } = this.prefs();
+    const want = inGame && (visionSamples || autoJungle);
+    if (inGame && !this.layout) {
+      void readMinimapLayout(this.connector.getCredentials()?.installDirectory ?? null)
+        .then((l) => { this.layout = l; })
+        .catch(() => undefined);
+    }
+    if (!inGame && (this.gameKey !== null || this.layout !== null)) {
       this.gameKey = null;
       this.layout = null;
       this.latest = null;
       this.jungle.reset();
       this.status = { black: null, samples: 0, folder: this.samplesDirectory, autoCamps: 0 };
     }
-    if (want && !this.stream.running) void this.start();
+    if (want && !this.stream.running && !this.starting) void this.start();
     else if (!want && this.stream.running) this.stop();
   }
 
   private async start(): Promise<void> {
+    if (this.starting || this.stream.running) return;
+    this.starting = true;
     try {
       this.layout ??= await readMinimapLayout(this.connector.getCredentials()?.installDirectory ?? null);
       this.timings = await this.jungleTimings().catch(() => null);
       const layout = this.layout;
-      await this.stream.start((w, h) => (this.region = minimapRegion(layout, w, h)));
+      await this.stream.start((w, h) => minimapRegion(layout, w, h));
       this.gamePoll ??= setInterval(() => void this.pollGame(), GAME_POLL_MS);
       void this.pollGame();
     } catch (error) {
       appLog(`visão: não deu para começar a captura: ${error instanceof Error ? error.message : error}`);
+    } finally {
+      this.starting = false;
     }
   }
 
@@ -201,21 +210,6 @@ export class VisionController {
     } catch {
       return null;
     }
-  }
-
-  /** O mapa na tela (pixels físicos): o overlay do minimapa fica exatamente em cima dele. */
-  screenMapBox(): { x: number; y: number; size: number } | null {
-    const region = this.region;
-    if (!region) return null;
-    const box = this.jungle.mapBox;
-    // Sem a moldura achada ainda: a medida das amostras (mapa a 52/49 px de um recorte de 333).
-    const b = box ?? { left: Math.round(region.width * 0.156), top: Math.round(region.height * 0.147), size: Math.round(region.width * 0.78) };
-    return { x: region.x + b.left, y: region.y + b.top, size: b.size };
-  }
-
-  /** Seu time na partida (ORDER embaixo à esquerda, CHAOS em cima à direita). */
-  team(): Team | null {
-    return this.game.team;
   }
 
   folder(): string {

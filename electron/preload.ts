@@ -13,11 +13,6 @@ function subscribe<T>(channel: string, callback: (value: T) => void): () => void
   return () => ipcRenderer.removeListener(channel, listener);
 }
 
-// Overlay transparente do minimapa (só aquela janela escuta).
-contextBridge.exposeInMainWorld('minimapOverlay', {
-  onMarks: (callback: (marks: unknown) => void) => subscribe('minimap-overlay:marks', callback),
-});
-
 contextBridge.exposeInMainWorld('lcu', {
   getState: () => ipcRenderer.invoke('lcu:get-state'),
   onState: (callback: (state: unknown) => void) => subscribe('lcu:state', callback),
@@ -35,7 +30,6 @@ contextBridge.exposeInMainWorld('app', {
   onRankUpdated: (callback: () => void) => subscribe('rank:updated', callback),
   onAutoAccepted: (callback: (timestamp: number) => void) =>
     subscribe('auto-accept:accepted', callback),
-  onOverlayData: (callback: (data: unknown) => void) => subscribe('overlay:data', callback),
   onPreferencesChanged: (callback: (preferences: unknown) => void) =>
     subscribe('prefs:changed', callback),
   onAutoRunesApplied: (callback: (result: unknown) => void) =>
@@ -51,11 +45,9 @@ contextBridge.exposeInMainWorld('app', {
   onJungleMark: (callback: (camp: unknown) => void) => subscribe('jungle:mark', callback),
   onJungleAuto: (callback: (camp: unknown) => void) => subscribe('jungle:auto', callback),
   visionMinimap: () => ipcRenderer.invoke('vision:minimap'),
-  setOverlayRead: (read: unknown) => ipcRenderer.send('app:overlay-read', read),
   setBorderless: () => ipcRenderer.invoke('app:set-borderless'),
   visionStatus: () => ipcRenderer.invoke('vision:status'),
   openVisionSamples: () => ipcRenderer.invoke('vision:open-samples'),
-  setCampTimers: (camps: unknown) => ipcRenderer.send('app:camp-timers', camps),
   captureImage: (rect: unknown, action: unknown, fileName: unknown) => ipcRenderer.invoke('app:capture-image', rect, action, fileName),
 });
 

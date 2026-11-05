@@ -1,14 +1,5 @@
 import https from 'node:https';
 import { lanePosition } from './lanes';
-import {
-  DEFAULT_TIMINGS,
-  toLiveDashboard,
-  type LivePlayer,
-  type LiveTeam,
-  type ObjectiveKey,
-  type ObjectiveTimings,
-  type RawDashboardData,
-} from './live-dashboard';
 
 /**
  * Live Client Data API: exposta pelo próprio jogo em https://127.0.0.1:2999
@@ -19,50 +10,6 @@ const LIVE_CLIENT_URL = process.env.RIFT_LIVE_CLIENT_URL ?? 'https://127.0.0.1:2
 
 // Certificado autoassinado da Riot; só fala com localhost.
 const localAgent = new https.Agent({ rejectUnauthorized: false, keepAlive: true });
-
-export interface OverlayPlayer {
-  championName: string;
-  /** Nome interno no Data Dragon (ex.: "MonkeyKing"). */
-  championKey: string;
-  level: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  cs: number;
-  /** Itens por slot (0-6); o renderer soma o preço no Data Dragon. */
-  items: Array<{ id: number; count: number }>;
-}
-
-export interface OverlayData {
-  gameTime: number;
-  gameMode: string;
-  me: (OverlayPlayer & {
-    position: string;
-    csPerMinute: number;
-    gold: number;
-    wardScore: number;
-    /** Níveis de Q, W, E e R; null quando o jogo não informa. */
-    skills: [number, number, number, number] | null;
-  }) | null;
-  /** Inimigo da mesma rota; null sem rotas (ARAM, por exemplo). */
-  opponent: OverlayPlayer | null;
-  /** Abates de campeões por time (aliado x inimigo). */
-  teamKills: { ally: number; enemy: number };
-  objectives: {
-    dragons: { ally: number; enemy: number };
-    barons: { ally: number; enemy: number };
-    heralds: { ally: number; enemy: number };
-    towers: { ally: number; enemy: number };
-  };
-  /** Objetivos do Summoner's Rift ainda em jogo, com o tempo de surgimento (mesmos timers do painel). */
-  upcoming: Array<{ key: ObjectiveKey; name: string; state: 'upcoming' | 'alive'; at: number }>;
-  /** Inibidores derrubados que vão voltar (`ally` = do seu time). */
-  inhibitors: Array<{ ally: boolean; lane: string; respawnAt: number }>;
-  /** Campos da selva marcados como mortos na tela do app (tempo de jogo em que voltam). */
-  camps: Array<{ key: string; name: string; backAt: number }>;
-  /** Última leitura da IA (frase curta) e o tempo de jogo dela; some depois de 90 s. */
-  ai: { text: string; at: number } | null;
-}
 
 interface RawPlayer {
   riotId?: string;
@@ -85,7 +32,7 @@ export interface RawGameData {
   gameData: { gameTime: number; gameMode: string; mapNumber?: number };
 }
 
-/** Leituras feitas há menos disso são reaproveitadas: overlay, painel e avisos dividem a mesma. */
+/** Leituras feitas há menos disso são reaproveitadas: painel, celular e avisos dividem a mesma. */
 const SHARE_MS = 1_000;
 let lastRead: { at: number; data: RawGameData | null } | null = null;
 let reading: Promise<RawGameData | null> | null = null;
@@ -162,54 +109,4 @@ export function toLocalPlayers(raw: RawGameData): LocalPlayer[] {
     subStyleId: p.runes?.secondaryRuneTree?.id ?? 0,
     position: lanePosition(p.position),
   }));
-}
-
-/** Barra sobre o jogo: você, o inimigo da sua rota, o placar e os próximos objetivos. */
-export function toOverlayData(raw: RawGameData, timings: ObjectiveTimings = DEFAULT_TIMINGS): OverlayData {
-  const live = toLiveDashboard(raw as RawDashboardData, timings);
-  const mine = live.players.find((p) => p.isMe) ?? null;
-  const opponent = mine?.position ? (live.players.find((p) => !p.ally && p.position === mine.position) ?? null) : null;
-  const player = (p: LivePlayer): OverlayPlayer => ({
-    championName: p.championName,
-    championKey: p.championKey,
-    level: p.level,
-    kills: p.kills,
-    deaths: p.deaths,
-    assists: p.assists,
-    cs: p.cs,
-    items: p.items,
-  });
-  const abilities = (raw as RawDashboardData).activePlayer?.abilities;
-  const skills = abilities
-    ? ((['Q', 'W', 'E', 'R'] as const).map((key) => abilities[key]?.abilityLevel ?? 0) as [number, number, number, number])
-    : null;
-  const count = (pick: (t: LiveTeam) => number) => ({ ally: pick(live.teams.ally), enemy: pick(live.teams.enemy) });
-  const minutes = live.gameTime / 60;
-
-  return {
-    gameTime: live.gameTime,
-    gameMode: live.gameMode,
-    me: mine && {
-      ...player(mine),
-      position: mine.position,
-      csPerMinute: minutes > 0 ? Math.round((mine.cs / minutes) * 10) / 10 : 0,
-      gold: live.me?.currentGold ?? 0,
-      wardScore: mine.wardScore,
-      skills,
-    },
-    opponent: opponent && player(opponent),
-    teamKills: count((t) => t.kills),
-    objectives: {
-      dragons: count((t) => t.dragons.length),
-      barons: count((t) => t.barons),
-      heralds: count((t) => t.heralds),
-      towers: count((t) => t.towers),
-    },
-    upcoming: live.objectives
-      .filter((o): o is typeof o & { state: 'upcoming' | 'alive' } => o.state !== 'done'),
-    inhibitors: live.timers?.inhibitors ?? [],
-    // Quem marca os campos é a tela do app; o controlador do overlay junta antes de mandar.
-    camps: [],
-    ai: null,
-  };
 }

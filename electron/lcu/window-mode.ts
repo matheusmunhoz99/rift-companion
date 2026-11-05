@@ -9,7 +9,7 @@ export type BorderlessResult = 'changed' | 'already' | 'in-game' | 'no-client';
 /**
  * Troca o jogo para "Sem bordas" (WindowMode 2) pela mesma API que a tela de configurações
  * do cliente do LoL usa. Não mexe em arquivo do jogo; vale a partir da próxima partida.
- * Sem bordas tem o mesmo desempenho da tela cheia e deixa o overlay aparecer sem injetar nada.
+ * Sem bordas tem o mesmo desempenho da tela cheia e deixa a selva automática ler o minimapa.
  */
 export async function setBorderless(credentials: LcuCredentials | null, phase: string | null): Promise<BorderlessResult> {
   if (!credentials) return 'no-client';

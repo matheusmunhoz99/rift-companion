@@ -157,7 +157,7 @@ export function initializeAndroid(): void {
       info: async () => { if (!snapshot) throw new Error('PC desconectado.'); return snapshot.info; },
       updateStatus: async () => ({ state: 'idle' }), checkUpdate: localOnly, installUpdate: localOnly, openBuildsFolder: localOnly,
       onPreferencesChanged: on('prefs:changed'), onAutoAccepted: on('auto-accept:accepted'),
-      onAutoRunesApplied: on('auto-runes:applied'), onOverlayData: on('overlay:data'), onUpdateStatus: on('update:status'),
+      onAutoRunesApplied: on('auto-runes:applied'), onUpdateStatus: on('update:status'),
     },
     lobby: methods({ queues: 'lobby:queues', friends: 'lobby:friends', create: 'lobby:create', leave: 'lobby:leave',
       setPositions: 'lobby:positions', search: 'lobby:search', invite: 'lobby:invite', readyCheck: 'lobby:ready-check',

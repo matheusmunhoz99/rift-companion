@@ -146,6 +146,9 @@
         <!-- Campos da selva: um toque quando morre e o app conta até voltar. -->
         <app-jungle-timers />
       }
+      @if ((game.gameMode === 'KIWI' || game.gameMode === 'CHERRY') && myChampion(); as myChamp) {
+        <app-augment-cards-panel [champion]="myChamp" />
+      }
     </section>
 
     <!-- Timers: objetivos, inibidores e quem está morto. -->

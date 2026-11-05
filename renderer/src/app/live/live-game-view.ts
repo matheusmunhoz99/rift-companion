@@ -22,6 +22,7 @@ import { PARTY_COLORS, PARTY_NAMES, rememberParties } from '../match/parties';
 import { clientParties } from '../match/client-groups';
 import { rememberGroups, rememberedGroups } from '../match/group-memory';
 import { LiveDashboardPanel } from './live-dashboard';
+import { AugmentCardsPanel } from './augment-cards-panel';
 import { LiveDataService } from './live-data.service';
 import { ChampionDamageService } from '../stats/champion-damage.service';
 import { RiftUsersService } from '../core/rift-users.service';
@@ -137,7 +138,7 @@ interface EncounterSummary {
 
 @Component({
   selector: 'app-live-game-view',
-  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, RiftUserBadge, Icon, PlanPanel, LayoutMenu],
+  imports: [ChampionStatsPanel, MatchDetails, LiveDashboardPanel, AugmentCardsPanel, RiftUserBadge, Icon, PlanPanel, LayoutMenu],
   templateUrl: './live-game-view.html',
   styleUrl: './live-game-view.scss',
 })

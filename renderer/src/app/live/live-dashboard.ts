@@ -6,6 +6,7 @@ import { LiveDataService } from './live-data.service';
 import { JungleTimers } from './jungle-timers';
 import { AdaptiveBuild } from './adaptive-build';
 import { LiveReadPanel } from './live-read';
+import { AugmentCardsPanel } from './augment-cards-panel';
 
 const DRAGONS: Record<string, { name: string; color: string }> = {
   Fire: { name: 'Infernal', color: '#ff7a45' },
@@ -52,7 +53,7 @@ interface Matchup {
 
 @Component({
   selector: 'app-live-dashboard',
-  imports: [JungleTimers, AdaptiveBuild, LiveReadPanel],
+  imports: [JungleTimers, AdaptiveBuild, LiveReadPanel, AugmentCardsPanel],
   templateUrl: './live-dashboard.html',
   styleUrl: './live-dashboard.scss',
 })
@@ -68,6 +69,10 @@ export class LiveDashboardPanel {
   protected readonly valueDiff = computed(() => this.live.teamValue().ally - this.live.teamValue().enemy);
 
   protected readonly aram = computed(() => isAram(this.data()));
+  protected readonly myChampion = computed(() => {
+    const p = this.data()?.players.find((x) => x.isMe);
+    return p?.championKey || p?.championName || null;
+  });
 
   /** Placar de estruturas e monstros: no ARAM só existem torres e inibidores. */
   protected readonly scoreRows = computed(() => {

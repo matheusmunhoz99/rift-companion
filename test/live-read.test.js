@@ -101,3 +101,62 @@ test('selva pela tela: posições espelhadas por time, leitura do número e mold
   const rect = cropAround(box, ally(red, 'krugs'), w, w);
   assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= w && rect.y + rect.height <= w);
 });
+
+test('AutoJungle: emite timer imediato no 2m+ (Red/Blue) e ajusta para exato quando baixa de 2 min', async () => {
+  const { AutoJungle } = require('../dist-electron/vision/auto-jungle.js');
+  const { campPoints, cropAround, isMinutePlus } = require('../dist-electron/vision/camp-detector.js');
+  assert.equal(isMinutePlus('2m+'), true);
+  assert.equal(isMinutePlus('3m+'), true);
+  assert.equal(isMinutePlus('1:57'), false);
+
+  const w = 240;
+  function makeMapFrame(withGlyphOnKey = null) {
+    const px = Buffer.alloc(w * w * 4, 255);
+    for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) {
+      const inMap = x >= 20 && x < 220 && y >= 20 && y < 220;
+      const border = !inMap && x >= 12 && x < 228 && y >= 12 && y < 228;
+      const v = inMap ? 60 : border ? 0 : 40;
+      px.fill(v, (y * w + x) * 4, (y * w + x) * 4 + 3);
+    }
+    if (withGlyphOnKey) {
+      const pt = campPoints('ORDER').find((p) => p.key === withGlyphOnKey);
+      const rect = cropAround({ left: 20, top: 20, size: 200 }, pt, w, w);
+      for (let dy = 8; dy < 13; dy++) {
+        for (let dx = 6; dx < 16; dx++) {
+          const i = ((rect.y + dy) * w + (rect.x + dx)) * 4;
+          px[i] = 240; px[i + 1] = 240; px[i + 2] = 240;
+        }
+      }
+    }
+    return px;
+  }
+
+  let ocrReply = '2m+';
+  let nowMs = 100_000;
+  const emitted = [];
+  const jungle = new AutoJungle({
+    ocr: async (crops) => crops.map((c) => ({ id: c.id, text: ocrReply })),
+    emit: (key, backAt, exact) => emitted.push({ key, backAt, exact }),
+    respawnOf: (key) => (key.endsWith(':red') || key.endsWith(':blue') ? 300 : 135),
+    firstSpawnOf: () => 55,
+    now: () => nowMs,
+  });
+
+  // 4 quadros sem número (campo vivo/ausente)
+  for (let t = 96; t < 100; t++) {
+    nowMs = t * 1000;
+    await jungle.frame(makeMapFrame(null), w, w, t, 'ORDER');
+  }
+  // Quadro em t=100s: Red morre e o LoL mostra "2m+"
+  nowMs = 100_000;
+  await jungle.frame(makeMapFrame('ally:red'), w, w, 100, 'ORDER');
+  assert.equal(emitted.length, 1);
+  assert.deepEqual(emitted[0], { key: 'ally:red', backAt: 400, exact: false });
+
+  // Quadro em t=283s: o timer do LoL baixa para "1:57" (117s restantes) -> refina para exact=true
+  ocrReply = '1:57';
+  nowMs = 283_000;
+  await jungle.frame(makeMapFrame('ally:red'), w, w, 283, 'ORDER');
+  assert.equal(emitted.length, 2);
+  assert.deepEqual(emitted[1], { key: 'ally:red', backAt: 400, exact: true });
+});

@@ -2,10 +2,20 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.22';
+const RELEASE = '1.24';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'swords',
+    title: 'Dano AP, AD e verdadeiro real + itens situacionais precisos',
+    text: 'Todos os 173 campeões agora usam o dano real medido em 247 mil+ partidas Mestre+ (corrigindo campeões como Qiyana, Bel’Veth, Senna e Locke na seleção e na build). Os itens situacionais filtram botas repetidas, evoluções de Lágrima e priorizam apenas itens que realmente sobem contra o dano inimigo.',
+  },
+  {
+    icon: 'display',
+    title: 'Overlay e timers do minimapa em tela cheia',
+    text: 'O overlay e os timers do minimapa agora funcionam em tela cheia (100% da tela, sem precisar jogar em janela pequena), com contagem desde o 2m+ nos buffs Red e Blue e contagem do primeiro spawn no início da partida.',
+  },
   {
     icon: 'eye',
     title: 'Timers em cima do minimapa',

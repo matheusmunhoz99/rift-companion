@@ -99,7 +99,7 @@ export class Shell {
   protected readonly toast = inject(ToastService);
 
   private readonly live = inject(LiveDataService);
-  /** Avisos falados da partida e campos da selva no overlay (no celular, só a voz dos campos). */
+  /** Avisos falados da partida e dos campos da selva. */
   private readonly voice = inject(VoiceService);
   /** Modo partida: menu só com ícones, conteúdo largo e timers no topo (da seleção ao fim de jogo). */
   protected readonly match = inject(MatchModeService);

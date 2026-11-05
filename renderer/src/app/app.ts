@@ -1,19 +1,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { LiveDataService } from './live/live-data.service';
-import { OverlayView } from './overlay/overlay-view';
 import { Shell } from './shell/shell';
 import { MobileLink } from './mobile/mobile-link';
 import { isAndroid, phoneStatus, savedAccount } from './mobile/mobile-client';
 
-/** Raiz: a janela principal mostra o shell; a do overlay (#overlay) só a barra do jogo. */
+/** Raiz: a janela principal mostra o shell. */
 @Component({
   selector: 'app-root',
-  imports: [Shell, OverlayView, MobileLink],
+  imports: [Shell, MobileLink],
   template: `
     @if (android && status() !== 'online' && !browseOffline()) {
       <main class="phone-welcome"><app-mobile-link /></main>
-    } @else if (overlayMode) {
-      <app-overlay-view />
     } @else {
       @if (android && status() !== 'online') {
         <!-- PC desligado: perfil, histórico e estatísticas continuam (direto do servidor). -->
@@ -64,27 +61,19 @@ import { isAndroid, phoneStatus, savedAccount } from './mobile/mobile-client';
 export class App {
   protected readonly android = isAndroid;
   protected readonly status = phoneStatus;
-  protected readonly overlayMode = location.hash === '#overlay';
   /** Mostra a tela de conexão mesmo com a conta lembrada (botão "Conexão"). */
   protected readonly showLink = signal(false);
   /** PC desligado, mas o celular já conhece sua conta: abre o app em vez da tela de conexão. */
   protected readonly browseOffline = computed(() => this.status() === 'offline' && !!savedAccount() && !this.showLink());
 
   constructor() {
-    if (this.overlayMode) {
-      // O overlay é uma barra transparente sobre o jogo: sem splash.
-      document.body.classList.add('overlay-mode', 'boot-done');
-      // Remove de vez: a transição de opacidade não anda com a janela ainda escondida.
-      document.getElementById('boot')?.remove();
-    } else {
-      // Os dados ao vivo acumulam desde o início da partida, mesmo antes de abrir a aba.
-      if (!isAndroid) inject(LiveDataService);
-      // Tempo mínimo para a animação de abertura aparecer; depois do fade, remove o splash
-      // de vez (não depende só da transição de opacidade, que pausa com a aba em segundo plano).
-      setTimeout(() => {
-        document.body.classList.add('boot-done');
-        setTimeout(() => document.getElementById('boot')?.remove(), 600);
-      }, 850);
-    }
+    // Os dados ao vivo acumulam desde o início da partida, mesmo antes de abrir a aba.
+    if (!isAndroid) inject(LiveDataService);
+    // Tempo mínimo para a animação de abertura aparecer; depois do fade, remove o splash
+    // de vez (não depende só da transição de opacidade, que pausa com a aba em segundo plano).
+    setTimeout(() => {
+      document.body.classList.add('boot-done');
+      setTimeout(() => document.getElementById('boot')?.remove(), 600);
+    }, 850);
   }
 }

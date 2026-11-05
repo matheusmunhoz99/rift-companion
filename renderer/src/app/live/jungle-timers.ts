@@ -221,7 +221,7 @@ export class JungleTimers {
   }
 }
 
-/** Nomes de um campo marcado ("ally:blue"): curto para o overlay e por extenso para a voz. */
+/** Nomes de um campo marcado ("ally:blue"): curto e por extenso para a voz. */
 export function campNames(key: string): { short: string; spoken: string } | null {
   const [side, id] = key.split(':');
   if (side === 'river') {

@@ -1,10 +1,14 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { DataDragonService, type ChampionInfo } from '../data-dragon/data-dragon.service';
+import { ChampionDamageService, type DamageSplit } from '../stats/champion-damage.service';
 
 interface TeamSummary {
   known: number;
-  /** Fatia estimada de dano mágico (0 a 1) pelas notas do Data Dragon. */
+  /** Fatia de dano mágico entre mágico e físico (0 a 1), para avisos de armadura/RM. */
   magicShare: number;
+  ap: number;
+  ad: number;
+  true: number;
   frontline: number;
 }
 
@@ -13,12 +17,28 @@ function isFrontline(champion: ChampionInfo): boolean {
   return champion.tags.includes('Tank') || (champion.tags.includes('Fighter') && champion.defense >= 6);
 }
 
-function summarize(champions: ChampionInfo[]): TeamSummary {
-  const rated = champions.filter((c) => c.attack + c.magic > 0);
-  const magicShare = rated.length
-    ? rated.reduce((sum, c) => sum + c.magic / (c.attack + c.magic), 0) / rated.length
-    : 0.5;
-  return { known: champions.length, magicShare, frontline: champions.filter(isFrontline).length };
+function summarize(
+  champions: ChampionInfo[],
+  damageOf: (championId: number) => DamageSplit | null,
+): TeamSummary {
+  const splits = champions
+    .map((c) => damageOf(c.key))
+    .filter((s): s is DamageSplit => s !== null);
+  const avg = (key: 'ap' | 'ad' | 'true') =>
+    splits.length ? splits.reduce((sum, s) => sum + s[key], 0) / splits.length : key === 'true' ? 0 : 0.5;
+  const ap = avg('ap');
+  const ad = avg('ad');
+  const t = avg('true');
+  const mitigated = ap + ad;
+  const magicShare = mitigated > 0 ? ap / mitigated : 0.5;
+  return {
+    known: champions.length,
+    magicShare,
+    ap,
+    ad,
+    true: t,
+    frontline: champions.filter(isFrontline).length,
+  };
 }
 
 /** Equilíbrio de dano e linha de frente dos dois times, com avisos quando algo falta. */
@@ -31,13 +51,22 @@ function summarize(champions: ChampionInfo[]): TeamSummary {
           <span class="label">{{ row.label }}</span>
           <div class="bar" [attr.aria-label]="row.aria">
             <span class="ad" [style.width.%]="row.ad"></span>
-            <span class="ap" [style.width.%]="100 - row.ad"></span>
+            <span class="ap" [style.width.%]="row.ap"></span>
+            @if (row.true >= 5) {
+              <span class="true" [style.width.%]="row.true"></span>
+            }
           </div>
-          <span class="split num">{{ row.ad }}% / {{ 100 - row.ad }}%</span>
+          <span class="split num">{{ row.ad }}% / {{ row.ap }}%</span>
           <span class="front muted" [title]="'Tanques e lutadores resistentes'">{{ row.frontline }} na frente</span>
         </div>
       }
-      <div class="legend muted"><span class="dot ad"></span>físico <span class="dot ap"></span>mágico</div>
+      <div class="legend muted">
+        <span class="dot ad"></span>físico
+        <span class="dot ap"></span>mágico
+        @if (hasTrueDamage()) {
+          <span class="dot true"></span>verdadeiro
+        }
+      </div>
       @for (tip of tips(); track tip) {
         <p class="tip">{{ tip }}</p>
       }
@@ -72,7 +101,8 @@ function summarize(champions: ChampionInfo[]): TeamSummary {
       background: var(--well);
     }
     .ad,
-    .ap {
+    .ap,
+    .true {
       height: 100%;
       transition: width var(--dur) var(--ease-out);
     }
@@ -81,6 +111,9 @@ function summarize(champions: ChampionInfo[]): TeamSummary {
     }
     .ap {
       background: #8f7cf0;
+    }
+    .true {
+      background: #e2e8f0;
     }
     .split {
       text-align: right;
@@ -101,7 +134,8 @@ function summarize(champions: ChampionInfo[]): TeamSummary {
       &.ad {
         margin-left: 0;
       }
-      &.ap {
+      &.ap,
+      &.true {
         margin-left: 6px;
       }
     }
@@ -126,12 +160,17 @@ export class TeamCompPanel {
   readonly canPick = input(false);
 
   private readonly ddragon = inject(DataDragonService);
+  private readonly damage = inject(ChampionDamageService);
 
   private readonly champions = (ids: number[]) =>
     ids.map((id) => (id > 0 ? this.ddragon.champion(id) : null)).filter((c): c is ChampionInfo => c !== null);
 
-  protected readonly ally = computed(() => summarize(this.champions(this.allyChampionIds())));
-  protected readonly enemy = computed(() => summarize(this.champions(this.enemyChampionIds())));
+  protected readonly ally = computed(() =>
+    summarize(this.champions(this.allyChampionIds()), (id) => this.damage.of(id)),
+  );
+  protected readonly enemy = computed(() =>
+    summarize(this.champions(this.enemyChampionIds()), (id) => this.damage.of(id)),
+  );
 
   protected readonly rows = computed(() =>
     [
@@ -140,16 +179,23 @@ export class TeamCompPanel {
     ]
       .filter((row) => row.team.known > 0)
       .map((row) => {
-        const ad = Math.round((1 - row.team.magicShare) * 100);
+        const truePct = Math.round(row.team.true * 100);
+        const showTrue = truePct >= 5 ? truePct : 0;
+        const ad = Math.round(row.team.ad * 100);
+        const ap = Math.max(0, 100 - ad - showTrue);
         return {
           label: row.label,
           enemy: row.enemy,
           ad,
+          ap,
+          true: showTrue,
           frontline: row.team.frontline,
-          aria: `${row.label}: ${ad}% de dano físico`,
+          aria: `${row.label}: ${ad}% de dano físico e ${ap}% mágico`,
         };
       }),
   );
+
+  protected readonly hasTrueDamage = computed(() => this.rows().some((r) => r.true >= 5));
 
   protected readonly tips = computed(() => {
     const ally = this.ally();

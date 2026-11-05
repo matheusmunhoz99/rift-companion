@@ -32,7 +32,7 @@ export function invisibleSummary(prefs: Preferences): string {
   return { offline: 'offline', mobile: 'no celular', online: 'online' }[prefs.invisibleStatus];
 }
 
-/** Ícone na bandeja: o app continua rodando (aceite automático, overlay) com a janela fechada. */
+/** Ícone na bandeja: o app continua rodando (aceite automático, avisos) com a janela fechada. */
 export function createTray(iconPath: string, actions: TrayActions): AppTray {
   const tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 }));
 

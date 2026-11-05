@@ -12,7 +12,7 @@ const CAMP_WINDOW_S = 6;
 /**
  * Avisos falados durante a partida, com a voz do Windows em português: objetivos (o
  * processo principal decide quando, os mesmos avisos do chat) e os campos da selva que você
- * marcou ("Seu azul volta em 15 segundos"). Também manda os campos marcados para o overlay.
+ * marcou ("Seu azul volta em 15 segundos").
  */
 @Injectable({ providedIn: 'root' })
 export class VoiceService {
@@ -27,12 +27,6 @@ export class VoiceService {
     // Selva automática: o app leu no minimapa o timer de um campo que morreu.
     window.app?.onJungleAuto?.((camp) => {
       if (this.live.data() && camp?.key && typeof camp.backAt === 'number') this.live.setCamp(camp.key, camp.backAt);
-    });
-
-    // O overlay (outra janela) mostra a contagem dos campos marcados aqui.
-    effect(() => {
-      const camps = [...this.live.campTimers()].map(([key, backAt]) => ({ key, name: campNames(key)?.short ?? key, backAt }));
-      window.app?.setCampTimers?.(camps);
     });
 
     effect(() => {

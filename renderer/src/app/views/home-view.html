@@ -151,13 +151,6 @@
         [checked]="prefs.preferences().autoAccept"
         (toggled)="prefs.set({ autoAccept: $event })"
       />
-      <div class="divider"></div>
-      <app-switch
-        label="Overlay durante a partida"
-        description="Barra com KDA, CS, ouro e objetivos sobre o jogo (modo sem bordas)."
-        [checked]="prefs.preferences().overlayEnabled"
-        (toggled)="prefs.set({ overlayEnabled: $event })"
-      />
     </section>
 
     <section class="card">

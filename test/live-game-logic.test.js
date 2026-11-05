@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { loadTs } = require('./helpers/renderer');
 
 const { findEncounters } = loadTs('live/encounters');
-const { assignTeamPositions, guessLaneOpponent, guessOwnPosition, damageProfile, positionOrder } =
+const { assignTeamPositions, guessLaneOpponent, guessOwnPosition, damageProfile, baselineDamageOf, positionOrder } =
   loadTs('stats/match-context');
 const { estimateWinChance } = loadTs('live/win-chance');
 
@@ -121,6 +121,16 @@ test('damageProfile classifica time mágico, físico e misto', () => {
 
 test('damageProfile é null com menos de 2 campeões conhecidos', () => {
   assert.equal(damageProfile([champ(5, 5), null]), null);
+});
+
+test('damageProfile usa dano real Mestre+ (Qiyana, Senna e Bel\'Veth são AD, Locke e Azir são AP)', () => {
+  // No Data Dragon, Qiyana (246) tem attack=0 e magic=4 (pareceria 100% AP), Bel'Veth (200) tem 64% AP.
+  const qiyana = { key: 246, attack: 0, magic: 4 };
+  const belveth = { key: 200, attack: 4, magic: 7 };
+  const senna = { key: 235, attack: 7, magic: 6 };
+  assert.ok(baselineDamageOf(qiyana).ad >= 0.75, 'Qiyana causa dano físico real');
+  assert.ok(baselineDamageOf({ key: 805, attack: 6, magic: 2 }).ap >= 0.8, 'Locke causa dano mágico real');
+  assert.equal(damageProfile([qiyana, belveth, senna]).damage, 'ad', 'time AD não vira AP pelas notas do Data Dragon');
 });
 
 // ---- estimateWinChance ----

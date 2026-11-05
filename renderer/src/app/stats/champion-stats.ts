@@ -3,6 +3,7 @@ import type { ItemBuild, RunePageSuggestion } from '../builds/builds.types';
 import { ToastService, errorText } from '../core/toast.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
+import { ChampionDamageService } from './champion-damage.service';
 import {
   STATS_POSITIONS,
   parseRuneKey,
@@ -37,6 +38,7 @@ export class ChampionStatsPanel {
   readonly allyIds = input<number[]>([]);
 
   protected readonly ddragon = inject(DataDragonService);
+  private readonly damage = inject(ChampionDamageService);
   private readonly lcu = inject(LcuService);
   private readonly toast = inject(ToastService);
 
@@ -49,9 +51,11 @@ export class ChampionStatsPanel {
   /** Oponente de rota detectado pelos campeões inimigos (antes de qualquer escolha manual). */
   protected readonly detectedOpponentId = signal<number | null>(null);
 
-  /** Perfil de dano estimado do time inimigo. */
+  /** Perfil de dano medido do time inimigo (partidas Mestre+). */
   protected readonly enemyProfile = computed(() =>
-    damageProfile(this.enemyIds().map((id) => this.ddragon.champion(id))),
+    damageProfile(
+      this.enemyIds().map((id) => (id > 0 ? (this.damage.of(id) ?? this.ddragon.champion(id)) : null)),
+    ),
   );
   protected readonly matchMode = computed(() => this.enemyIds().some((id) => id > 0));
   protected readonly damageLabel = (damage: string) =>
@@ -114,8 +118,16 @@ export class ChampionStatsPanel {
   protected readonly situationalPicks = computed(() => {
     const s = this.stats();
     const core = new Set((s?.core?.[0]?.key ?? '').split(',').map(Number));
+    if (s?.boots?.[0]) core.add(Number(s.boots[0].key));
+    const dmg = s?.situational?.damage;
     return (s?.situational?.items ?? [])
-      .filter((i) => !core.has(i.itemId) && i.lift >= 1.1)
+      .filter(
+        (i) =>
+          !core.has(i.itemId) &&
+          i.lift >= 1.1 &&
+          !(dmg === 'ap' && i.itemId === 3047) &&
+          !(dmg === 'ad' && i.itemId === 3111),
+      )
       .slice(0, 6);
   });
 

@@ -49,6 +49,9 @@
   } @else if (tab() === 'build') {
     @if (me(); as mine) {
       <section class="match-build">
+        @if (live.queueId === 2400 || live.queueId === 1700 || liveData.data()?.gameMode === 'KIWI' || liveData.data()?.gameMode === 'CHERRY') {
+          <app-augment-cards-panel [champion]="mine.championId" />
+        }
         @if (mode(); as m) {
           @if (!m.riftStats) {
             <p class="mode-note">

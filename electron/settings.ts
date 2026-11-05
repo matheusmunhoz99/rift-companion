@@ -2,7 +2,6 @@ import { app } from 'electron';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-export type OverlayPosition = 'left' | 'center' | 'right';
 export type InvisibleStatus = 'online' | 'offline' | 'mobile';
 export type InvisibleStartupStatus = InvisibleStatus | 'last';
 
@@ -16,10 +15,6 @@ export interface Preferences {
   invisibleStartupStatus: InvisibleStartupStatus;
   /** Desligado, você também some das salas (lobby e seleção). */
   invisibleLobbyChat: boolean;
-  overlayEnabled: boolean;
-  overlayPosition: OverlayPosition;
-  /** Opacidade do overlay, de 0.4 a 1. */
-  overlayOpacity: number;
   /** Abre a tela certa sozinho (seleção, partida) conforme a fase do cliente. */
   autoNavigate: boolean;
   /** Modo partida: da seleção ao fim de jogo o app usa a tela toda (menu só com ícones, timers no topo). */
@@ -57,8 +52,6 @@ export interface Preferences {
   visionSamples: boolean;
   /** Marca os campos da selva sozinho, lendo os timers que o LoL desenha no minimapa. */
   autoJungle: boolean;
-  /** Timers da selva e dos objetivos desenhados em cima do minimapa (overlay transparente). */
-  minimapOverlay: boolean;
   /** Envia só a mensagem de erro e a versão ao servidor quando algo quebra (sem nick nem dados pessoais). */
   sendErrorReports: boolean;
   /**
@@ -79,13 +72,10 @@ const DEFAULT_PREFERENCES: Preferences = {
   invisibleStatus: 'offline',
   invisibleStartupStatus: 'last',
   invisibleLobbyChat: true,
-  overlayEnabled: true,
-  overlayPosition: 'center',
-  overlayOpacity: 0.9,
   autoNavigate: true,
   matchMode: true,
   matchModeWindow: true,
-  matchModeFullscreen: true,
+  matchModeFullscreen: false,
   focusOnChampSelect: true,
   autoRunes: false,
   minimizeToTray: true,
@@ -98,10 +88,9 @@ const DEFAULT_PREFERENCES: Preferences = {
   liveRead: true,
   liveReadVoice: true,
   jungleHotkeys: true,
-  screenVision: true,
+  screenVision: false,
   visionSamples: false,
-  autoJungle: true,
-  minimapOverlay: true,
+  autoJungle: false,
   sendErrorReports: true,
   detailedDiagnostics: false,
   telegramReadyCheck: true,
@@ -117,11 +106,6 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   invisibleStatus: isInvisibleStatus,
   invisibleStartupStatus: (value): value is InvisibleStartupStatus => value === 'last' || isInvisibleStatus(value),
   invisibleLobbyChat: isBoolean,
-  overlayEnabled: isBoolean,
-  overlayPosition: (value): value is OverlayPosition =>
-    value === 'left' || value === 'center' || value === 'right',
-  overlayOpacity: (value): value is number =>
-    typeof value === 'number' && value >= 0.4 && value <= 1,
   autoNavigate: isBoolean,
   matchMode: isBoolean,
   matchModeWindow: isBoolean,
@@ -141,7 +125,6 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   screenVision: isBoolean,
   visionSamples: isBoolean,
   autoJungle: isBoolean,
-  minimapOverlay: isBoolean,
   sendErrorReports: isBoolean,
   detailedDiagnostics: isBoolean,
   telegramReadyCheck: isBoolean,
@@ -186,13 +169,17 @@ export class Settings {
       const value = this.data[key];
       if (VALIDATORS[key](value)) (preferences as Record<string, unknown>)[key] = value;
     }
+    // Desativa captura contínua de 1s em tela cheia para eliminar qualquer travamento no jogo.
+    preferences.autoJungle = false;
+    preferences.visionSamples = false;
     return preferences;
   }
 
   /** Aceita só chaves conhecidas com valores no formato esperado. */
   updatePreferences(changes: Partial<Preferences>): Preferences {
+    const normalized: Partial<Preferences> = { ...changes };
     for (const key of Object.keys(DEFAULT_PREFERENCES) as Array<keyof Preferences>) {
-      const value = changes[key];
+      const value = normalized[key];
       if (VALIDATORS[key](value)) (this.data as Record<string, unknown>)[key] = value;
     }
     this.write();

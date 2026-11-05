@@ -71,7 +71,7 @@ export class ObjectiveAnnouncer {
     const lines: string[] = [];
     if (chat && !this.greeted) {
       this.greeted = true;
-      lines.push('Partida começou: aviso aqui 1 min 30 s e 30 s antes de cada objetivo nascer, e quando ele nasce. Dá para desligar em Configurações › Overlay.');
+      lines.push('Partida começou: aviso aqui 1 min 30 s e 30 s antes de cada objetivo nascer, e quando ele nasce. Dá para desligar em Configurações › Durante a partida.');
     }
     // Os avisos são marcados como enviados mesmo com uma das saídas desligada: ligar no meio
     // da partida não despeja de uma vez os que já passaram.
