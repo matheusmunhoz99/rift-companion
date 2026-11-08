@@ -3,6 +3,7 @@ import { PreferencesService } from '../core/preferences.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveDashboard, LiveRead, LiveReadRequest } from '../history/riot.types';
 import { LcuService } from '../lcu/lcu.service';
+import { aiAllowed } from '../riot/modes';
 import { ChampionDamageService } from '../stats/champion-damage.service';
 import { enemyDamageRead } from './adaptive-build';
 import { LiveDataService } from './live-data.service';
@@ -224,7 +225,14 @@ export class LiveReadPanel {
   private readonly damage = inject(ChampionDamageService);
   private readonly voice = inject(VoiceService);
 
-  protected readonly enabled = computed(() => this.prefs.preferences().liveRead && !!window.riot?.getLiveRead);
+  /** Só nas filas do Summoner's Rift (ranqueada, normal, Partida Rápida): em ARAM, Arena... não há IA. */
+  private readonly modeAllowed = computed(() => {
+    const data = this.live.data();
+    return !!data && aiAllowed(this.lcu.state().lobby?.queueId, data.mapNumber, data.gameMode);
+  });
+  protected readonly enabled = computed(
+    () => this.prefs.preferences().liveRead && !!window.riot?.getLiveRead && this.modeAllowed(),
+  );
   protected readonly shown = signal<{ read: LiveRead; at: number; trigger: LiveReadRequest['trigger']; minimap: boolean } | null>(null);
   protected readonly loading = signal(false);
   protected readonly failed = signal(false);

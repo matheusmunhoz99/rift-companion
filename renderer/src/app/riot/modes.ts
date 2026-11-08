@@ -53,6 +53,16 @@ const MODES: Record<number, ModeInfo> = {
 /** Filas sem rota no Abismo Uivante (para a partida pelos dados locais, antes do mapa chegar). */
 export const ARAM_QUEUES = new Set([450, 100, 720, 2400]);
 
+/**
+ * A IA (plano, leitura ao vivo, coach) só roda nas filas do Summoner's Rift: Ranqueada Solo/Duo e
+ * Flex, Normal, Partida Rápida e Clash. Espelha aiAllowed do servidor, que é quem decide.
+ */
+export function aiAllowed(queueId: number | null | undefined, mapId?: number | null, gameMode?: string | null): boolean {
+  const known = queueId ? MODES[queueId] : undefined;
+  if (known) return known.kind === 'rift';
+  return mapId === 11 && (gameMode ?? 'CLASSIC').toUpperCase() === 'CLASSIC';
+}
+
 export function modeOf(queueId: number | null | undefined, mapId?: number | null): ModeInfo {
   const known = queueId ? MODES[queueId] : undefined;
   if (known) return known;
