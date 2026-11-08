@@ -72,6 +72,8 @@ export interface LiveParticipant {
   subStyleId: number;
   ranked: RankedEntry[];
   mastery: { level: number; points: number } | null;
+  /** Nível da conta; ausente em servidor antigo. */
+  summonerLevel?: number | null;
 }
 
 export interface LiveGame {

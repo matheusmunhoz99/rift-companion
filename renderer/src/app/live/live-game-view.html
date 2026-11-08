@@ -307,7 +307,7 @@
 
                 <span class="pcard-tags">
                   @for (tag of cardTags(player).tags; track tag.label) {
-                    <span class="tag" [attr.data-tone]="tag.tone" [style.--tag]="tag.color ?? null">{{ tag.label }}</span>
+                    <span class="tag" [attr.data-tone]="tag.tone" [style.--tag]="tag.color ?? null" [attr.title]="tag.title ?? null">{{ tag.label }}</span>
                   }
                   @if (cardTags(player).more; as more) {
                     <span class="tag" data-tone="muted">+{{ more }}</span>

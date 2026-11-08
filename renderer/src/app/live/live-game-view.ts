@@ -27,11 +27,14 @@ import { LiveDataService } from './live-data.service';
 import { ChampionDamageService } from '../stats/champion-damage.service';
 import { RiftUsersService } from '../core/rift-users.service';
 import { RiftUserBadge } from '../ui/rift-user-badge';
+import { smurfHint } from './smurf';
 
 interface CardTag {
   label: string;
   tone: 'party' | 'accent' | 'good' | 'warn' | 'bad' | 'muted';
   color?: string;
+  /** Explicação ao passar o mouse. */
+  title?: string;
 }
 
 /** Nome curto do grupo no selo do card. */
@@ -773,6 +776,9 @@ export class LiveGameView {
     if (!player.puuid) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
     // O grupo (duo, trio...) tem selo próprio no topo do card: não entra nas etiquetas.
     const profile = this.profileOf(player);
+    // Conta de nível baixo com elo alto: vem primeiro, é o que mais muda a leitura do jogador.
+    const smurf = smurfHint(player.summonerLevel, player.ranked);
+    if (smurf) tags.push({ label: 'Provável smurf', tone: 'bad', title: smurf });
     // O cliente do LoL sabe com certeza quem caiu fora da rota; o histórico só estima.
     // "Autofill" e "Main <rota>" só em fila com função (no ARAM, URF, Arena... não existem).
     const roles = this.mode()?.roles ?? true;
