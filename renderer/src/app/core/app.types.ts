@@ -100,6 +100,11 @@ export interface AppBridge {
   launchLeague(): Promise<
     'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
   >;
+  /** O LoL está aberto sem o modo invisível (aberto pelo atalho da Riot). Só no PC. */
+  invisibleMissing?(): Promise<boolean>;
+  onInvisibleMissing?(callback: (missing: boolean) => void): () => void;
+  /** Fecha o LoL e o Riot Client e abre de novo já invisível (sai da sala, se houver). Só no PC. */
+  restartInvisible?(): Promise<'restarted' | 'waiting' | 'declined' | 'not-needed'>;
   onAutoAccepted(callback: (timestamp: number) => void): () => void;
   onPreferencesChanged(callback: (preferences: Preferences) => void): () => void;
   onAutoRunesApplied(callback: (result: { championId: number; pageName: string }) => void): () => void;

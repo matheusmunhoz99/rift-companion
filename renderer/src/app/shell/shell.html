@@ -100,6 +100,20 @@
       }
     </header>
 
+    @if (prefs.invisibleMissing() && !invisibleBannerHidden()) {
+      <div class="update-banner invisible-banner">
+        <app-icon name="eye" [size]="16" />
+        <span class="update-text">
+          <strong>Você não está invisível</strong>
+          <span class="muted">O LoL foi aberto pelo atalho da Riot. Para ficar invisível, reinicie por aqui (se estiver numa sala, sai dela).</span>
+        </span>
+        <button type="button" class="btn small" [disabled]="prefs.invisibleRestarting()" (click)="prefs.restartInvisible()">
+          {{ prefs.invisibleRestarting() ? 'Reiniciando…' : 'Reiniciar invisível' }}
+        </button>
+        <button type="button" class="banner-close" title="Esconder até abrir o LoL de novo" aria-label="Esconder aviso" (click)="invisibleBannerHidden.set(true)">×</button>
+      </div>
+    }
+
     @switch (prefs.update().state) {
       @case ('available') {
         <div class="update-banner">

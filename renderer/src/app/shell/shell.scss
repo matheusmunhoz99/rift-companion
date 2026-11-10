@@ -333,6 +333,28 @@ $gutter: max(clamp(14px, 2.2vw, 36px), calc((100% - 1760px) / 2));
   }
 }
 
+.invisible-banner .btn {
+  white-space: nowrap;
+}
+
+.banner-close {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+  }
+}
+
 .update-text {
   display: grid;
   min-width: 0;

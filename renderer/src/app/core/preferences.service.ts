@@ -44,10 +44,15 @@ export class PreferencesService {
   readonly lastAutoAccept = signal<string | null>(null);
   readonly gameWindowMode = signal<GameWindowMode>('unknown');
   readonly update = signal<UpdateStatus>({ state: 'idle' });
+  /** LoL aberto sem o modo invisível: a janela mostra uma faixa discreta (nunca um pop-up). */
+  readonly invisibleMissing = signal(false);
+  readonly invisibleRestarting = signal(false);
 
   constructor() {
     const bridge = window.app;
     if (!bridge) return;
+    void bridge.invisibleMissing?.().then((missing) => this.invisibleMissing.set(missing === true));
+    bridge.onInvisibleMissing?.((missing) => this.invisibleMissing.set(missing === true));
     void bridge.getPreferences().then((preferences) => this.preferences.set(preferences));
     void bridge.info().then((info) => this.info.set(info));
     void this.refreshGameWindowMode();
@@ -76,6 +81,21 @@ export class PreferencesService {
       console.error('prefs.set falhou:', error);
       this.preferences.set(previous);
       this.toast.show(errorText(error), 'error');
+    }
+  }
+
+  /** Botão da faixa: reinicia o LoL já invisível, quando o jogador quiser. */
+  async restartInvisible(): Promise<void> {
+    if (!window.app?.restartInvisible || this.invisibleRestarting()) return;
+    this.invisibleRestarting.set(true);
+    try {
+      const result = await window.app.restartInvisible();
+      if (result === 'waiting') this.toast.show('Você está numa fila ou partida. Tente de novo quando acabar.', 'error');
+      else if (result === 'restarted') this.toast.show('Reabrindo o LoL invisível…', 'success');
+    } catch (error) {
+      this.toast.show(errorText(error), 'error');
+    } finally {
+      this.invisibleRestarting.set(false);
     }
   }
 

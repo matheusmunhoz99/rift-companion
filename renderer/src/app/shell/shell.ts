@@ -110,6 +110,11 @@ export class Shell {
   protected readonly phoneTabs = PHONE_TABS;
   protected readonly phoneMore = PHONE_MORE;
   protected readonly moreOpen = signal(false);
+  /** Faixa "Você não está invisível" escondida no X: volta só quando o LoL abrir de novo sem o modo. */
+  protected readonly invisibleBannerHidden = signal(false);
+  private readonly resetInvisibleBanner = effect(() => {
+    if (!this.prefs.invisibleMissing()) untracked(() => this.invisibleBannerHidden.set(false));
+  });
   protected readonly title = computed(() => VIEW_TITLES[this.nav.view()]);
 
   /** Aba "Mais" ativa quando a tela atual é uma das consultas ou as configurações. */
