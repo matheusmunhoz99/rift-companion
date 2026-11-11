@@ -299,11 +299,21 @@
                   </span>
                 </span>
 
-                @if (mainRank(player.ranked); as rank) {
-                  <span class="pcard-rank"><span class="tier-gem"></span>{{ tierName(rank) }}<span class="pdl">{{ rank.leaguePoints }} PDL</span></span>
-                } @else {
-                  <span class="pcard-rank unranked">{{ waitingRiot() ? 'Carregando elo…' : 'Sem elo' }}</span>
-                }
+                <!-- Os dois elos: Solo/Duo e Flex, cada um com a sua cor. -->
+                <span class="pcard-ranks">
+                  @for (q of rankQueues; track q.type) {
+                    @if (queueRank(player, q.type); as rank) {
+                      <span class="pcard-rank" [attr.data-tier]="rank.tier"
+                        [title]="q.label + ': ' + tierName(rank) + ' · ' + rank.leaguePoints + ' PDL · ' + rank.wins + 'V ' + rank.losses + 'D'">
+                        <span class="queue">{{ q.short }}</span><span class="tier-gem"></span>{{ tierName(rank) }}<span class="pdl">{{ rank.leaguePoints }} PDL</span>
+                      </span>
+                    } @else {
+                      <span class="pcard-rank unranked">
+                        <span class="queue">{{ q.short }}</span>{{ waitingRiot() ? 'Carregando…' : 'Sem elo' }}
+                      </span>
+                    }
+                  }
+                </span>
 
                 <span class="pcard-tags">
                   @for (tag of cardTags(player).tags; track tag.label) {

@@ -755,6 +755,16 @@ export class LiveGameView {
     return this.isApex(rank.tier) ? tierLabelOf(rank.tier) : `${tierLabelOf(rank.tier)} ${rank.rank}`;
   }
 
+  /** As duas filas ranqueadas mostradas no card, cada uma com o seu elo. */
+  protected readonly rankQueues = [
+    { type: 'RANKED_SOLO_5x5', short: 'Solo', label: 'Solo/Duo' },
+    { type: 'RANKED_FLEX_SR', short: 'Flex', label: 'Flex' },
+  ] as const;
+
+  protected queueRank(player: LiveParticipant, queueType: string): RankedEntry | null {
+    return player.ranked.find((entry) => entry.queueType === queueType) ?? null;
+  }
+
   /** Partidas ranqueadas na fila do elo principal. */
   protected rankGames(player: LiveParticipant): number {
     const rank = mainRank(player.ranked);

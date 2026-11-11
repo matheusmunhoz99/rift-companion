@@ -863,6 +863,35 @@ button {
 }
 
 // Elo em destaque, na cor dele.
+.pcard-ranks {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  max-width: 100%;
+  margin-top: 2px;
+
+  .pcard-rank {
+    margin-top: 0;
+  }
+
+  // A segunda fila (Flex) fica um pouco menor: o Solo/Duo continua sendo o destaque.
+  .pcard-rank + .pcard-rank {
+    font-size: 12.5px;
+  }
+}
+
+.pcard-rank .queue {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .pcard-rank {
   display: inline-flex;
   align-items: center;
