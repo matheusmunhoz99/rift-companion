@@ -2,10 +2,15 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.24';
+const RELEASE = '1.26.9';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'progress',
+    title: 'Ranking dos amigos',
+    text: 'Em Progresso, um ranking com todos os seus amigos do LoL: elo da temporada, pico e quanto cada um subiu desde a temporada passada, ou o PDL ganho na semana com vitórias, derrotas e sequências. Solo/Duo e Flex separados. O botão "Copiar imagem" gera o ranking pronto para mandar no grupo.',
+  },
   {
     icon: 'swords',
     title: 'Dano AP, AD e verdadeiro real + itens situacionais precisos',
