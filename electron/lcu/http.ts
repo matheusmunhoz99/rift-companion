@@ -24,6 +24,7 @@ export function lcuRequest<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
   body?: unknown,
+  timeoutMs = 5_000,
 ): Promise<T> {
   const payload = body === undefined ? undefined : JSON.stringify(body);
 
@@ -35,7 +36,7 @@ export function lcuRequest<T>(
         path: endpoint,
         method,
         agent: localAgent,
-        timeout: 5_000,
+        timeout: timeoutMs,
         headers: {
           Authorization: authHeader(credentials),
           Accept: 'application/json',

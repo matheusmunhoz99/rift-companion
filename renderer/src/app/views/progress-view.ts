@@ -4,6 +4,7 @@ import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { tierName } from '../riot/labels';
 import { currentRank, forQueue, ladderChart, ladderLabel, summarize, todayEntries } from '../progress/rank-stats';
 import { Icon } from '../ui/icon';
+import { FriendsRankingPanel } from '../progress/friends-ranking';
 import { MyMatchesService } from '../history/my-matches.service';
 import { partiesOf } from '../match/parties';
 import { partnerStats, type WinRecord } from '../progress/partners';
@@ -20,7 +21,7 @@ interface SparkPoint {
 
 @Component({
   selector: 'app-progress-view',
-  imports: [Icon],
+  imports: [Icon, FriendsRankingPanel],
   templateUrl: './progress-view.html',
   styleUrl: './progress-view.scss',
 })

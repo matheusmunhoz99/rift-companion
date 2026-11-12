@@ -4,6 +4,49 @@ export type InvisibleStatus = 'online' | 'offline' | 'mobile';
 export type InvisibleStartupStatus = InvisibleStatus | 'last';
 export type RankedQueue = 'solo' | 'flex';
 
+/** Espelha electron/lcu/friends-ranking.ts. O cliente não informa derrotas de outros jogadores. */
+export interface FriendQueueRank {
+  tier: string;
+  division: string;
+  lp: number;
+  ladder: number;
+  wins: number;
+  peakTier: string;
+  peakDivision: string;
+  previousTier: string;
+  previousDivision: string;
+}
+
+export interface FriendRecent {
+  weekWins: number;
+  weekLosses: number;
+  /** Positivo = vitórias seguidas, negativo = derrotas seguidas. */
+  streak: number;
+  lastPlayed: number | null;
+}
+
+export interface FriendRankRow {
+  puuid: string;
+  gameName: string;
+  tagLine: string;
+  icon: number;
+  availability: string;
+  gameStatus: string;
+  isMe: boolean;
+  ranks: Record<RankedQueue, FriendQueueRank | null>;
+  /** null enquanto o histórico deste amigo ainda não foi lido. */
+  recent: Record<RankedQueue, FriendRecent> | null;
+  weekLp: Record<RankedQueue, number | null>;
+}
+
+export interface FriendsRanking {
+  rows: FriendRankRow[];
+  weekStart: number;
+  baseTakenAt: number;
+  fetchedAt: number;
+  historyPending: boolean;
+}
+
 /** Espelha electron/lcu/rank-tracker.ts. */
 export interface RankEntry {
   at: number;
@@ -97,6 +140,9 @@ export interface AppBridge {
   /** Histórico de PDL das partidas ranqueadas (registrado localmente). */
   rankHistory(): Promise<RankEntry[]>;
   onRankUpdated(callback: () => void): () => void;
+  /** Ranking dos amigos, lido do cliente do LoL. Ausente no celular. */
+  friendsRanking?(force?: boolean): Promise<FriendsRanking>;
+  onFriendsUpdated?(callback: () => void): () => void;
   launchLeague(): Promise<
     'riot-client' | 'already-open' | 'started' | 'restart-required' | 'restarted' | 'waiting' | 'declined' | null
   >;

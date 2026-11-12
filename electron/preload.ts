@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld('app', {
   diagEvent: (kind: string, fields?: unknown) => ipcRenderer.invoke('diag:event', kind, fields),
   rankHistory: () => ipcRenderer.invoke('rank:history'),
   onRankUpdated: (callback: () => void) => subscribe('rank:updated', callback),
+  friendsRanking: (force?: boolean) => ipcRenderer.invoke('friends:ranking', force === true),
+  onFriendsUpdated: (callback: () => void) => subscribe('friends:updated', callback),
   onAutoAccepted: (callback: (timestamp: number) => void) =>
     subscribe('auto-accept:accepted', callback),
   onPreferencesChanged: (callback: (preferences: unknown) => void) =>

@@ -1,0 +1,152 @@
+@if (available) {
+  <section class="ranking">
+    <div class="head">
+      <div class="title">
+        <h3>Ranking dos amigos</h3>
+        <span class="muted">
+          @if (period() === 'season') {
+            Temporada atual · elo de cada amigo
+          } @else {
+            Semana desde segunda · PDL ganho
+          }
+        </span>
+      </div>
+      <div class="controls">
+        <div class="seg" role="tablist" aria-label="Fila">
+          <button type="button" role="tab" [class.active]="queue() === 'solo'" [attr.aria-selected]="queue() === 'solo'" (click)="setQueue('solo')">Solo/Duo</button>
+          <button type="button" role="tab" [class.active]="queue() === 'flex'" [attr.aria-selected]="queue() === 'flex'" (click)="setQueue('flex')">Flex</button>
+        </div>
+        <div class="seg" role="tablist" aria-label="Período">
+          <button type="button" role="tab" [class.active]="period() === 'season'" [attr.aria-selected]="period() === 'season'" (click)="setPeriod('season')">Temporada</button>
+          <button type="button" role="tab" [class.active]="period() === 'week'" [attr.aria-selected]="period() === 'week'" (click)="setPeriod('week')">Semana</button>
+        </div>
+        <button type="button" class="icon-btn" title="Atualizar" aria-label="Atualizar" [disabled]="loading()" (click)="load(true)">
+          <app-icon name="refresh" [class.spin]="loading()" />
+        </button>
+        @if (canShare && sorted().length) {
+          <button type="button" class="share" [disabled]="sharing()" (click)="share()">
+            {{ sharing() ? 'Copiando…' : 'Copiar imagem' }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (error(); as message) {
+      <p class="empty">{{ message }}</p>
+    } @else if (!data()) {
+      <p class="empty">Lendo o elo dos seus amigos no cliente do LoL…</p>
+    } @else if (!sorted().length) {
+      <p class="empty">Nenhum amigo com elo na {{ queue() === 'solo' ? 'Solo/Duo' : 'Flex' }} nesta temporada.</p>
+    } @else {
+      <div class="board" #board>
+        <div class="board-brand">
+          <strong>Ranking dos amigos</strong>
+          <span>{{ queue() === 'solo' ? 'Solo/Duo' : 'Flex' }} · {{ period() === 'season' ? 'Temporada' : 'Semana' }}</span>
+        </div>
+
+        @if (highlights().length) {
+          <div class="highlights">
+            @for (h of highlights(); track h.label) {
+              <div class="highlight" [attr.data-tone]="h.tone">
+                <span class="hl-label"><app-icon [name]="h.icon" />{{ h.label }}</span>
+                <strong>{{ h.text }}</strong>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="table" [class.week]="period() === 'week'">
+          <div class="row header">
+            <span>#</span>
+            <span>Jogador</span>
+            <span>Elo</span>
+            @if (period() === 'season') {
+              <span>Pico</span>
+              <span>vs temporada passada</span>
+              <span class="num">Vitórias</span>
+            } @else {
+              <span class="num">PDL</span>
+              <span class="num">V-D</span>
+              <span>Sequência</span>
+            }
+          </div>
+          @for (row of visible(); track row.puuid; let i = $index) {
+            <div class="row" [class.me]="row.isMe">
+              <span class="place" [class.top]="sorted().indexOf(row) < 3">{{ sorted().indexOf(row) + 1 }}</span>
+              <span class="player">
+                @if (iconUrl(row); as url) {
+                  <img [src]="url" alt="" />
+                } @else {
+                  <span class="avatar"></span>
+                }
+                <span class="name" [title]="row.gameName + '#' + row.tagLine">{{ row.isMe ? row.gameName + ' (você)' : row.gameName }}</span>
+                @if (status(row); as s) {
+                  <span class="pill" [attr.data-tone]="s.tone">{{ s.label }}</span>
+                }
+              </span>
+              <span class="elo" [attr.data-tier]="rank(row).tier">
+                <span class="gem"></span>{{ rankLabel(rank(row).tier, rank(row).division) }}
+                <small>{{ rank(row).lp }} PDL</small>
+              </span>
+              @if (period() === 'season') {
+                <span class="muted">{{ peakLabel(rank(row)) }}</span>
+                <span
+                  class="gain"
+                  [class.up]="(seasonGain(rank(row)) ?? 0) > 0"
+                  [class.down]="(seasonGain(rank(row)) ?? 0) < 0"
+                  [title]="gainTitle(rank(row))"
+                >{{ gainLabel(rank(row)) }}</span>
+                <span class="num">{{ rank(row).wins }}</span>
+              } @else {
+                <span
+                  class="num lp"
+                  [class.up]="(row.weekLp[queue()] ?? 0) > 0"
+                  [class.down]="(row.weekLp[queue()] ?? 0) < 0"
+                >{{ weekLpLabel(row) }}</span>
+                <span class="num muted">
+                  @if (!row.recent) {
+                    …
+                  } @else if (weekGames(row)) {
+                    {{ recent(row).weekWins }}-{{ recent(row).weekLosses }}
+                  } @else {
+                    não jogou
+                  }
+                </span>
+                <span class="streak" [class.up]="recent(row).streak > 0" [class.down]="recent(row).streak < 0">{{ streakLabel(row) }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (myPlace(); as p) {
+          <p class="me-line">{{ p.text }}</p>
+        }
+        <span class="board-mark">Rift Companion</span>
+      </div>
+
+      <div class="foot">
+        @if (hiddenCount() > 0) {
+          <button type="button" class="link" (click)="expanded.set(true)">Ver todos ({{ sorted().length }})</button>
+        } @else if (expanded()) {
+          <button type="button" class="link" (click)="expanded.set(false)">Mostrar menos</button>
+        }
+        @if (unranked()) {
+          <span class="muted">{{ unranked() }} {{ unranked() === 1 ? 'amigo' : 'amigos' }} sem elo nesta fila</span>
+        }
+      </div>
+      @if (data()?.historyPending) {
+        <p class="note">Lendo as partidas recentes dos amigos, um por vez, para não pesar no cliente do LoL…</p>
+      }
+      @if (period() === 'season') {
+        <p class="note">O cliente do LoL mostra as vitórias dos seus amigos, mas não as derrotas. Por isso não aparece a taxa de vitórias.</p>
+      } @else {
+        <p class="note">
+          Vitórias, derrotas e sequência contam as últimas 20 partidas de cada amigo.
+          @if (weekNote(); as note) {
+            {{ note }}
+          }
+        </p>
+      }
+    }
+  </section>
+}

@@ -36,6 +36,7 @@ import {
 } from './lcu/riot-client';
 import { PostGameService } from './lcu/postgame';
 import { RankTracker } from './lcu/rank-tracker';
+import { FriendsRankingService } from './lcu/friends-ranking';
 
 const rendererUrl = process.env.RENDERER_URL;
 const RENDERER_INDEX = path.join(__dirname, '..', 'renderer', 'dist', 'renderer', 'browser', 'index.html');
@@ -600,6 +601,14 @@ void acquireInstance().then((acquired) => {
       if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
       const puuid = connector.getState().summoner?.puuid;
       return puuid ? rankTracker.history(puuid) : [];
+    });
+    // Ranking dos amigos: elo e partidas de cada amigo, lidos do cliente (sem API da Riot).
+    const friendsRanking = new FriendsRankingService(connector, path.join(app.getPath('userData'), 'friends-rank'));
+    friendsRanking.on('updated', () => mainWindow?.webContents.send('friends:updated'));
+    ipcMain.handle('friends:ranking', (_event, force: unknown) => {
+      const demo = devOnly('RIFT_DEMO_FRIENDS');
+      if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+      return friendsRanking.get(force === true);
     });
     applyStartWithWindows(prefs.getPreferences().startWithWindows);
     // Última sessão de seleção (sem o token do chat), para entender modos novos da Riot.
