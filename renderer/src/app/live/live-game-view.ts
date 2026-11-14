@@ -216,7 +216,21 @@ export class LiveGameView {
    * Rotas informadas pelo jogo (chave "id:<riot id>") ou pela seleção (chave
    * "<time>:<campeão>"). Nunca só pelo campeão: a Partida Rápida repete campeões entre os times.
    */
-  private readonly knownPositions = signal<Map<string, string>>(new Map());
+  private readonly rememberedPositions = signal<Map<string, string>>(new Map());
+
+  /**
+   * Rotas conhecidas: as lidas no início (jogo + seleção) e as que o jogo informa a cada
+   * segundo na aba Ao vivo. No carregamento o jogo às vezes ainda não sabe as rotas e a
+   * tela adivinhava pelo campeão (ex.: Zed e Sylas trocados); assim que o jogo informa,
+   * a rota real substitui a estimativa.
+   */
+  private readonly knownPositions = computed(() => {
+    const known = new Map(this.rememberedPositions());
+    for (const player of this.liveData.data()?.players ?? []) {
+      if (player.riotId && player.position) known.set(`id:${player.riotId.toLowerCase()}`, player.position);
+    }
+    return known;
+  });
 
   /** Rota de cada jogador em Summoner's Rift (vazio em outros mapas). */
   protected readonly positions = computed(() => {
@@ -1041,7 +1055,7 @@ export class LiveGameView {
       if (player.riotId && player.position)
         known.set(`id:${player.riotId.toLowerCase()}`, player.position);
     }
-    if (known.size) this.knownPositions.set(known);
+    if (known.size) this.rememberedPositions.set(known);
   }
 
   private setRecent(puuid: string, value: RecentSummary | 'loading' | 'error'): void {
@@ -1072,7 +1086,7 @@ export class LiveGameView {
     this.plan.set(null);
     this.planLoading.set(false);
     this.planFor = 0;
-    this.knownPositions.set(new Map());
+    this.rememberedPositions.set(new Map());
     this.failures = 0;
   }
 
