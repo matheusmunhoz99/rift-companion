@@ -120,7 +120,12 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
   });
 
   // Tela de carregamento: plano de jogo (IA + opções de build Mestre+). Falha -> null.
-  ipcMain.handle('riot:get-plan', (_event, request: unknown) => apiPost('/v1/plan', request).catch(() => null));
+  ipcMain.handle('riot:get-plan', (_event, request: unknown) => {
+    // Só no desenvolvimento: plano gravado para revisar o visual sem gastar a IA.
+    const demo = app.isPackaged ? undefined : process.env.RIFT_DEMO_PLAN;
+    if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
+    return apiPost('/v1/plan', request).catch(() => null);
+  });
   // Partida em andamento: leitura por IA (situação + opções para você escolher). Falha -> null.
   ipcMain.handle('riot:get-live-read', (_event, request: unknown) => apiPost('/v1/live-read', request).catch(() => null));
 

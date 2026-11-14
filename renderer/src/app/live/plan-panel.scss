@@ -129,6 +129,61 @@
   }
 }
 
+.plan-teams {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.plan-team {
+  --side: var(--ally);
+  padding: 8px 10px;
+  border-left: 3px solid var(--side);
+  border-radius: 0 9px 9px 0;
+  background: color-mix(in srgb, var(--side) 8%, var(--surface-2));
+
+  &.enemy {
+    --side: var(--enemy);
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}
+
+.plan-team-label {
+  display: block;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.plan-start {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--warning) 9%, var(--surface-2));
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+
+  .plan-team-label {
+    margin-bottom: 2px;
+    color: var(--warning);
+  }
+}
+
 .plan-points {
   display: grid;
   gap: 6px;

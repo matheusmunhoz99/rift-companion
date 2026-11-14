@@ -23,6 +23,21 @@
         <div class="plan-main">
           @if (plan()?.plan; as p) {
             <p class="plan-summary">{{ p.resumo }}</p>
+            @if (p.times; as t) {
+              <div class="plan-teams">
+                <div class="plan-team ally">
+                  <span class="plan-team-label">Seu time</span>
+                  <p>{{ t.aliado }}</p>
+                </div>
+                <div class="plan-team enemy">
+                  <span class="plan-team-label">Time inimigo</span>
+                  <p>{{ t.inimigo }}</p>
+                </div>
+              </div>
+            }
+            @if (p.inicio; as start) {
+              <p class="plan-start"><span class="plan-team-label">Começo da partida</span>{{ start }}</p>
+            }
             <ul class="plan-points">
               @for (point of p.pontos; track $index) {
                 <li [attr.data-kind]="point.tipo">

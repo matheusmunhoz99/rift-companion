@@ -203,7 +203,15 @@ export interface PlanRequest {
 }
 
 export interface PlanResponse {
-  plan: { resumo: string; pontos: Array<{ tipo: 'oportunidade' | 'cuidado' | 'dica'; texto: string }>; build: string | null } | null;
+  plan: {
+    resumo: string;
+    pontos: Array<{ tipo: 'oportunidade' | 'cuidado' | 'dica'; texto: string }>;
+    build: string | null;
+    /** Como cada time tende a vencer (servidor novo; ausente nos antigos). */
+    times?: { aliado: string; inimigo: string } | null;
+    /** Primeira compra e primeiros minutos, no modo da partida. */
+    inicio?: string | null;
+  } | null;
   build: {
     position: string;
     games: number;
