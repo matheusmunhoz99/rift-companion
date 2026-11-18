@@ -193,6 +193,8 @@ export class LiveGameView {
   private failures = 0;
   /** Tentativas esperando a Riot liberar a partida (com os dados locais na tela). */
   private waitingAttempts = 0;
+  /** O servidor do app não respondeu (fora do ar, sem internet): não é a Riot atrasando. */
+  protected readonly serverIssue = signal(false);
 
   protected readonly me = computed(() => {
     const game = this.game();
@@ -650,6 +652,7 @@ export class LiveGameView {
       this.waitingRiot.set(false);
       this.waitingAttempts = 0;
       this.failures = 0;
+      this.serverIssue.set(false);
       // A Riot API não informa rotas; o jogo local às vezes sim.
       void window.riot.getLocalGame().then(
         (local) => local && this.rememberPositions(local),
@@ -674,6 +677,7 @@ export class LiveGameView {
     const inGame = ['InProgress', 'Reconnect'].includes(this.lcu.state().gameflowPhase ?? '');
     // No começo da partida a Riot ainda não liberou os dados: é normal, não é falha.
     const notYet = inGame && /não está em partida/i.test(errorText(error));
+    this.serverIssue.set(inGame && !notYet);
     diag(notYet ? 'aguardando-riot' : 'falha', {
       detail: { onde: 'partida-ao-vivo', erro: errorText(error), tentativas: this.waitingAttempts, fase: this.lcu.state().gameflowPhase },
     });
@@ -797,7 +801,8 @@ export class LiveGameView {
   protected cardTags(player: LiveParticipant): { tags: CardTag[]; more: number } {
     const tags: CardTag[] = [];
     // Jogador escondido pelo modo streamer: a Riot não devolve identidade. Honesto, sem chutar.
-    if (!player.puuid) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
+    // Sem puuid nos dados locais do jogo é normal (a Riot ainda não liberou): não é modo streamer.
+    if (!player.puuid && !this.waitingRiot()) return { tags: [{ label: 'Oculto (modo streamer)', tone: 'muted' }], more: 0 };
     // O grupo (duo, trio...) tem selo próprio no topo do card: não entra nas etiquetas.
     const profile = this.profileOf(player);
     // Conta de nível baixo com elo alto: vem primeiro, é o que mais muda a leitura do jogador.

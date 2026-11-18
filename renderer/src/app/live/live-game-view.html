@@ -68,8 +68,13 @@
   @if (waitingRiot()) {
     <p class="waiting">
       <span class="pulse"></span>
-      Times carregados direto do jogo. Elo, maestria e chance de vitória chegam quando a Riot liberar a partida,
-      cerca de 2 a 3 minutos após o início. Atualiza sozinho.
+      @if (serverIssue()) {
+        O servidor do Rift Companion não respondeu agora: mostrando só o que vem do jogo (campeões, rotas, duo).
+        Elo, maestria e histórico voltam sozinhos quando ele responder.
+      } @else {
+        Times carregados direto do jogo. Elo, maestria e chance de vitória chegam quando a Riot liberar a partida,
+        cerca de 2 a 3 minutos após o início. Atualiza sozinho.
+      }
     </p>
   }
 
@@ -309,7 +314,7 @@
                       </span>
                     } @else {
                       <span class="pcard-rank unranked">
-                        <span class="queue">{{ q.short }}</span>{{ waitingRiot() ? 'Carregando…' : 'Sem elo' }}
+                        <span class="queue">{{ q.short }}</span>{{ waitingRiot() ? (serverIssue() ? '—' : 'Carregando…') : 'Sem elo' }}
                       </span>
                     }
                   }

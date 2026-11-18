@@ -38,6 +38,18 @@ export function fitsSomeDisplay(state: Rectangle, workAreas: Rectangle[]): boole
 }
 
 /**
+ * Encaixa a janela na área útil do monitor (sem a barra de tarefas): encolhe se for maior
+ * e empurra para dentro se passar de alguma borda. Nunca menor que o mínimo da janela.
+ */
+export function clampToArea(bounds: Rectangle, area: Rectangle, min = { width: 760, height: 560 }): Rectangle {
+  const width = Math.max(Math.min(bounds.width, area.width), Math.min(min.width, area.width));
+  const height = Math.max(Math.min(bounds.height, area.height), Math.min(min.height, area.height));
+  const x = Math.min(Math.max(bounds.x, area.x), area.x + area.width - width);
+  const y = Math.min(Math.max(bounds.y, area.y), area.y + area.height - height);
+  return { x, y, width, height };
+}
+
+/**
  * Guarda onde a janela está sempre que você move, redimensiona ou maximiza, para abrir no
  * mesmo monitor e lugar da próxima vez. Ignora o que o app faz sozinho (modo partida
  * aumentando a janela ou em tela cheia) e a janela minimizada.

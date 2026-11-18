@@ -45,6 +45,8 @@ export interface FriendsRanking {
   baseTakenAt: number;
   fetchedAt: number;
   historyPending: boolean;
+  /** Ranking salvo na tela enquanto a versão nova é lida em segundo plano. */
+  refreshing?: boolean;
 }
 
 /** Espelha electron/lcu/rank-tracker.ts. */

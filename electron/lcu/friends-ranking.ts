@@ -54,6 +54,8 @@ export interface FriendsRanking {
   fetchedAt: number;
   /** Ainda lendo o histórico de partidas dos amigos (em segundo plano, um por vez). */
   historyPending: boolean;
+  /** Mostrando o ranking salvo enquanto o elo dos amigos é lido de novo em segundo plano. */
+  refreshing?: boolean;
 }
 
 interface WeekBase {
@@ -105,7 +107,8 @@ const HISTORY_GAMES = 20;
 const HISTORY_TIMEOUT_MS = 25_000;
 /** Remake: partidas mais curtas que isso não contam. */
 const REMAKE_SECONDS = 300;
-const CACHE_MS = 3 * 60_000;
+/** O ranking salvo vale por 15 min; depois disso é atualizado em segundo plano (a tela mostra o salvo). */
+const CACHE_MS = 15 * 60_000;
 /** Elo: pedidos leves, alguns em paralelo. */
 const PARALLEL = 4;
 /** Histórico de cada amigo vale por 20 min; depois disso é lido de novo (um por vez). */
@@ -174,6 +177,7 @@ export function recentOf(games: RawGame[], queue: RankedQueue, weekStart: number
  */
 export class FriendsRankingService extends EventEmitter<{ updated: [] }> {
   private cache: FriendsRanking | null = null;
+  private cacheOwner: string | null = null;
   private pending: Promise<FriendsRanking> | null = null;
   private histories = new Map<string, StoredHistory>();
   private historiesOwner: string | null = null;
@@ -187,13 +191,70 @@ export class FriendsRankingService extends EventEmitter<{ updated: [] }> {
     super();
   }
 
-  get(force = false): Promise<FriendsRanking> {
-    if (!force && this.cache && Date.now() - this.cache.fetchedAt < CACHE_MS) {
-      void this.readHistories();
-      return Promise.resolve(this.cache);
+  /**
+   * Ranking na hora: o salvo (memória ou disco) aparece imediatamente e, se estiver velho,
+   * é atualizado em segundo plano (avisa com 'updated'). `force` espera a leitura nova.
+   */
+  async get(force = false): Promise<FriendsRanking> {
+    const owner = this.connector.getState().summoner?.puuid;
+    // Trocou de conta no LoL: o ranking é de outra lista de amigos.
+    if (owner && this.cacheOwner !== owner) {
+      this.cache = null;
+      this.cacheOwner = owner;
     }
-    this.pending ??= this.build().finally(() => (this.pending = null));
+    if (!this.cache && owner) this.cache = await this.loadRanking(owner);
+    if (!force && this.cache) {
+      const stale = Date.now() - this.cache.fetchedAt > CACHE_MS || this.cache.weekStart !== weekStartOf(Date.now());
+      if (stale) this.refreshInBackground();
+      else void this.readHistories();
+      return { ...this.cache, refreshing: !!this.pending };
+    }
+    return this.refresh();
+  }
+
+  /** Lê o ranking ao conectar no LoL, para a tela já abrir pronta. */
+  prefetch(): void {
+    void this.get(false).catch(() => undefined);
+  }
+
+  private refresh(): Promise<FriendsRanking> {
+    this.pending ??= this.build()
+      .then(async (result) => {
+        await this.saveRanking();
+        this.emit('updated');
+        return result;
+      })
+      .finally(() => (this.pending = null));
     return this.pending;
+  }
+
+  private refreshInBackground(): void {
+    if (!this.pending) void this.refresh().catch(() => undefined);
+  }
+
+  private rankingFile(owner: string): string {
+    return path.join(this.directory, `${owner.replace(/[^A-Za-z0-9_-]/g, '')}-ranking.json`);
+  }
+
+  private async loadRanking(owner: string): Promise<FriendsRanking | null> {
+    try {
+      const raw = JSON.parse(await readFile(this.rankingFile(owner), 'utf8')) as FriendsRanking;
+      await this.loadHistories(owner);
+      return Array.isArray(raw?.rows) ? { ...raw, historyPending: false, refreshing: false } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async saveRanking(): Promise<void> {
+    const owner = this.connector.getState().summoner?.puuid;
+    if (!owner || !this.cache) return;
+    try {
+      await mkdir(this.directory, { recursive: true });
+      await writeFile(this.rankingFile(owner), JSON.stringify({ ...this.cache, historyPending: false, refreshing: false }));
+    } catch {
+      // Sem disco: fica só na memória.
+    }
   }
 
   private async build(): Promise<FriendsRanking> {
@@ -307,6 +368,7 @@ export class FriendsRankingService extends EventEmitter<{ updated: [] }> {
       this.applyHistories();
       this.emit('updated');
       await this.saveHistories();
+      await this.saveRanking();
     }
   }
 

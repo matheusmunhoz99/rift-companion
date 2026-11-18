@@ -55,3 +55,14 @@ test('posição num monitor que não existe mais não vale (abre no lugar padrã
   assert.equal(fitsSomeDisplay(onSecond, [PRIMARY]), false, 'segundo monitor desconectado');
   assert.equal(fitsSomeDisplay({ x: 1900, y: 40, width: 1320, height: 780 }, [PRIMARY]), false, 'barra de cima fora da tela');
 });
+
+test('janela encaixa na área útil (acima da barra de tarefas)', () => {
+  const { clampToArea } = require('../dist-electron/window-state');
+  const area = { x: 0, y: 0, width: 1920, height: 1032 };
+  // Passava por baixo da barra de tarefas: sobe.
+  assert.deepEqual(clampToArea({ x: 100, y: 300, width: 1320, height: 840 }, area), { x: 100, y: 192, width: 1320, height: 840 });
+  // Maior que a tela: encolhe para a área útil.
+  assert.deepEqual(clampToArea({ x: -50, y: -10, width: 2500, height: 1200 }, area), { x: 0, y: 0, width: 1920, height: 1032 });
+  // Segundo monitor à direita.
+  assert.deepEqual(clampToArea({ x: 3700, y: 50, width: 400, height: 300 }, { x: 1920, y: 0, width: 1920, height: 1040 }), { x: 3080, y: 50, width: 760, height: 560 });
+});

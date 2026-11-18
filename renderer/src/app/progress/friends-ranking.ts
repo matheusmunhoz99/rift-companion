@@ -198,6 +198,14 @@ export class FriendsRankingPanel {
     }
   }
 
+  protected updatedLabel(at: number): string {
+    const minutes = Math.round((Date.now() - at) / 60_000);
+    if (minutes < 1) return 'atualizado agora';
+    if (minutes < 60) return `atualizado há ${minutes} min`;
+    const hours = Math.round(minutes / 60);
+    return hours < 24 ? `atualizado há ${hours} h` : 'atualizado há mais de um dia';
+  }
+
   protected setQueue(queue: RankedQueue): void {
     this.queue.set(queue);
     this.expanded.set(false);

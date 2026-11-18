@@ -9,6 +9,11 @@
           } @else {
             Semana desde segunda · PDL ganho
           }
+          @if (data()?.refreshing || loading()) {
+            · atualizando…
+          } @else if (data(); as d) {
+            · {{ updatedLabel(d.fetchedAt) }}
+          }
         </span>
       </div>
       <div class="controls">

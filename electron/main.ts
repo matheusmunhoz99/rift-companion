@@ -22,7 +22,7 @@ import { RIFT_API_URL, apiPost, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
 import { MatchWindow } from './match-window';
-import { WindowStateKeeper, fitsSomeDisplay, loadWindowState } from './window-state';
+import { WindowStateKeeper, clampToArea, fitsSomeDisplay, loadWindowState } from './window-state';
 import { Settings, type Preferences } from './settings';
 import { createTray, invisibleSummary, type AppTray } from './tray';
 import { isStoreInstall, removeOldVersions, repointShortcuts, Updater } from './updater';
@@ -137,7 +137,11 @@ function createWindow(): void {
   // Abre no monitor e no lugar em que estava da última vez (se esse monitor ainda existir).
   const stateFile = path.join(app.getPath('userData'), 'window-state.json');
   const saved = capturing || devOnly('RIFT_SIZE') ? null : loadWindowState(stateFile);
-  const place = saved && fitsSomeDisplay(saved, screen.getAllDisplays().map((d) => d.workArea)) ? saved : null;
+  const found = saved && fitsSomeDisplay(saved, screen.getAllDisplays().map((d) => d.workArea)) ? saved : null;
+  // A janela salva cabe na área útil do monitor (acima da barra de tarefas), sem passar das bordas.
+  const place = found ? { ...clampToArea(found, screen.getDisplayMatching(found).workArea), maximized: found.maximized } : null;
+  // Primeira vez (ou monitor que não existe mais): ocupa a área útil inteira, encostada na barra.
+  const firstOpen = !place && !capturing && !devOnly('RIFT_SIZE');
   mainWindow = new BrowserWindow({
     ...(place ? { x: place.x, y: place.y, width: place.width, height: place.height } : { width, height }),
     minWidth: 760,
@@ -157,7 +161,21 @@ function createWindow(): void {
       backgroundThrottling: !capturing,
     },
   });
-  if (place?.maximized) mainWindow.maximize();
+  if (place?.maximized || firstOpen) mainWindow.maximize();
+  // Barra de tarefas mudou de tamanho/lugar ou a resolução mudou: a janela acompanha.
+  const refit = () => {
+    const win = mainWindow;
+    if (!win || win.isDestroyed() || win.isMaximized() || win.isFullScreen() || win.isMinimized() || matchManaging()) return;
+    const bounds = win.getBounds();
+    const fitted = clampToArea(bounds, screen.getDisplayMatching(bounds).workArea);
+    if (fitted.x !== bounds.x || fitted.y !== bounds.y || fitted.width !== bounds.width || fitted.height !== bounds.height) win.setBounds(fitted);
+  };
+  screen.on('display-metrics-changed', refit);
+  screen.on('display-removed', refit);
+  mainWindow.on('closed', () => {
+    screen.removeListener('display-metrics-changed', refit);
+    screen.removeListener('display-removed', refit);
+  });
   if (!capturing) new WindowStateKeeper(stateFile, () => matchManaging()).attach(mainWindow);
 
   // Links externos abrem no navegador do sistema, nunca dentro do app.
@@ -605,6 +623,14 @@ void acquireInstance().then((acquired) => {
     // Ranking dos amigos: elo e partidas de cada amigo, lidos do cliente (sem API da Riot).
     const friendsRanking = new FriendsRankingService(connector, path.join(app.getPath('userData'), 'friends-rank'));
     friendsRanking.on('updated', () => mainWindow?.webContents.send('friends:updated'));
+    // Ao conectar no LoL, lê o ranking em segundo plano (depois do resto do app carregar).
+    let prefetchedFor: string | null = null;
+    connector.on('state', (state) => {
+      const puuid = state.status === 'connected' ? state.summoner?.puuid : null;
+      if (!puuid || puuid === prefetchedFor) return;
+      prefetchedFor = puuid;
+      setTimeout(() => friendsRanking.prefetch(), 30_000);
+    });
     ipcMain.handle('friends:ranking', (_event, force: unknown) => {
       const demo = devOnly('RIFT_DEMO_FRIENDS');
       if (demo) return JSON.parse(readFileSync(demo, 'utf8'));
