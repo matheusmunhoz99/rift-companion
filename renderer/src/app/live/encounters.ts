@@ -1,4 +1,22 @@
-import type { LiveParticipant, MatchParticipant, MatchSummary } from '../history/riot.types';
+import type { LiveParticipant } from '../history/riot.types';
+
+/** O mínimo de uma partida para cruzar encontros (serve tanto para MatchSummary quanto para o acervo local). */
+export interface EncounterMatch {
+  matchId: string;
+  queueId: number;
+  gameEndTimestamp: number;
+  participants: EncounterParticipant[];
+}
+export interface EncounterParticipant {
+  puuid: string;
+  riotId: string;
+  championId: number;
+  teamId: number;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+}
 
 /** Uma partida recente em que você e outro jogador da partida atual estavam juntos. */
 export interface Encounter {
@@ -31,7 +49,7 @@ export function findEncounters(
   myRiotId: string,
   myTeamId: number,
   participants: LiveParticipant[],
-  myMatches: MatchSummary[],
+  myMatches: EncounterMatch[],
 ): PlayerEncounters[] {
   const result: PlayerEncounters[] = [];
 
@@ -66,6 +84,6 @@ export function findEncounters(
   return result.sort((a, b) => b.encounters.length - a.encounters.length);
 }
 
-function stats(p: MatchParticipant) {
+function stats(p: EncounterParticipant) {
   return { championId: p.championId, kills: p.kills, deaths: p.deaths, assists: p.assists };
 }

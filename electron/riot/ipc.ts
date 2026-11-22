@@ -2,6 +2,7 @@ import { diagEvent, diagHeaders, diagPath } from '../diagnostics';
 import { app } from 'electron';
 import { ipcMain } from '../mobile/rpc';
 import { readFileSync } from 'node:fs';
+import nodePath from 'node:path';
 import type { LcuConnector } from '../lcu/connector';
 import { lcuRequest } from '../lcu/http';
 import { lanePosition } from '../overlay/lanes';
@@ -12,6 +13,7 @@ import type { Settings } from '../settings';
 import { PLATFORMS } from './routing';
 import { clientPartyQuery, readClientTeams, type ClientTeams } from './client-teams';
 import { LocalHistory, mergePage, toSummary as toLocalSummary, type MatchSummary } from './local-history';
+import { EncountersStore } from './encounters-store';
 
 /** Servidor que guarda a chave da Riot (server/). Pode ser trocado em desenvolvimento. */
 export const RIFT_API_URL = process.env.RIFT_API_URL ?? 'https://rift-api.workscanner.com.br';
@@ -161,6 +163,8 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
   // A API da Riot não entrega alguns modos (ex.: ARAM: Desordem, fila 2400). Para o
   // jogador logado, completa com o histórico do próprio cliente do LoL.
   const localHistory = new LocalHistory();
+  // Guarda localmente as SUAS partidas (dedup) para o "com quem já joguei" crescer além de 20, sem API extra.
+  const encounters = new EncountersStore(nodePath.join(app.getPath('userData'), 'encounters.json'));
   const myApiPuuid = new Map<string, string>();
   const apiPuuidOfMe = async (platformId: string): Promise<string | null> => {
     const me = connector.getState().summoner;
@@ -196,12 +200,18 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
         const local = (await Promise.all(games.map((g) => localHistory.game(credentials, g.gameId))))
           .map((g) => (g ? toLocalSummary(g, me.puuid, puuid) : null))
           .filter((m): m is MatchSummary => m !== null);
-        return mergePage(page, local, upper, page.length >= count);
+        const merged = mergePage(page, local, upper, page.length >= count);
+        encounters.remember(merged);
+        return merged;
       } catch {
+        encounters.remember(page);
         return page;
       }
     },
   );
+
+  // Todas as suas partidas guardadas (enxutas), para cruzar o "com quem já joguei" com muito mais que 20.
+  ipcMain.handle('riot:remembered-matches', () => encounters.list());
 
   // Série por minuto (ouro/XP/CS/nível dos 10) para os gráficos do fim de jogo. Só Riot API (sem IA).
   // A timeline da Riot sai alguns segundos depois da partida: enquanto não há, o servidor dá 404

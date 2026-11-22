@@ -11,7 +11,7 @@ import { LcuService } from '../lcu/lcu.service';
 import { TIER_NAMES, mainRank, queueName, rankText, tierName as tierLabelOf, winRate } from '../riot/labels';
 import { ARAM_QUEUES, modeOf } from '../riot/modes';
 import type { RankedEntry } from '../history/riot.types';
-import { findEncounters, type PlayerEncounters } from './encounters';
+import { findEncounters, type EncounterMatch, type PlayerEncounters } from './encounters';
 import type { PlayerTag } from './live-dashboard';
 import { estimateWinChance } from './win-chance';
 import { ChampionStatsPanel } from '../stats/champion-stats';
@@ -872,8 +872,13 @@ export class LiveGameView {
       const matches = await window.riot.getMatches(myPuuid, platformId, 0, ENCOUNTER_GAMES);
       this.myMatches.set(matches);
       this.myPuuid.set(myPuuid);
+      // Acervo local (sem API extra): une com as recentes, dedup por matchId, para cruzar com muito
+      // mais do que as últimas 20. Cresce sozinho a cada partida e cada vez que você abre o histórico.
+      const remembered = (await window.riot.getRememberedMatches?.().catch(() => [])) ?? [];
+      const byId = new Map<string, EncounterMatch>();
+      for (const m of [...remembered, ...matches]) byId.set(m.matchId, m);
       this.encounters.set(
-        findEncounters(myPuuid, me.riotId, me.teamId, game.participants, matches),
+        findEncounters(myPuuid, me.riotId, me.teamId, game.participants, [...byId.values()]),
       );
     } catch {
       this.encounters.set(null);

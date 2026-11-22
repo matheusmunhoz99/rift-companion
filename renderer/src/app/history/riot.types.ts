@@ -392,6 +392,23 @@ export interface PostGame {
   players: PostGamePlayer[];
 }
 
+// Espelha electron/riot/encounters-store.ts (StoredMatch). Acervo local das suas partidas.
+export interface RememberedMatch {
+  matchId: string;
+  queueId: number;
+  gameEndTimestamp: number;
+  participants: Array<{
+    puuid: string;
+    riotId: string;
+    championId: number;
+    teamId: number;
+    win: boolean;
+    kills: number;
+    deaths: number;
+    assists: number;
+  }>;
+}
+
 // Espelha server/src/riot/matches.ts (TimelineSeries). Série por minuto para os gráficos do fim de jogo.
 export interface MatchTimelinePoint {
   minute: number;
@@ -470,6 +487,8 @@ export interface RiotBridge {
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;
   getMatches(puuid: string, platformId: string, start: number, count: number): Promise<MatchSummary[]>;
+  /** Suas partidas guardadas localmente (enxutas), para o "com quem já joguei" crescer além das últimas 20. Ausente em app antigo. */
+  getRememberedMatches?(): Promise<RememberedMatch[]>;
   /** Série por minuto (ouro/XP/CS/nível dos 10) para os gráficos do fim de jogo; null enquanto a Riot não publica. Ausente em app antigo. */
   getMatchTimeline?(platformId: string, matchId: string): Promise<MatchTimelineSeries | null>;
   /** Fim de jogo: timeline do early + narração por IA (ou null se indisponível). */

@@ -98,6 +98,7 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
   getMatchTimeline: (platformId: string, matchId: string) =>
     ipcRenderer.invoke('riot:get-match-timeline', platformId, matchId),
+  getRememberedMatches: () => ipcRenderer.invoke('riot:remembered-matches'),
   getCoach: (request: unknown) => ipcRenderer.invoke('riot:get-coach', request),
   getPlan: (request: unknown) => ipcRenderer.invoke('riot:get-plan', request),
   getLiveRead: (request: unknown) => ipcRenderer.invoke('riot:get-live-read', request),
