@@ -1357,3 +1357,282 @@ h3 {
     color: var(--danger);
   }
 }
+
+/* ---- Gráficos (sem IA): timeline, dano por tipo, você vs oponente ---- */
+.charts-panel {
+  display: grid;
+  gap: 18px;
+
+  .charts-sub {
+    color: var(--muted);
+    font-size: 13px;
+  }
+}
+
+.chart-metric {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  width: fit-content;
+
+  button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+
+    &.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+  }
+}
+
+.line-chart {
+  margin: 0;
+
+  svg {
+    width: 100%;
+    height: 200px;
+    display: block;
+    overflow: visible;
+  }
+
+  .axis {
+    stroke: var(--border-strong);
+    stroke-width: 1;
+  }
+  .grid {
+    stroke: var(--border);
+    stroke-width: 0.5;
+    opacity: 0.5;
+  }
+  .tick {
+    fill: var(--faint);
+    font-size: 8px;
+  }
+  .line-me {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .line-opp {
+    fill: none;
+    stroke: var(--danger);
+    stroke-width: 2.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.85;
+    stroke-dasharray: 5 4;
+  }
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+
+  i {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    margin-right: 6px;
+    border-radius: 2px;
+    vertical-align: middle;
+  }
+  .k-me i {
+    background: var(--accent);
+  }
+  .k-opp i {
+    background: var(--danger);
+  }
+  .axis-note {
+    margin-left: auto;
+    color: var(--faint);
+  }
+}
+
+.chart-diffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .diff {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    &.up {
+      border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+      background: color-mix(in srgb, var(--success) 12%, transparent);
+      color: var(--success);
+    }
+    &.down {
+      border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+      background: color-mix(in srgb, var(--danger) 12%, transparent);
+      color: var(--danger);
+    }
+  }
+}
+
+.charts-wait {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Dano por tipo */
+.dmg-types {
+  display: grid;
+  gap: 8px;
+
+  .dmg-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+
+    h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+    span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+  }
+
+  .dmg-bar {
+    display: flex;
+    height: 16px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--surface-3);
+
+    .seg {
+      height: 100%;
+    }
+    .seg-physical {
+      background: #e0894a;
+    }
+    .seg-magic {
+      background: #4aa8e0;
+    }
+    .seg-true {
+      background: #cfd6e4;
+    }
+  }
+
+  .dmg-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 12px;
+    color: var(--muted);
+
+    i {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 6px;
+      border-radius: 2px;
+      vertical-align: middle;
+    }
+    .dot-physical {
+      background: #e0894a;
+    }
+    .dot-magic {
+      background: #4aa8e0;
+    }
+    .dot-true {
+      background: #cfd6e4;
+    }
+  }
+}
+
+/* Você vs oponente de rota */
+.versus {
+  display: grid;
+  gap: 10px;
+
+  h4 {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .vs-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vs-label {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .vs-track {
+    position: relative;
+    height: 22px;
+    border-radius: var(--radius-xs);
+    background: var(--surface-3);
+    overflow: hidden;
+
+    b {
+      position: absolute;
+      top: 0;
+      line-height: 22px;
+      padding: 0 8px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    &.me {
+      direction: rtl;
+      b {
+        right: auto;
+        left: 8px;
+        direction: ltr;
+      }
+    }
+    &.opp b {
+      right: 8px;
+    }
+
+    .vs-fill {
+      display: block;
+      height: 100%;
+      border-radius: var(--radius-xs);
+      opacity: 0.4;
+    }
+  }
+
+  .vs-track.me .vs-fill {
+    background: var(--accent);
+    &.lead {
+      opacity: 0.85;
+    }
+  }
+  .vs-track.opp .vs-fill {
+    background: var(--danger);
+    &.lead {
+      opacity: 0.85;
+    }
+  }
+}

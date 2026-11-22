@@ -202,6 +202,13 @@ export function registerRiotHandlers(settings: Settings, connector: LcuConnector
       }
     },
   );
+
+  // Série por minuto (ouro/XP/CS/nível dos 10) para os gráficos do fim de jogo. Só Riot API (sem IA).
+  // A timeline da Riot sai alguns segundos depois da partida: enquanto não há, o servidor dá 404
+  // e isto devolve null para a tela tentar de novo.
+  ipcMain.handle('riot:get-match-timeline', (_event, platformId: string, matchId: string) =>
+    apiGet<unknown>(`/v1/matches/${enc(platformId)}/${enc(matchId)}/timeline`).catch(() => null),
+  );
 }
 
 async function apiGet<T>(path: string, notFoundMessage?: string): Promise<T> {

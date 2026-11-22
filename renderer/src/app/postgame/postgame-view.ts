@@ -1,7 +1,7 @@
 import { diag, errorText } from '../core/diag';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
-import type { CoachTimeline, PostGame, PostGamePlayer } from '../history/riot.types';
+import type { CoachTimeline, MatchTimelineParticipant, MatchTimelinePoint, PostGame, PostGamePlayer } from '../history/riot.types';
 import { NavigationService } from '../core/navigation.service';
 import { LcuService } from '../lcu/lcu.service';
 import { queueName } from '../riot/labels';
@@ -108,6 +108,7 @@ export class PostGameView {
    */
   protected readonly layout = new ScreenLayout('rift.layout.postgame.v1', [
     { id: 'placar', label: 'Placar', description: 'Os dois times: KDA, itens, dano e Duo/Trio' },
+    { id: 'graficos', label: 'Gráficos', description: 'Ouro, XP e CS por minuto vs seu oponente de rota, e seu dano por tipo' },
     { id: 'desempenho', label: 'Ranking e gráficos', description: 'Nota de 1 a 10, estatísticas e destaques' },
     { id: 'coach', label: 'Seu coach', description: 'A partida contra a sua média, com a IA' },
   ]);
@@ -134,6 +135,129 @@ export class PostGameView {
   protected readonly coachLoading = signal(false);
   private analyzedGame = 0;
 
+  // --- Gráficos (sem IA): série por minuto da timeline da Riot, você vs oponente de rota ---
+  /** Minha série e a do oponente de rota (espelho na timeline); null enquanto a Riot não publica. */
+  protected readonly timeline = signal<{ me: MatchTimelineParticipant; opp: MatchTimelineParticipant; oppPlayer: PostGamePlayer | null } | null>(null);
+  protected readonly chartMetric = signal<'gold' | 'xp' | 'cs'>('gold');
+  protected readonly chartMetrics: Array<{ key: 'gold' | 'xp' | 'cs'; label: string }> = [
+    { key: 'gold', label: 'Ouro' },
+    { key: 'xp', label: 'XP' },
+    { key: 'cs', label: 'CS' },
+  ];
+  private timelineTries = 0;
+
+  /** Busca a timeline e casa a minha série (por PUUID) com a do oponente de rota (participante espelho). */
+  private async loadTimeline(platformId: string, matchId: string, myPuuid: string, gameId: number): Promise<void> {
+    if (!window.riot?.getMatchTimeline) return;
+    const series = await window.riot.getMatchTimeline(platformId, matchId).catch(() => null);
+    if (gameId !== this.analyzedGame) return; // mudou de partida enquanto buscava
+    if (!series) {
+      // A timeline sai alguns segundos depois da partida: tenta de novo algumas vezes.
+      if (this.timelineTries++ < 6) setTimeout(() => void this.loadTimeline(platformId, matchId, myPuuid, gameId), 15_000);
+      return;
+    }
+    const me = series.participants.find((p) => p.puuid === myPuuid);
+    if (!me) return;
+    // Oponente de rota = participante espelho (1↔6, 2↔7, …): times são 1–5 e 6–10 na match-v5.
+    const oppId = me.participantId <= 5 ? me.participantId + 5 : me.participantId - 5;
+    const opp = series.participants.find((p) => p.participantId === oppId);
+    if (!opp) return;
+    const oppPlayer = this.game()?.players.find((p) => p.puuid === opp.puuid) ?? null;
+    this.timeline.set({ me, opp, oppPlayer });
+  }
+
+  // Área de desenho dos gráficos de linha (viewBox fixo; o SVG escala sozinho).
+  private readonly VB = { w: 320, h: 140, pad: 10, top: 12, bottom: 20 };
+
+  /** Dados prontos do gráfico de linha para a métrica escolhida (duas linhas: você e oponente). */
+  protected readonly lineChart = computed(() => {
+    const t = this.timeline();
+    if (!t) return null;
+    const metric = this.chartMetric();
+    const val = (p: MatchTimelinePoint) => p[metric];
+    const all = [...t.me.points, ...t.opp.points];
+    const maxMin = Math.max(1, ...all.map((p) => p.minute));
+    const maxVal = Math.max(1, ...all.map(val));
+    return {
+      me: this.polyline(t.me.points, val, maxVal, maxMin),
+      opp: this.polyline(t.opp.points, val, maxVal, maxMin),
+      maxMin,
+      maxVal,
+      ticks: this.minuteTicks(maxMin),
+      meLast: t.me.points.length ? val(t.me.points[t.me.points.length - 1]) : 0,
+      oppLast: t.opp.points.length ? val(t.opp.points[t.opp.points.length - 1]) : 0,
+    };
+  });
+
+  /** Vantagem (você − oponente) na métrica atual aos N minutos; null se não houver o quadro. */
+  protected diffAt(minute: number): number | null {
+    const t = this.timeline();
+    if (!t) return null;
+    const metric = this.chartMetric();
+    const at = (p: MatchTimelineParticipant) => p.points.find((x) => x.minute === minute);
+    const a = at(t.me);
+    const b = at(t.opp);
+    return a && b ? a[metric] - b[metric] : null;
+  }
+
+  private polyline(points: MatchTimelinePoint[], val: (p: MatchTimelinePoint) => number, maxVal: number, maxMin: number): string {
+    const { w, h, pad, top, bottom } = this.VB;
+    return points
+      .map((p) => {
+        const x = pad + (p.minute / maxMin) * (w - pad * 2);
+        const y = h - bottom - (val(p) / maxVal) * (h - top - bottom);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
+
+  /** Marcas de minuto no eixo X (a cada 5 min). */
+  private minuteTicks(maxMin: number): Array<{ x: number; label: string }> {
+    const { w, pad } = this.VB;
+    const ticks: Array<{ x: number; label: string }> = [];
+    for (let m = 0; m <= maxMin; m += 5) {
+      ticks.push({ x: pad + (m / maxMin) * (w - pad * 2), label: String(m) });
+    }
+    return ticks;
+  }
+
+  /** Seu dano a campeões por tipo (físico/mágico/verdadeiro); null se o cliente não trouxe o detalhe. */
+  protected readonly damageTypes = computed(() => {
+    const m = this.me();
+    if (!m) return null;
+    const parts = [
+      { key: 'physical', label: 'Físico', value: m.physicalToChampions },
+      { key: 'magic', label: 'Mágico', value: m.magicToChampions },
+      { key: 'true', label: 'Verdadeiro', value: m.trueToChampions },
+    ];
+    const total = parts.reduce((s, p) => s + p.value, 0);
+    if (total <= 0) return null;
+    return { total, parts: parts.map((p) => ({ ...p, pct: (p.value / total) * 100 })) };
+  });
+
+  /** Comparação direta você × oponente de rota ao fim da partida (números da timeline + dano do placar). */
+  protected readonly versusOpponent = computed(() => {
+    const t = this.timeline();
+    const me = this.me();
+    if (!t || !me) return null;
+    const meLast = t.me.points[t.me.points.length - 1];
+    const oppLast = t.opp.points[t.opp.points.length - 1];
+    if (!meLast || !oppLast) return null;
+    const rows: Array<{ label: string; me: number; opp: number }> = [
+      { label: 'Ouro', me: meLast.gold, opp: oppLast.gold },
+      { label: 'CS', me: meLast.cs, opp: oppLast.cs },
+      { label: 'Nível', me: meLast.level, opp: oppLast.level },
+    ];
+    if (t.oppPlayer) {
+      rows.push({ label: 'Dano a campeões', me: me.damageToChampions, opp: t.oppPlayer.damageToChampions });
+      rows.push({ label: 'Visão', me: me.vision, opp: t.oppPlayer.vision });
+    }
+    return rows.map((r) => {
+      const max = Math.max(1, r.me, r.opp);
+      return { ...r, meWidth: (r.me / max) * 100, oppWidth: (r.opp / max) * 100, win: r.me >= r.opp };
+    });
+  });
+
   constructor() {
     // Quando o placar chega (ou muda de partida), monta a análise do coach.
     effect(() => {
@@ -149,6 +273,8 @@ export class PostGameView {
     this.coach.set(null);
     this.coachNarration.set(null);
     this.coachTimeline.set(null);
+    this.timeline.set(null);
+    this.timelineTries = 0;
 
     const me = game.players.find((p) => p.isMe);
     const [gameName, tagLine] = (me?.riotId ?? '').split('#');
@@ -159,6 +285,8 @@ export class PostGameView {
     try {
       // PUUID da Riot API (o do histórico), não o do cliente do LoL.
       const profile = await window.riot.findPlayer(gameName, tagLine, platformId);
+      // Gráficos (sem IA): carrega a timeline em paralelo, sem travar o coach nem a tela.
+      void this.loadTimeline(platformId, `${platformId}_${game.gameId}`, profile.puuid, game.gameId);
       const recent = await window.riot.getMatches(profile.puuid, platformId, 0, BASELINE_SIZE);
       const report = buildCoachReport(game, recent, profile.puuid);
       this.coach.set(report);
@@ -210,6 +338,17 @@ export class PostGameView {
 
   protected perMinute(value: number, seconds: number): string {
     return seconds > 0 ? (value / (seconds / 60)).toFixed(1) : '0';
+  }
+
+  /** Formata um valor da métrica atual (ouro/XP em milhares; CS inteiro). */
+  protected fmtValue(value: number): string {
+    return this.chartMetric() === 'cs' ? String(Math.round(value)) : this.thousands(Math.round(value));
+  }
+
+  /** O mesmo com sinal (+ / −), para a vantagem vs oponente. */
+  protected signedValue(value: number): string {
+    const sign = value > 0 ? '+' : value < 0 ? '−' : '';
+    return sign + this.fmtValue(Math.abs(value));
   }
 
   /** Seu time; sem você na lista (espectador), o time azul. */

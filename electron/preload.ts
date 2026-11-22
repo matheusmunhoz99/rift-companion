@@ -96,6 +96,8 @@ contextBridge.exposeInMainWorld('riot', {
     ipcRenderer.invoke('riot:get-premades', gameName, tagLine, platformId),
   getMatches: (puuid: string, platformId: string, start: number, count: number) =>
     ipcRenderer.invoke('riot:get-matches', puuid, platformId, start, count),
+  getMatchTimeline: (platformId: string, matchId: string) =>
+    ipcRenderer.invoke('riot:get-match-timeline', platformId, matchId),
   getCoach: (request: unknown) => ipcRenderer.invoke('riot:get-coach', request),
   getPlan: (request: unknown) => ipcRenderer.invoke('riot:get-plan', request),
   getLiveRead: (request: unknown) => ipcRenderer.invoke('riot:get-live-read', request),

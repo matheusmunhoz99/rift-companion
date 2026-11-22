@@ -23,6 +23,10 @@ export interface PostGamePlayer {
   deaths: number;
   assists: number;
   damageToChampions: number;
+  /** Dano a campeões por tipo (físico/mágico/verdadeiro): soma ≈ damageToChampions. */
+  physicalToChampions: number;
+  magicToChampions: number;
+  trueToChampions: number;
   damageTaken: number;
   damageMitigated: number;
   healing: number;
@@ -112,6 +116,9 @@ export function parsePostGame(raw: unknown, now = Date.now()): PostGame | null {
         deaths: s('NUM_DEATHS'),
         assists: s('ASSISTS'),
         damageToChampions: s('TOTAL_DAMAGE_DEALT_TO_CHAMPIONS'),
+        physicalToChampions: s('PHYSICAL_DAMAGE_DEALT_TO_CHAMPIONS'),
+        magicToChampions: s('MAGIC_DAMAGE_DEALT_TO_CHAMPIONS'),
+        trueToChampions: s('TRUE_DAMAGE_DEALT_TO_CHAMPIONS'),
         damageTaken: s('TOTAL_DAMAGE_TAKEN'),
         damageMitigated: s('TOTAL_DAMAGE_SELF_MITIGATED'),
         healing: s('TOTAL_HEAL'),

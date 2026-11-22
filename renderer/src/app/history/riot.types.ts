@@ -359,6 +359,10 @@ export interface PostGamePlayer {
   deaths: number;
   assists: number;
   damageToChampions: number;
+  /** Dano a campeões por tipo (físico/mágico/verdadeiro): soma ≈ damageToChampions. */
+  physicalToChampions: number;
+  magicToChampions: number;
+  trueToChampions: number;
   damageTaken: number;
   damageMitigated: number;
   healing: number;
@@ -386,6 +390,23 @@ export interface PostGame {
   endedAt: number;
   myTeamWon: boolean | null;
   players: PostGamePlayer[];
+}
+
+// Espelha server/src/riot/matches.ts (TimelineSeries). Série por minuto para os gráficos do fim de jogo.
+export interface MatchTimelinePoint {
+  minute: number;
+  gold: number;
+  xp: number;
+  cs: number;
+  level: number;
+}
+export interface MatchTimelineParticipant {
+  participantId: number;
+  puuid: string | null;
+  points: MatchTimelinePoint[];
+}
+export interface MatchTimelineSeries {
+  participants: MatchTimelineParticipant[];
 }
 
 // Espelha server/src/coach.ts.
@@ -449,6 +470,8 @@ export interface RiotBridge {
   setPlatform(platformId: string): Promise<void>;
   findPlayer(gameName: string, tagLine: string, platformId: string): Promise<PlayerProfile>;
   getMatches(puuid: string, platformId: string, start: number, count: number): Promise<MatchSummary[]>;
+  /** Série por minuto (ouro/XP/CS/nível dos 10) para os gráficos do fim de jogo; null enquanto a Riot não publica. Ausente em app antigo. */
+  getMatchTimeline?(platformId: string, matchId: string): Promise<MatchTimelineSeries | null>;
   /** Fim de jogo: timeline do early + narração por IA (ou null se indisponível). */
   getCoach(request: CoachNarrationRequest): Promise<CoachNarrationResult>;
   /** Plano de jogo da tela de carregamento (null se o servidor não respondeu). Espelha server/src/plan.ts. */

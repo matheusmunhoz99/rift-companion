@@ -73,6 +73,92 @@
     />
   }
 
+  <!-- Gráficos (sem IA): ouro/XP/CS por minuto você vs oponente de rota, dano por tipo e comparação. -->
+  @if (layout.visible('graficos')) {
+    <section class="panel charts-panel" [style.order]="layout.position('graficos')">
+      <header class="panel-head">
+        <h3>Gráficos</h3>
+        @if (timeline(); as t) {
+          <span class="charts-sub">
+            Você
+            @if (t.oppPlayer) { vs {{ championName(t.oppPlayer.championId) }} } @else { vs seu oponente de rota }
+          </span>
+        }
+      </header>
+
+      @if (lineChart(); as c) {
+        <div class="chart-metric">
+          @for (m of chartMetrics; track m.key) {
+            <button type="button" [class.active]="chartMetric() === m.key" (click)="chartMetric.set(m.key)">{{ m.label }}</button>
+          }
+        </div>
+
+        <figure class="line-chart">
+          <svg viewBox="0 0 320 140" preserveAspectRatio="none" role="img" aria-label="Evolução por minuto">
+            <!-- eixo X -->
+            <line class="axis" x1="10" y1="120" x2="310" y2="120" />
+            @for (t of c.ticks; track t.x) {
+              <line class="grid" [attr.x1]="t.x" y1="12" [attr.x2]="t.x" y2="120" />
+              <text class="tick" [attr.x]="t.x" y="134" text-anchor="middle">{{ t.label }}</text>
+            }
+            <polyline class="line-opp" [attr.points]="c.opp" />
+            <polyline class="line-me" [attr.points]="c.me" />
+          </svg>
+          <figcaption class="chart-legend">
+            <span class="k-me"><i></i>Você · {{ fmtValue(c.meLast) }}</span>
+            <span class="k-opp"><i></i>Oponente · {{ fmtValue(c.oppLast) }}</span>
+            <span class="axis-note">minuto</span>
+          </figcaption>
+        </figure>
+
+        <div class="chart-diffs">
+          @if (diffAt(10) !== null) {
+            <span class="diff" [class.up]="diffAt(10)! >= 0" [class.down]="diffAt(10)! < 0">10 min: {{ signedValue(diffAt(10)!) }}</span>
+          }
+          @if (diffAt(15) !== null) {
+            <span class="diff" [class.up]="diffAt(15)! >= 0" [class.down]="diffAt(15)! < 0">15 min: {{ signedValue(diffAt(15)!) }}</span>
+          }
+          @if (diffAt(20) !== null) {
+            <span class="diff" [class.up]="diffAt(20)! >= 0" [class.down]="diffAt(20)! < 0">20 min: {{ signedValue(diffAt(20)!) }}</span>
+          }
+        </div>
+      } @else {
+        <p class="charts-wait">Montando os gráficos… a linha do tempo da partida leva alguns segundos para ficar pronta na Riot.</p>
+      }
+
+      <!-- Seu dano a campeões por tipo -->
+      @if (damageTypes(); as d) {
+        <div class="dmg-types">
+          <div class="dmg-head"><h4>Seu dano por tipo</h4><span>{{ thousands(d.total) }} a campeões</span></div>
+          <div class="dmg-bar" role="img" aria-label="Dano por tipo">
+            @for (p of d.parts; track p.key) {
+              @if (p.pct > 0) { <span [class]="'seg seg-' + p.key" [style.width.%]="p.pct"></span> }
+            }
+          </div>
+          <div class="dmg-keys">
+            @for (p of d.parts; track p.key) {
+              <span class="dmg-key"><i [class]="'dot-' + p.key"></i>{{ p.label }} · {{ p.pct.toFixed(0) }}%</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Você vs oponente de rota -->
+      @if (versusOpponent(); as rows) {
+        <div class="versus">
+          <h4>Você vs oponente de rota</h4>
+          @for (r of rows; track r.label) {
+            <div class="vs-row">
+              <span class="vs-label">{{ r.label }}</span>
+              <span class="vs-track me"><span class="vs-fill" [style.width.%]="r.meWidth" [class.lead]="r.win"></span><b>{{ r.me }}</b></span>
+              <span class="vs-track opp"><span class="vs-fill" [style.width.%]="r.oppWidth" [class.lead]="!r.win"></span><b>{{ r.opp }}</b></span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <!-- Coach: como ESTA partida se compara com a SUA média recente. -->
   @if (layout.visible('coach') && coach(); as c) {
     <section class="panel coach-panel" [style.order]="layout.position('coach')" [attr.data-overall]="c.overall.verdict">
