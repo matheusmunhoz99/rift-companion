@@ -368,6 +368,10 @@ button {
 
   --side: var(--win);
 
+  &.no-details {
+    cursor: default;
+  }
+
   &.loss {
     --side: var(--loss);
   }

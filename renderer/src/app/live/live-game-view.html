@@ -81,12 +81,12 @@
   @if (!layout.visible('encontros')) {
     <!-- Escondido pelo "Organizar". -->
   } @else if (encounters() === 'loading') {
-    <p class="muted encounters-note" [style.order]="layout.position('encontros')">Procurando jogadores conhecidos nas suas últimas 20 partidas…</p>
+    <p class="muted encounters-note" [style.order]="layout.position('encontros')">Procurando jogadores conhecidos no seu histórico…</p>
   } @else if (encounterSummaries().length > 0) {
     <section class="encounters" [style.order]="layout.position('encontros')">
       <header class="encounters-head">
-        <h4>Já jogaram com você</h4>
-        <span class="muted">dos jogadores desta sala, estes apareceram nas suas últimas 20 partidas · toque para ver os jogos</span>
+        <h4>Já se cruzaram com você</h4>
+        <span class="muted">destes jogadores da sala, estes já apareceram no seu histórico · toque para ver os jogos</span>
       </header>
 
       @for (summary of encounterSummaries(); track summary.player.riotId) {
@@ -134,7 +134,8 @@
                   [class.win]="e.youWon"
                   [class.loss]="!e.youWon"
                   [class.active]="openMatchId() === e.matchId"
-                  (click)="toggleMatch(e.matchId)"
+                  [class.no-details]="!matchById(e.matchId)"
+                  (click)="matchById(e.matchId) && toggleMatch(e.matchId)"
                 >
                   <span class="tag" [class.enemy]="!e.sameTeam">{{ e.sameTeam ? 'Juntos' : 'Contra' }}</span>
                   <span class="pair">
@@ -147,7 +148,7 @@
                   </span>
                   <span class="outcome">{{ e.youWon ? 'Vitória' : 'Derrota' }}</span>
                   <span class="muted when">{{ queueName(e.queueId) }} · {{ timeAgo(e.gameEndTimestamp) }}</span>
-                  <span class="chevron" aria-hidden="true">▾</span>
+                  @if (matchById(e.matchId)) { <span class="chevron" aria-hidden="true">▾</span> }
                 </button>
                 @if (openMatchId() === e.matchId) {
                   @if (matchById(e.matchId); as match) {
