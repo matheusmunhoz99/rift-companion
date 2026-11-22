@@ -4,6 +4,12 @@ import type { BrowserWindow, Rectangle } from 'electron';
 /** Onde a janela estava: monitor (pela posição), tamanho e se estava maximizada. */
 export interface WindowState extends Rectangle {
   maximized: boolean;
+  /**
+   * Id do monitor em que a janela estava. Guardado porque, maximizada, as coordenadas de
+   * "restaurar" (getNormalBounds) podem apontar para o monitor primário, e aí a janela reabria
+   * no monitor errado. Ausente em estados salvos por versões antigas.
+   */
+  displayId?: number;
 }
 
 /** Quanto da barra de cima precisa estar dentro de um monitor para a posição valer. */
@@ -18,7 +24,9 @@ export function loadWindowState(file: string): WindowState | null {
     const numbers = [raw.x, raw.y, raw.width, raw.height];
     if (!numbers.every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
     if (raw.width! < 200 || raw.height! < 150) return null;
-    return { x: raw.x!, y: raw.y!, width: raw.width!, height: raw.height!, maximized: raw.maximized === true };
+    const state: WindowState = { x: raw.x!, y: raw.y!, width: raw.width!, height: raw.height!, maximized: raw.maximized === true };
+    if (typeof raw.displayId === 'number' && Number.isFinite(raw.displayId)) state.displayId = raw.displayId;
+    return state;
   } catch {
     return null;
   }
@@ -61,6 +69,8 @@ export class WindowStateKeeper {
     private readonly file: string,
     /** O app está mexendo na janela agora (modo partida): não salvar esse tamanho. */
     private readonly managedByApp: () => boolean = () => false,
+    /** Id do monitor em que a janela está agora (vale mesmo maximizada); null = não guardar. */
+    private readonly displayIdOf: (win: BrowserWindow) => number | null = () => null,
   ) {}
 
   attach(win: BrowserWindow): void {
@@ -81,8 +91,11 @@ export class WindowStateKeeper {
     const maximized = win.isMaximized();
     // Maximizada: guarda o tamanho de antes de maximizar, para "restaurar" funcionar depois.
     const bounds = maximized ? win.getNormalBounds() : win.getBounds();
+    // ...mas o monitor vem da posição REAL de agora: maximizada, getNormalBounds pode mentir.
+    const displayId = this.displayIdOf(win);
+    const state = displayId != null ? { ...bounds, maximized, displayId } : { ...bounds, maximized };
     try {
-      writeFileSync(this.file, JSON.stringify({ ...bounds, maximized }));
+      writeFileSync(this.file, JSON.stringify(state));
     } catch {
       // Sem conseguir salvar: só abre no lugar padrão da próxima vez.
     }

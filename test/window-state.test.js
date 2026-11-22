@@ -40,6 +40,15 @@ test('maximizada: guarda o tamanho de antes e a marca de maximizada', (t) => {
   assert.deepEqual(loadWindowState(file), { x: -1800, y: 60, width: 1200, height: 700, maximized: true });
 });
 
+test('maximizada no 2º monitor: guarda o id do monitor (restaurar pode apontar para o primário)', (t) => {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rift-window-')), 'window-state.json');
+  t.after(() => fs.rmSync(path.dirname(file), { recursive: true, force: true }));
+  // Maximizada no 2º monitor, mas getNormalBounds devolve coordenadas do primário (x >= 0).
+  const win = fakeWindow(SECOND, { maximized: true, normal: { x: 200, y: 60, width: 1200, height: 700 } });
+  new WindowStateKeeper(file, () => false, () => 77).save(win);
+  assert.deepEqual(loadWindowState(file), { x: 200, y: 60, width: 1200, height: 700, maximized: true, displayId: 77 });
+});
+
 test('não grava o que o app faz sozinho (modo partida), nem tela cheia ou minimizada', (t) => {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rift-window-')), 'window-state.json');
   t.after(() => fs.rmSync(path.dirname(file), { recursive: true, force: true }));

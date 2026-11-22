@@ -137,9 +137,14 @@ function createWindow(): void {
   // Abre no monitor e no lugar em que estava da última vez (se esse monitor ainda existir).
   const stateFile = path.join(app.getPath('userData'), 'window-state.json');
   const saved = capturing || devOnly('RIFT_SIZE') ? null : loadWindowState(stateFile);
-  const found = saved && fitsSomeDisplay(saved, screen.getAllDisplays().map((d) => d.workArea)) ? saved : null;
-  // A janela salva cabe na área útil do monitor (acima da barra de tarefas), sem passar das bordas.
-  const place = found ? { ...clampToArea(found, screen.getDisplayMatching(found).workArea), maximized: found.maximized } : null;
+  const displays = screen.getAllDisplays();
+  // Monitor salvo: de preferência pelo id guardado (vale mesmo quando a janela foi fechada
+  // maximizada e as coordenadas de "restaurar" apontam para outro monitor); senão, pela posição.
+  const savedDisplay = saved?.displayId != null ? displays.find((d) => d.id === saved.displayId) : undefined;
+  const found = saved && (savedDisplay || fitsSomeDisplay(saved, displays.map((d) => d.workArea))) ? saved : null;
+  const target = found ? (savedDisplay ?? screen.getDisplayMatching(found)) : null;
+  // Encaixa na área útil do monitor certo (acima da barra de tarefas), sem passar das bordas.
+  const place = found && target ? { ...clampToArea(found, target.workArea), maximized: found.maximized } : null;
   // Primeira vez (ou monitor que não existe mais): ocupa a área útil inteira, encostada na barra.
   const firstOpen = !place && !capturing && !devOnly('RIFT_SIZE');
   mainWindow = new BrowserWindow({
@@ -176,7 +181,8 @@ function createWindow(): void {
     screen.removeListener('display-metrics-changed', refit);
     screen.removeListener('display-removed', refit);
   });
-  if (!capturing) new WindowStateKeeper(stateFile, () => matchManaging()).attach(mainWindow);
+  if (!capturing)
+    new WindowStateKeeper(stateFile, () => matchManaging(), (win) => screen.getDisplayMatching(win.getBounds()).id).attach(mainWindow);
 
   // Links externos abrem no navegador do sistema, nunca dentro do app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
