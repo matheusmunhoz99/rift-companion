@@ -30,6 +30,7 @@ export class PreferencesService {
     liveRead: true,
     liveReadVoice: true,
     jungleHotkeys: true,
+    jungleRadar: true,
     screenVision: false,
     visionSamples: false,
     autoJungle: false,

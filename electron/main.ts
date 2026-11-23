@@ -2,6 +2,7 @@ import { app, BrowserWindow, clipboard, ClipboardItem, dialog, nativeImage, scre
 import { APP_SHORTCUT, AppShortcut } from './app-shortcut';
 import { JUNGLE_HOTKEYS, JungleHotkeys } from './jungle-hotkeys';
 import { VisionController } from './vision/controller';
+import { JungleRadarController } from './vision/jungle-radar';
 import { setBorderless } from './lcu/window-mode';
 import { ipcMain, mobileOverride } from './mobile/rpc';
 import { AndroidLink } from './mobile/link';
@@ -61,6 +62,7 @@ let invisibleMode: InvisibleModeProxy | null = null;
 let androidLink: AndroidLink | null = null;
 let appShortcut: AppShortcut | null = null;
 let jungleHotkeys: JungleHotkeys | null = null;
+let jungleRadar: JungleRadarController | null = null;
 let visionSync: () => void = () => undefined;
 /** Campos da selva marcados (atalhos e leitura automática). */
 let campTimers: Array<{ key: string; name: string; backAt: number }> = [];
@@ -380,6 +382,7 @@ void acquireInstance().then((acquired) => {
       if ('showAsRiftUser' in changes) announceRiftUser();
       appShortcut?.apply(preferences.appShortcut && !capturing);
       jungleHotkeys?.sync();
+      jungleRadar?.sync();
       visionSync();
       applyStartWithWindows(preferences.startWithWindows);
       appTray?.refresh();
@@ -712,6 +715,16 @@ void acquireInstance().then((acquired) => {
       await shell.openPath(folder);
     });
     visionSync = () => vision.sync();
+    // Radar visual do Jungler inimigo no minimapa (Nível 2, apenas em Summoner's Rift).
+    if (!capturing) {
+      jungleRadar = new JungleRadarController(
+        connector,
+        () => prefs.getPreferences().jungleRadar,
+        (state) => mainWindow?.webContents.send('radar:update', state),
+      );
+      jungleRadar.sync();
+    }
+    ipcMain.handle('radar:get', () => jungleRadar?.getState() ?? null);
     // Ctrl+Alt+1..6 na partida: marca azul, vermelho e caranguejos sem sair do jogo.
     if (!capturing) jungleHotkeys = new JungleHotkeys(
       connector,
@@ -875,6 +888,7 @@ void acquireInstance().then((acquired) => {
     appLog('app fechando');
     appShortcut?.dispose();
     jungleHotkeys?.dispose();
+    jungleRadar?.dispose();
     invisibleMode?.dispose();
   });
 

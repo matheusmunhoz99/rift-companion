@@ -2,10 +2,20 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.26.14';
+const RELEASE = '1.27.0';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
+  {
+    icon: 'eye',
+    title: 'Radar Visual do Jungler Inimigo pelo Minimapa',
+    text: 'Em Summoner’s Rift (Sem Bordas ou Janela), o app identifica automaticamente onde o Jungler inimigo apareceu pela última vez no minimapa, mostra o rastro recente e conta há quanto tempo está sumido — no PC e no celular Android.',
+  },
+  {
+    icon: 'chat',
+    title: 'Limpeza automática do chat no LoL',
+    text: 'Ao fim de cada partida, o Rift Companion apaga sozinho os avisos de Dragão/Barão/Arauto do contato Rift Companion e zera a notificação não lida.',
+  },
   {
     icon: 'swords',
     title: 'Tela Jogar redesenhada e convites ao vivo',

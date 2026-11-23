@@ -152,7 +152,7 @@ export function initializeAndroid(): void {
   Object.assign(window, {
     lcu: { getState: async () => snapshot?.lcu ?? emptyState, onState: on('lcu:state') },
     app: {
-      ...methods({ setPreferences: 'prefs:set', launchLeague: 'app:launch-league', gameWindowMode: 'app:game-window-mode' }),
+      ...methods({ setPreferences: 'prefs:set', launchLeague: 'app:launch-league', gameWindowMode: 'app:game-window-mode', getJungleRadar: 'radar:get' }),
       getPreferences: async () => { if (!snapshot) throw new Error('PC desconectado.'); return snapshot.prefs; },
       info: async () => { if (!snapshot) throw new Error('PC desconectado.'); return snapshot.info; },
       updateStatus: async () => ({ state: 'idle' }), checkUpdate: localOnly, installUpdate: localOnly, openBuildsFolder: localOnly,

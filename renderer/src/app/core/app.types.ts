@@ -49,6 +49,23 @@ export interface FriendsRanking {
   refreshing?: boolean;
 }
 
+export interface RadarPoint {
+  u: number;
+  v: number;
+  gameTime: number;
+  zone: string;
+  confidence: number;
+}
+
+export interface JungleRadarState {
+  active: boolean;
+  black: boolean;
+  championKey: string | null;
+  championName: string | null;
+  lastSeen: RadarPoint | null;
+  trail: RadarPoint[];
+}
+
 /** Espelha electron/lcu/rank-tracker.ts. */
 export interface RankEntry {
   at: number;
@@ -84,6 +101,7 @@ export interface Preferences {
   liveRead: boolean;
   liveReadVoice: boolean;
   jungleHotkeys: boolean;
+  jungleRadar: boolean;
   screenVision: boolean;
   visionSamples: boolean;
   autoJungle: boolean;
@@ -175,6 +193,9 @@ export interface AppBridge {
   onJungleMark?(callback: (camp: string) => void): () => void;
   /** Campo da selva que o app viu morrer pela tela (timer lido do minimapa). Só no PC. */
   onJungleAuto?(callback: (camp: { key: string; backAt: number; exact: boolean }) => void): () => void;
+  /** Estado atual do Radar do Jungler inimigo (Nível 2). Funciona no PC e no Android pareado. */
+  getJungleRadar?(): Promise<JungleRadarState | null>;
+  onJungleRadar?(callback: (state: JungleRadarState) => void): () => void;
   /** Recorte do minimapa agora (JPEG em base64); null fora da partida. Só no PC. */
   visionMinimap?(): Promise<{ jpeg: string; black: boolean } | null>;
   /** Troca o jogo para Sem bordas pela API do cliente (vale na próxima partida). Só no PC. */

@@ -46,6 +46,8 @@ export interface Preferences {
   liveReadVoice: boolean;
   /** Na partida, Ctrl+Alt+1..6 marcam azul, vermelho e caranguejos (seus e do inimigo). */
   jungleHotkeys: boolean;
+  /** Radar visual do Jungler inimigo no minimapa (Nível 2, apenas em Summoner's Rift). */
+  jungleRadar: boolean;
   /** A leitura da IA leva junto o recorte do minimapa (o que você vê na tela). */
   screenVision: boolean;
   /** Guarda recortes do minimapa durante a partida (para calibrar os timers automáticos da selva). */
@@ -88,6 +90,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   liveRead: true,
   liveReadVoice: true,
   jungleHotkeys: true,
+  jungleRadar: true,
   screenVision: false,
   visionSamples: false,
   autoJungle: false,
@@ -122,6 +125,7 @@ const VALIDATORS: { [K in keyof Preferences]: (value: unknown) => value is Prefe
   liveRead: isBoolean,
   liveReadVoice: isBoolean,
   jungleHotkeys: isBoolean,
+  jungleRadar: isBoolean,
   screenVision: isBoolean,
   visionSamples: isBoolean,
   autoJungle: isBoolean,

@@ -169,6 +169,13 @@
   <section class="card">
     <h3 class="section-title">Durante a partida</h3>
     <app-switch
+      label="Radar visual do Jungler inimigo"
+      description="Lê apenas o quadradinho do minimapa a cada 2 segundos no Summoner's Rift (em modo Sem Bordas ou Janela) para marcar onde o Jungler inimigo foi visto pela última vez e há quanto tempo está sumido. Adapta-se a qualquer resolução, escala e lado do minimapa."
+      [checked]="prefs.preferences().jungleRadar"
+      (toggled)="prefs.set({ jungleRadar: $event })"
+    />
+    <div class="divider"></div>
+    <app-switch
       label="Avisar dos objetivos no chat do LoL"
       [description]="prefs.preferences().appearOffline
         ? 'O contato Rift Companion manda uma mensagem só para você 1 min 30 s e 30 s antes de dragão, Barão, Arauto e Larvas nascerem, e quando nascem.'

@@ -4,6 +4,7 @@ import type { LiveEvent, LivePlayer } from '../history/riot.types';
 import { positionOrder } from '../stats/match-context';
 import { LiveDataService } from './live-data.service';
 import { JungleTimers } from './jungle-timers';
+import { JungleRadar } from './jungle-radar';
 import { AdaptiveBuild } from './adaptive-build';
 import { LiveReadPanel } from './live-read';
 import { AugmentCardsPanel } from './augment-cards-panel';
@@ -53,7 +54,7 @@ interface Matchup {
 
 @Component({
   selector: 'app-live-dashboard',
-  imports: [JungleTimers, AdaptiveBuild, LiveReadPanel, AugmentCardsPanel],
+  imports: [JungleTimers, JungleRadar, AdaptiveBuild, LiveReadPanel, AugmentCardsPanel],
   templateUrl: './live-dashboard.html',
   styleUrl: './live-dashboard.scss',
 })

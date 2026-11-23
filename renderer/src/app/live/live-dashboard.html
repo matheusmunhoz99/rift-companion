@@ -151,8 +151,11 @@
       }
     </section>
 
-    <!-- Timers: objetivos, inibidores e quem está morto. -->
+    <!-- Timers: radar do jungler, objetivos, inibidores e quem está morto. -->
     <section class="timers">
+      @if (!aram() && game.objectives.length) {
+        <app-jungle-radar />
+      }
       @if (game.objectives.length) {
         <!-- Surgimentos fixos da temporada: conta até o primeiro e, depois de cada abate, até o próximo. -->
         <div class="objectives-card">

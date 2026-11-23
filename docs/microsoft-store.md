@@ -48,13 +48,10 @@ Rift Companion não é endossado pela Riot Games e não reflete as opiniões da 
 
 ### O que há de novo nesta versão
 ```
-Versão 1.26.15:
-- Limpeza automática do chat de objetivos: ao fim de cada partida, o Rift Companion apaga as mensagens de Dragão/Barão/Arauto/Larvas no contato do cliente do LoL e fecha a notificação de mensagem não lida.
-- Nova tela Jogar redesenhada: aceite convites de amigos e aceite ou recuse partidas direto pelo app, com slots em destaque no Jogo Dinâmico.
-- Gráficos de fim de jogo (sem IA): acompanhe Ouro, XP e CS minuto a minuto contra o seu oponente de rota e a divisão exata do seu dano (físico, mágico e verdadeiro).
-- Acervo local ampliado em "Já jogaram com você": guarda até 1.000 partidas no PC para reconhecer jogadores antigos sem gastar API extra.
-- Alertas de itens críticos inimigos ao vivo (Zhonya, Anjo Guardião, Bandana de Mercúrio, Rabadon e outros) na aba Ao vivo.
-- Ranking dos amigos no Progresso (Solo/Duo e Flex), os dois elos nos cards e detector de provável smurf.
+Versão 1.27.0:
+- NOVO Radar Visual do Jungler Inimigo: detecta automaticamente no minimapa (em qualquer resolução, escala ou lado) onde o Jungler inimigo foi visto pela última vez, desenha o rastro no mapa e conta o tempo desde o último avistamento (também no Android).
+- Limpeza automática do chat de objetivos: ao fim da partida, apaga os avisos no contato Rift Companion do LoL e zera a notificação não lida.
+- Nova tela Jogar redesenhada com convites ao vivo, gráficos pós-jogo minuto a minuto contra o oponente de rota, acervo de 1.000 partidas e alertas de itens críticos inimigos.
 ```
 
 ### Recursos do produto (um por campo)
