@@ -1209,6 +1209,8 @@ h3 {
   border-radius: 10px;
   background: var(--well);
   color: var(--text);
+  /* O coach manda uma ideia por linha: sem isso tudo vira um parágrafo só. */
+  white-space: pre-line;
   font-size: 14.5px;
   line-height: 1.55;
 }
