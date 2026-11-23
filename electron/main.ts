@@ -96,6 +96,7 @@ function upsertCampTimer(key: string, backAt: number): void {
 let quitting = false;
 /** O modo partida está mexendo na janela (não grava esse tamanho como o lugar escolhido). */
 let matchManaging: () => boolean = () => false;
+let activeMatchWindow: MatchWindow | null = null;
 
 /**
  * Com o chat do LoL passando pelo proxy, fechar o app derruba o chat até o
@@ -164,8 +165,8 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      // Prints de revisão: a janela escondida continua animando e carregando (sem pausa do Chromium).
-      backgroundThrottling: !capturing,
+      // Mantém timers/radar/modo partida sempre ativos mesmo no 2º monitor sem foco.
+      backgroundThrottling: false,
     },
   });
   if (place?.maximized || firstOpen) mainWindow.maximize();
@@ -177,10 +178,14 @@ function createWindow(): void {
     const fitted = clampToArea(bounds, screen.getDisplayMatching(bounds).workArea);
     if (fitted.x !== bounds.x || fitted.y !== bounds.y || fitted.width !== bounds.width || fitted.height !== bounds.height) win.setBounds(fitted);
   };
-  screen.on('display-metrics-changed', refit);
+  const onDisplayMetricsChanged = () => {
+    refit();
+    activeMatchWindow?.onDisplayMetricsChanged();
+  };
+  screen.on('display-metrics-changed', onDisplayMetricsChanged);
   screen.on('display-removed', refit);
   mainWindow.on('closed', () => {
-    screen.removeListener('display-metrics-changed', refit);
+    screen.removeListener('display-metrics-changed', onDisplayMetricsChanged);
     screen.removeListener('display-removed', refit);
   });
   if (!capturing)
@@ -836,7 +841,8 @@ void acquireInstance().then((acquired) => {
     ipcMain.handle('app:launch-league', () => openLeague(true));
     // Modo partida: a janela cresce na seleção, fica em tela cheia no carregamento e no jogo,
     // e volta ao tamanho de antes no fim de jogo. 'fullscreen' | true (aumentada) | false.
-    const matchWindow = new MatchWindow(() => mainWindow);
+    const matchWindow = new MatchWindow(() => mainWindow, undefined, undefined, appLog);
+    activeMatchWindow = matchWindow;
     matchManaging = () => matchWindow.managing();
     ipcMain.handle('app:match-window', (_event, mode: unknown) => {
       // Prints de revisão (RIFT_CAPTURE) ficam sempre no tamanho pedido (RIFT_SIZE).
@@ -893,6 +899,7 @@ void acquireInstance().then((acquired) => {
   app.on('will-quit', () => {
     androidLink?.stop();
     appLog('app fechando');
+    activeMatchWindow?.dispose();
     appShortcut?.dispose();
     jungleHotkeys?.dispose();
     jungleRadar?.dispose();
@@ -956,6 +963,7 @@ function showMainWindow(): void {
 function toggleFromShortcut(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isVisible() && !mainWindow.isMinimized() && mainWindow.isFocused()) {
+    activeMatchWindow?.allowMinimize();
     mainWindow.minimize();
     return;
   }
