@@ -17,7 +17,7 @@ import { LcuConnector } from './lcu/connector';
 import { registerLobbyHandlers } from './lcu/lobby-ipc';
 import { readGameWindowMode } from './overlay/game-settings';
 import { createTimingsSource } from './overlay/timings-source';
-import { ObjectiveAnnouncer } from './overlay/objective-announcer';
+import { ObjectiveAnnouncer, clearBuddyChat } from './overlay/objective-announcer';
 import { RIFT_API_URL, apiPost, registerRiotHandlers } from './riot/ipc';
 import { TelegramNotifications } from './notify/telegram';
 import { ErrorReporter } from './report';
@@ -678,6 +678,7 @@ void acquireInstance().then((acquired) => {
       {
         chat: invisible,
         chatEnabled: () => prefs.getPreferences().chatObjectiveAlerts,
+        clearChat: () => clearBuddyChat(connector.getCredentials()),
         speak: (text) => mainWindow?.webContents.send('voice:say', text),
         voiceEnabled: () => prefs.getPreferences().voiceAlerts,
       },

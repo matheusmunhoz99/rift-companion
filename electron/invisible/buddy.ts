@@ -20,7 +20,7 @@ export function effectiveStatus(state: InvisibleState): ChatStatus {
  * chega à Riot: o proxy retém tudo que o Riot Client envia para este JID.
  */
 export const BUDDY_ID = '7f3c2a91-4b6e-4d1f-9c8a-5e2b7d0a6c13';
-const BUDDY_JID = `${BUDDY_ID}@eu1.pvp.net`;
+export const BUDDY_JID = `${BUDDY_ID}@eu1.pvp.net`;
 // O TAB inicial coloca o contato no topo da lista, em ordem alfabética.
 const BUDDY_NAME = '&#9;Rift Companion';
 
