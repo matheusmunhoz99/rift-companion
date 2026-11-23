@@ -170,7 +170,7 @@
     <h3 class="section-title">Durante a partida</h3>
     <app-switch
       label="Radar visual do Jungler inimigo"
-      description="Lê apenas o quadradinho do minimapa a cada 2 segundos no Summoner's Rift (em modo Sem Bordas ou Janela) para marcar onde o Jungler inimigo foi visto pela última vez e há quanto tempo está sumido. Adapta-se a qualquer resolução, escala e lado do minimapa."
+      description="Lê apenas o quadradinho do minimapa a cada 2 segundos no Summoner's Rift (em modo Sem Bordas ou Janela) para marcar onde o Jungler inimigo foi visto pela última vez e há quanto tempo está sumido, além de avisar no chat do LoL e por voz quando habilitados. Adapta-se a qualquer resolução, escala e lado do minimapa."
       [checked]="prefs.preferences().jungleRadar"
       (toggled)="prefs.set({ jungleRadar: $event })"
     />

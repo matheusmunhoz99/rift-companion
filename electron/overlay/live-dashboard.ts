@@ -283,7 +283,7 @@ export function timingsForQueue(config: TimingsConfig, queueId: number | null): 
 }
 
 const INHIBITOR_RESPAWN_S = 5 * 60;
-const SUMMONERS_RIFT_MODES = new Set(['CLASSIC', 'SWIFTPLAY']);
+const SUMMONERS_RIFT_MODES = new Set(['CLASSIC', 'SWIFTPLAY', 'PRACTICETOOL']);
 const MAX_EVENTS = 20;
 const LANES: Record<string, string> = { L: 'Topo', C: 'Meio', R: 'Bot' };
 
@@ -435,7 +435,7 @@ export function toLiveDashboard(raw: RawDashboardData, timings: ObjectiveTimings
   const elderComes = elementalNext === null || (elderNext !== null && elderNext <= elementalNext);
   const dragonNext = elderComes ? elderNext : elementalNext;
   const dragonAt: number | null = lastDragon === null ? null : dragonNext;
-  // Summoner's Rift: o modo normal/ranqueado (CLASSIC) e a Partida Rápida (SWIFTPLAY), que tem tempos próprios.
+  // Summoner's Rift: o modo normal/ranqueado (CLASSIC), a Partida Rápida (SWIFTPLAY) e o Modo de treino (PRACTICETOOL).
   // Modos especiais no mesmo mapa (URF, Um por Todos) têm tempos próprios e ficam sem timers.
   const classic = SUMMONERS_RIFT_MODES.has(raw.gameData.gameMode);
   const timers = classic

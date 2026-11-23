@@ -5,6 +5,7 @@ const {
   buildChampionTemplate,
   detectJunglerInMinimap,
   findEnemyRingCandidates,
+  shouldAnnounceRadarSighting,
   zoneName,
 } = require('../dist-electron/vision/jungle-radar-detector.js');
 
@@ -50,8 +51,8 @@ function drawMinimapChampion(buf, mapW, mapH, cx, cy, r, kind) {
       const dist = Math.hypot(x - cx, y - cy);
       const i = (y * mapW + x) * 4;
       if (dist <= r * 0.8) {
-        const ix = Math.max(0, Math.min(iconSize - 1, Math.round(((x - cx) / (r * 0.8) * 0.38 + 0.5) * (iconSize - 1))));
-        const iy = Math.max(0, Math.min(iconSize - 1, Math.round(((y - cy) / (r * 0.8) * 0.38 + 0.5) * (iconSize - 1))));
+        const ix = Math.max(0, Math.min(iconSize - 1, Math.round(((x - cx) / (r * 0.8) * 0.5 + 0.5) * (iconSize - 1))));
+        const iy = Math.max(0, Math.min(iconSize - 1, Math.round(((y - cy) / (r * 0.8) * 0.5 + 0.5) * (iconSize - 1))));
         const si = (iy * iconSize + ix) * 4;
         buf[i] = icon[si];
         buf[i + 1] = icon[si + 1];
@@ -122,5 +123,45 @@ describe('Radar Visual do Jungler Inimigo (jungle-radar)', () => {
     // Blue do ORDER (u=0.25, v=0.47): para ORDER é Sua selva azul; para CHAOS é Selva azul inimiga
     assert.equal(zoneName(0.25, 0.47, 'ORDER'), 'Sua selva azul');
     assert.equal(zoneName(0.25, 0.47, 'CHAOS'), 'Selva azul inimiga');
+  });
+
+  it('detecta inimigo perto da borda/base do minimapa (sem cortar anéis na margem)', () => {
+    const templates = [
+      buildChampionTemplate(makeIcon(64, 64, 'lee'), 64, 64, 'LeeSin', true, 16, 'bgra'),
+      buildChampionTemplate(makeIcon(64, 64, 'lux'), 64, 64, 'Lux', false, 16, 'bgra'),
+    ];
+    const size = 260;
+    const box = { left: 48, top: 48, size };
+    const W = 340;
+    const H = 340;
+    const bgra = Buffer.alloc(W * H * 4, 24);
+    const r = Math.max(6, Math.round(size * 0.047));
+
+    drawMinimapChampion(bgra, W, H, Math.round(box.left + size * 0.04), Math.round(box.top + size * 0.96), r, 'lee');
+    const hit = detectJunglerInMinimap(bgra, W, H, box, templates, 'CHAOS', 680, 'bgra');
+    assert.ok(hit, 'Deveria detectar o jungler mesmo colado na borda da base inimiga');
+    assert.equal(hit.zone, 'Base inimiga');
+  });
+
+  it('respeita cooldown de avisos e reavisa ao mudar de rota ou ficar sumido >= 15s', () => {
+    const pt = (zone, gameTime) => ({ u: 0.5, v: 0.5, zone, gameTime, confidence: 0.7 });
+
+    // Primeiro avistamento sempre avisa
+    assert.equal(shouldAnnounceRadarSighting(null, pt('Rio do Dragão', 100), null), true);
+
+    // Continua visível na mesma região -> não repete
+    const prevAlert = { zone: 'Rio do Dragão', gameTime: 100 };
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Rio do Dragão', 108), pt('Rio do Dragão', 106)), false);
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Rio do Dragão', 120), pt('Rio do Dragão', 118)), false);
+
+    // Mudou de região antes de 12 s -> segura; depois de 12 s -> avisa
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Meio', 110), pt('Rio do Dragão', 108)), false);
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Meio', 114), pt('Meio', 112)), true);
+
+    // Ficou sumido >= 15 s e reapareceu -> avisa mesmo na mesma região
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Rio do Dragão', 120), pt('Rio do Dragão', 102)), true);
+
+    // Relógio voltou atrás ("Resetar partida" no Modo de treino) -> avisa
+    assert.equal(shouldAnnounceRadarSighting(prevAlert, pt('Topo', 20), pt('Rio do Dragão', 100)), true);
   });
 });

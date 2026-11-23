@@ -153,7 +153,7 @@
 
     <!-- Timers: radar do jungler, objetivos, inibidores e quem está morto. -->
     <section class="timers">
-      @if (!aram() && game.objectives.length) {
+      @if (!aram() && (game.mapNumber === 11 || game.objectives.length)) {
         <app-jungle-radar />
       }
       @if (game.objectives.length) {

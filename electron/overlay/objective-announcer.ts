@@ -63,6 +63,7 @@ export class ObjectiveAnnouncer {
   private sent = new Set<string>();
   private greeted = false;
   private sentToChat = false;
+  private lastGameTime = -1;
 
   constructor(
     private readonly connector: LcuConnector,
@@ -89,6 +90,7 @@ export class ObjectiveAnnouncer {
       // Partida nova começa sem avisos enviados.
       this.sent = new Set();
       this.greeted = false;
+      this.lastGameTime = -1;
       if (this.sentToChat) {
         this.sentToChat = false;
         void this.outputs.clearChat?.();
@@ -122,6 +124,12 @@ export class ObjectiveAnnouncer {
     const dashboard = toLiveDashboard(raw as RawDashboardData, await this.timings());
     // Fora do Summoner's Rift (ARAM, Arena...) não há objetivos com tempo marcado.
     if (!dashboard.objectives.length && !dashboard.timers) return;
+    // Reinício de partida no Modo de treino: volta o relógio para reenviar avisos.
+    if (this.lastGameTime >= 0 && dashboard.gameTime + 5 < this.lastGameTime) {
+      this.sent = new Set();
+      this.greeted = false;
+    }
+    this.lastGameTime = dashboard.gameTime;
     const lines: string[] = [];
     if (chat && !this.greeted) {
       this.greeted = true;

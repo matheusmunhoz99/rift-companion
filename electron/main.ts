@@ -721,6 +721,13 @@ void acquireInstance().then((acquired) => {
         connector,
         () => prefs.getPreferences().jungleRadar,
         (state) => mainWindow?.webContents.send('radar:update', state),
+        {
+          chat: invisible,
+          chatEnabled: () => prefs.getPreferences().chatObjectiveAlerts,
+          clearChat: () => clearBuddyChat(connector.getCredentials()),
+          speak: (text) => mainWindow?.webContents.send('voice:say', text),
+          voiceEnabled: () => prefs.getPreferences().voiceAlerts,
+        },
       );
       jungleRadar.sync();
     }

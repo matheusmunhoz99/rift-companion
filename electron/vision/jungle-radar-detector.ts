@@ -149,7 +149,7 @@ export function normalizeCircularPatch(
 
 /**
  * Monta o template normalizado (16×16) de um retrato quadrado de campeão do Data Dragon,
- * pegando os 76% centrais para descartar a borda quadrada escura da arte.
+ * usando o círculo completo inscrito (raio 0.50) igual ao ícone circular no minimapa do LoL.
  */
 export function buildChampionTemplate(
   pixels: Uint8Array | Buffer,
@@ -162,7 +162,7 @@ export function buildChampionTemplate(
 ): ChampionTemplate {
   const cx = (width - 1) / 2;
   const cy = (height - 1) / 2;
-  const radius = Math.min(width, height) * 0.38;
+  const radius = Math.min(width, height) * 0.5;
   return {
     championKey,
     isJungler,
@@ -230,10 +230,11 @@ export function findEnemyRingCandidates(
 
   const r = Math.max(6, Math.round(box.size * 0.047));
   const step = Math.max(1, Math.floor(r / 4));
-  const xMin = Math.max(r, Math.round(box.left + r));
-  const xMax = Math.min(width - r - 1, Math.round(box.left + box.size - r));
-  const yMin = Math.max(r, Math.round(box.top + r));
-  const yMax = Math.min(height - r - 1, Math.round(box.top + box.size - r));
+  const xMin = Math.max(r, Math.round(box.left));
+  const xMax = Math.min(width - r - 1, Math.round(box.left + box.size));
+  const yMin = Math.max(r, Math.round(box.top));
+  const yMax = Math.min(height - r - 1, Math.round(box.top + box.size));
+  const radii = [...new Set([r - 2, r - 1, r, r + 1, r + 2].map((v) => Math.max(5, v)))];
 
   // Primeiro acha pixels vermelhos e projeta para possíveis centros pelo raio esperado (topo/esquerda/baixo/direita).
   const candidateMap = new Map<string, { x: number; y: number; score: number }>();
@@ -273,7 +274,7 @@ export function findEnemyRingCandidates(
         const cx = c.x + dx;
         const cy = c.y + dy;
         if (cx < xMin || cx > xMax || cy < yMin || cy > yMax) continue;
-        for (const radius of [Math.max(5, r - 1), r, r + 1]) {
+        for (const radius of radii) {
           const score = measureRingSupport(buf, width, height, cx, cy, radius, order);
           if (score > bestScore) {
             bestScore = score;
@@ -334,6 +335,34 @@ export function zoneName(u: number, v: number, myTeam: Team): string {
   }
 }
 
+const CENTER_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [0, 0],
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+
+export interface RadarAnnouncement {
+  zone: string;
+  gameTime: number;
+}
+
+/** Evita spam quando o jungler continua visível na mesma rota; reavisa se mudou de região ou ficou sumido ≥ 15 s. */
+export function shouldAnnounceRadarSighting(
+  prevAlert: RadarAnnouncement | null,
+  hit: RadarPoint,
+  lastSeenBefore: RadarPoint | null,
+): boolean {
+  if (!prevAlert) return true;
+  const sinceAlert = hit.gameTime - prevAlert.gameTime;
+  if (sinceAlert < 0) return true;
+  const wasMia = !!lastSeenBefore && hit.gameTime - lastSeenBefore.gameTime >= 15;
+  if (wasMia && sinceAlert >= 15) return true;
+  if (hit.zone !== prevAlert.zone && sinceAlert >= 12) return true;
+  return false;
+}
+
 /**
  * Compara cada anel vermelho inimigo visível no minimapa contra os 5 templates dos
  * campeões inimigos. Devolve a posição normalizada `(u, v)` quando o melhor match é o Jungler.
@@ -359,13 +388,22 @@ export function detectJunglerInMinimap(
   let bestHit: RadarPoint | null = null;
 
   for (const c of candidates) {
-    const patch = normalizeCircularPatch(buf, width, height, c.cx, c.cy, c.radius * 0.78, size, order);
+    const bestScores = new Float32Array(templates.length).fill(-1);
+    for (const [dx, dy] of CENTER_OFFSETS) {
+      const patch = normalizeCircularPatch(buf, width, height, c.cx + dx, c.cy + dy, c.radius * 0.8, size, order);
+      for (let i = 0; i < templates.length; i++) {
+        const score = nccScore(patch, templates[i].pixels);
+        if (score > bestScores[i]) bestScores[i] = score;
+      }
+    }
+
     let bestScore = -1;
     let bestTpl: ChampionTemplate | null = null;
     let secondEnemyScore = -1;
 
-    for (const tpl of templates) {
-      const score = nccScore(patch, tpl.pixels);
+    for (let i = 0; i < templates.length; i++) {
+      const tpl = templates[i];
+      const score = bestScores[i];
       if (score > bestScore) {
         if (bestTpl && !bestTpl.isJungler) secondEnemyScore = Math.max(secondEnemyScore, bestScore);
         bestScore = score;

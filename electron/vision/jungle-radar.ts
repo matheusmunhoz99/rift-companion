@@ -1,4 +1,4 @@
-import { desktopCapturer, nativeImage, screen } from 'electron';
+import { desktopCapturer, nativeImage, screen, type DesktopCapturerSource } from 'electron';
 import { appLog } from '../app-log';
 import type { LcuConnector } from '../lcu/connector';
 import { lanePosition } from '../overlay/lanes';
@@ -8,8 +8,10 @@ import { findMapBox } from './camp-detector';
 import {
   buildChampionTemplate,
   detectJunglerInMinimap,
+  shouldAnnounceRadarSighting,
   type ChampionTemplate,
   type JungleRadarState,
+  type RadarAnnouncement,
   type RadarPoint,
 } from './jungle-radar-detector';
 import { isBlack, minimapRegion, readMinimapLayout, type MinimapLayout } from './screen-vision';
@@ -19,6 +21,17 @@ const IN_GAME = new Set(['InProgress', 'Reconnect']);
 const GAME_WINDOW_NAME = 'League of Legends (TM) Client';
 const MAX_BLACK_STREAK = 3;
 const MAX_TRAIL = 3;
+const POST_GAME_CLEAR_DELAY_MS = 4_000;
+const MAX_CAPTURE_W = 2560;
+const MAX_CAPTURE_H = 1440;
+
+export interface RadarAlertOutputs {
+  chat?: { hasActiveChat(): boolean; sendBuddyMessages(lines: string[]): void };
+  chatEnabled?: () => boolean;
+  clearChat?: () => Promise<void> | void;
+  speak?: (text: string) => void;
+  voiceEnabled?: () => boolean;
+}
 
 const EMPTY_STATE: JungleRadarState = {
   active: false,
@@ -68,14 +81,48 @@ async function fetchTemplate(version: string, championKey: string, isJungler: bo
   }
 }
 
+interface CropCapture {
+  bgra: Buffer;
+  cw: number;
+  ch: number;
+  box: MapBox | null;
+  displayId: string | null;
+}
+
+function captureScreenSize(): { width: number; height: number } {
+  const primary = screen.getPrimaryDisplay();
+  let width = Math.max(320, Math.round(primary.size.width * primary.scaleFactor));
+  let height = Math.max(240, Math.round(primary.size.height * primary.scaleFactor));
+  if (width > MAX_CAPTURE_W || height > MAX_CAPTURE_H) {
+    const ratio = Math.min(MAX_CAPTURE_W / width, MAX_CAPTURE_H / height);
+    width = Math.round(width * ratio);
+    height = Math.round(height * ratio);
+  }
+  return { width, height };
+}
+
+function cropSource(source: DesktopCapturerSource, layout: MinimapLayout): { bgra: Buffer; cw: number; ch: number; black: boolean } | null {
+  const thumb = source.thumbnail;
+  if (!thumb || thumb.isEmpty()) return null;
+  const { width, height } = thumb.getSize();
+  if (width < 320 || height < 240) return null;
+  const region = minimapRegion(layout, width, height);
+  const crop = thumb.crop(region);
+  const { width: cw, height: ch } = crop.getSize();
+  if (cw < 40 || ch < 40) return null;
+  const bgra = crop.toBitmap();
+  return { bgra, cw, ch, black: isBlack(bgra, cw, ch) };
+}
+
 /**
  * Controlador leve do Radar Visual do Jungler Inimigo (Nível 2):
- * captura somente a janela do LoL a cada 2 s (1280×720), recorta o canto do minimapa
+ * captura a tela do jogo a cada 2 s (resolução nativa até 1440p), recorta o canto do minimapa
  * conforme `Config/game.cfg` (resolução, escala 0..3 e lado esquerdo/direito), acha a
  * moldura real do mapa e identifica onde o Jungler inimigo apareceu via NCC local.
  */
 export class JungleRadarController {
   private timer: NodeJS.Timeout | null = null;
+  private clearTimer: NodeJS.Timeout | null = null;
   private busy = false;
   private preparedGame = false;
   private unsupportedMode = false;
@@ -85,11 +132,18 @@ export class JungleRadarController {
   private myTeam: Team | null = null;
   private templates: ChampionTemplate[] = [];
   private state: JungleRadarState = { ...EMPTY_STATE };
+  private lastAnnouncement: RadarAnnouncement | null = null;
+  private sentToChat = false;
+  private lastGameTime = -1;
+  private loggedBox = false;
+  private preferredDisplayId: string | null = null;
+  private screenMissStreak = 0;
 
   constructor(
     private readonly connector: LcuConnector,
     private readonly enabled: () => boolean,
     private readonly onUpdate: (state: JungleRadarState) => void,
+    private readonly alerts?: RadarAlertOutputs,
   ) {
     connector.on('state', () => this.sync());
   }
@@ -103,6 +157,10 @@ export class JungleRadarController {
     const want = inGame && this.enabled();
     if (!inGame) this.reset();
     if (want && !this.timer && !this.state.black && !this.unsupportedMode) {
+      if (this.clearTimer) {
+        clearTimeout(this.clearTimer);
+        this.clearTimer = null;
+      }
       this.timer = setInterval(() => void this.tick(), POLL_MS);
       this.timer.unref();
       void this.tick();
@@ -115,6 +173,10 @@ export class JungleRadarController {
 
   dispose(): void {
     this.stopTimer();
+    if (this.clearTimer) {
+      clearTimeout(this.clearTimer);
+      this.clearTimer = null;
+    }
   }
 
   private stopTimer(): void {
@@ -132,7 +194,21 @@ export class JungleRadarController {
     this.cachedBox = null;
     this.myTeam = null;
     this.templates = [];
+    this.lastAnnouncement = null;
+    this.lastGameTime = -1;
+    this.loggedBox = false;
+    this.preferredDisplayId = null;
+    this.screenMissStreak = 0;
     this.state = { ...EMPTY_STATE };
+    if (this.sentToChat) {
+      this.sentToChat = false;
+      void this.alerts?.clearChat?.();
+      this.clearTimer = setTimeout(() => {
+        this.clearTimer = null;
+        void this.alerts?.clearChat?.();
+      }, POST_GAME_CLEAR_DELAY_MS);
+      this.clearTimer.unref();
+    }
     if (hadData) this.onUpdate(this.getState());
   }
 
@@ -165,7 +241,7 @@ export class JungleRadarController {
         const s2 = p.summonerSpells?.summonerSpellTwo?.rawDisplayName ?? '';
         return /Smite/i.test(s1) || /Smite/i.test(s2);
       }) ??
-      null;
+      (mode === 'PRACTICETOOL' && enemies.length === 1 ? enemies[0] : null);
 
     if (!jungler) {
       this.unsupportedMode = true;
@@ -198,6 +274,56 @@ export class JungleRadarController {
     return true;
   }
 
+  private async captureMinimapCrop(layout: MinimapLayout): Promise<{ capture: CropCapture | null; sawBlackOnly: boolean }> {
+    const thumbnailSize = captureScreenSize();
+    const primaryId = String(screen.getPrimaryDisplay().id);
+    const screens = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize });
+    const priority = (s: DesktopCapturerSource) => {
+      if (this.preferredDisplayId && s.display_id === this.preferredDisplayId) return 0;
+      return s.display_id === primaryId ? 1 : 2;
+    };
+    const ordered = [...screens].sort((a, b) => priority(a) - priority(b));
+
+    let sawValid = false;
+    let firstNonBlack: CropCapture | null = null;
+    for (const src of ordered) {
+      const cropped = cropSource(src, layout);
+      if (!cropped) continue;
+      sawValid = true;
+      if (cropped.black) continue;
+      const box = findMapBox(cropped.bgra, cropped.cw, cropped.ch);
+      const item: CropCapture = { bgra: cropped.bgra, cw: cropped.cw, ch: cropped.ch, box, displayId: src.display_id || null };
+      if (box) {
+        if (item.displayId) this.preferredDisplayId = item.displayId;
+        this.cachedBox = box;
+        this.screenMissStreak = 0;
+        return { capture: item, sawBlackOnly: false };
+      }
+      if (!firstNonBlack) firstNonBlack = item;
+    }
+
+    if (!firstNonBlack) return { capture: null, sawBlackOnly: sawValid };
+
+    this.screenMissStreak++;
+    if (this.screenMissStreak >= 2) {
+      const windows = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 1920, height: 1080 } });
+      const gameWin =
+        windows.find((s) => s.name === GAME_WINDOW_NAME) ??
+        windows.find((s) => /League of Legends/i.test(s.name) && !/Rift/i.test(s.name));
+      const winCrop = gameWin ? cropSource(gameWin, layout) : null;
+      if (winCrop && !winCrop.black) {
+        const box = findMapBox(winCrop.bgra, winCrop.cw, winCrop.ch);
+        if (box) {
+          this.cachedBox = box;
+          this.screenMissStreak = 0;
+          return { capture: { bgra: winCrop.bgra, cw: winCrop.cw, ch: winCrop.ch, box, displayId: null }, sawBlackOnly: false };
+        }
+      }
+    }
+
+    return { capture: firstNonBlack, sawBlackOnly: false };
+  }
+
   private async tick(): Promise<void> {
     if (this.busy || !this.enabled() || this.state.black || this.unsupportedMode) return;
     this.busy = true;
@@ -210,29 +336,8 @@ export class JungleRadarController {
       }
       if (!this.myTeam || !this.layout || !this.templates.length) return;
 
-      const sources = await desktopCapturer.getSources({
-        types: ['window', 'screen'],
-        thumbnailSize: { width: 1280, height: 720 },
-      });
-      const primaryId = String(screen.getPrimaryDisplay().id);
-      const gameSource =
-        sources.find((s) => s.name === GAME_WINDOW_NAME) ??
-        sources.find((s) => s.id.startsWith('window:') && /League of Legends/i.test(s.name) && !/Rift/i.test(s.name)) ??
-        sources.find((s) => s.display_id === primaryId) ??
-        sources.find((s) => s.id.startsWith('screen:')) ??
-        sources[0];
-      const thumb = gameSource?.thumbnail;
-      if (!thumb || thumb.isEmpty()) return;
-
-      const { width, height } = thumb.getSize();
-      if (width < 320 || height < 240) return;
-
-      const region = minimapRegion(this.layout, width, height);
-      const crop = thumb.crop(region);
-      const { width: cw, height: ch } = crop.getSize();
-      const bgra = crop.toBitmap();
-
-      if (isBlack(bgra, cw, ch)) {
+      const { capture, sawBlackOnly } = await this.captureMinimapCrop(this.layout);
+      if (sawBlackOnly) {
         this.blackStreak++;
         if (this.blackStreak >= MAX_BLACK_STREAK) {
           appLog('radar-jg: captura veio preta 3x (jogo em tela cheia exclusiva); pausando captura');
@@ -241,22 +346,32 @@ export class JungleRadarController {
         }
         return;
       }
+      if (!capture) return;
       this.blackStreak = 0;
 
-      const detectedBox = findMapBox(bgra, cw, ch);
-      if (detectedBox) this.cachedBox = detectedBox;
       const box: MapBox =
-        detectedBox ??
+        capture.box ??
         this.cachedBox ?? {
-          left: Math.round(cw * 0.14),
-          top: Math.round(ch * 0.14),
-          size: Math.round(cw * 0.78),
+          left: Math.round(capture.cw * 0.14),
+          top: Math.round(capture.ch * 0.14),
+          size: Math.round(capture.cw * 0.78),
         };
+      if (capture.box && !this.loggedBox) {
+        this.loggedBox = true;
+        appLog(`radar-jg: minimapa calibrado (${capture.cw}x${capture.ch}, box=${box.left},${box.top},${box.size})`);
+      }
 
       const gameTime = raw.gameData?.gameTime ?? 0;
-      const hit = detectJunglerInMinimap(bgra, cw, ch, box, this.templates, this.myTeam, gameTime, 'bgra');
+      if (this.lastGameTime >= 0 && gameTime + 5 < this.lastGameTime) {
+        this.lastAnnouncement = null;
+        this.setState({ ...this.state, lastSeen: null, trail: [] });
+      }
+      this.lastGameTime = gameTime;
+
+      const hit = detectJunglerInMinimap(capture.bgra, capture.cw, capture.ch, box, this.templates, this.myTeam, gameTime, 'bgra');
       if (!hit) return;
 
+      const prevSeen = this.state.lastSeen;
       const trail = appendTrail(this.state.trail, hit);
       this.setState({
         ...this.state,
@@ -265,6 +380,18 @@ export class JungleRadarController {
         lastSeen: hit,
         trail,
       });
+
+      if (shouldAnnounceRadarSighting(this.lastAnnouncement, hit, prevSeen)) {
+        this.lastAnnouncement = { zone: hit.zone, gameTime: hit.gameTime };
+        appLog(`radar-jg: ${this.state.championName} visto em ${hit.zone} (conf=${hit.confidence})`);
+        if (this.alerts?.chatEnabled?.() && this.alerts.chat?.hasActiveChat()) {
+          this.sentToChat = true;
+          this.alerts.chat.sendBuddyMessages([`Radar JG: ${this.state.championName} visto em ${hit.zone}.`]);
+        }
+        if (this.alerts?.voiceEnabled?.()) {
+          this.alerts.speak?.(`${this.state.championName} em ${hit.zone}`);
+        }
+      }
     } catch (error) {
       appLog(`radar-jg: erro: ${error instanceof Error ? error.message : error}`);
     } finally {

@@ -2,6 +2,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const { BUDDY_ID, BUDDY_JID } = require('../dist-electron/invisible/buddy.js');
+const { DEFAULT_TIMINGS } = require('../dist-electron/overlay/live-dashboard.js');
 const { clearBuddyChat, ObjectiveAnnouncer } = require('../dist-electron/overlay/objective-announcer.js');
 
 describe('ObjectiveAnnouncer e limpeza do chat ao fim da partida', () => {
@@ -98,6 +99,64 @@ describe('ObjectiveAnnouncer e limpeza do chat ao fim da partida', () => {
       connector.phase = 'PreEndOfGame';
       connector.emit('state');
       assert.equal(clears, 1, 'Deveria limpar o chat ao sair da partida');
+    } finally {
+      connector.phase = 'None';
+      connector.emit('state');
+    }
+  });
+
+  it('ObjectiveAnnouncer envia saudação e objetivos no Modo de treino (PRACTICETOOL) e reseta ao reiniciar o jogo', async () => {
+    class FakeConnector extends EventEmitter {
+      phase = 'InProgress';
+      getState() { return { gameflowPhase: this.phase }; }
+    }
+    const connector = new FakeConnector();
+    const sentLines = [];
+    let gameTime = 275;
+    const fakeRaw = async () => ({
+      gameData: { gameTime, gameMode: 'PRACTICETOOL', mapNumber: 11 },
+      activePlayer: { summonerName: 'Eu', level: 6 },
+      allPlayers: [{
+        summonerName: 'Eu',
+        championName: 'Katarina',
+        team: 'ORDER',
+        level: 6,
+        scores: { kills: 0, deaths: 0, assists: 0, creepScore: 0, wardScore: 0 },
+      }],
+      events: { Events: [{ EventName: 'GameStart', EventTime: 0 }] },
+    });
+
+    const announcer = new ObjectiveAnnouncer(
+      connector,
+      {
+        chat: {
+          hasActiveChat: () => true,
+          sendBuddyMessages: (lines) => sentLines.push(...lines),
+        },
+        chatEnabled: () => true,
+        clearChat: () => undefined,
+        speak: () => undefined,
+        voiceEnabled: () => false,
+      },
+      async () => DEFAULT_TIMINGS,
+      fakeRaw,
+    );
+
+    try {
+      announcer.sync();
+      await new Promise((r) => setTimeout(r, 30));
+      assert.ok(sentLines.some((l) => l.includes('Partida começou')), 'Deveria enviar saudação no PRACTICETOOL');
+      assert.ok(sentLines.some((l) => l.includes('Dragão nasce em 30 s')), 'Deveria avisar do Dragão em 30 s no PRACTICETOOL');
+
+      // Simula "Reiniciar partida" no Modo de treino (relógio volta para 10 s e depois chega a 275 s de novo)
+      const countBeforeReset = sentLines.length;
+      gameTime = 10;
+      await announcer.poll();
+      assert.ok(sentLines.length > countBeforeReset, 'Deveria reenviar saudação após reiniciar o Modo de treino');
+
+      gameTime = 275;
+      await announcer.poll();
+      assert.ok(sentLines.slice(countBeforeReset).some((l) => l.includes('Dragão nasce em 30 s')), 'Deveria reavisar objetivos após reset');
     } finally {
       connector.phase = 'None';
       connector.emit('state');

@@ -2,14 +2,14 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.27.0';
+const RELEASE = '1.27.1';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
     icon: 'eye',
     title: 'Radar Visual do Jungler Inimigo pelo Minimapa',
-    text: 'Em Summoner’s Rift (Sem Bordas ou Janela), o app identifica automaticamente onde o Jungler inimigo apareceu pela última vez no minimapa, mostra o rastro recente e conta há quanto tempo está sumido — no PC e no celular Android.',
+    text: 'Em Summoner’s Rift e no Modo de treino (Sem Bordas ou Janela), o app identifica automaticamente onde o Jungler inimigo apareceu no minimapa, mostra o rastro recente, avisa no chat do LoL e em voz alta (quando ativos) e funciona tanto no PC quanto no celular Android.',
   },
   {
     icon: 'chat',

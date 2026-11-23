@@ -175,3 +175,16 @@ test('Partida Rápida (SWIFTPLAY) é Summoner\'s Rift: mostra objetivos com os t
   assert.ok(live.objectives.some((o) => o.key === 'baron'), 'Barão na lista de objetivos');
   assert.ok(!live.objectives.some((o) => o.key === 'grubs' || o.key === 'herald'), 'sem Larvas e Arauto nesse modo');
 });
+
+test('Modo de treino (PRACTICETOOL) é Summoner\'s Rift: libera objetivos, timers e selva', () => {
+  const { DEFAULT_TIMINGS } = require('../dist-electron/overlay/live-dashboard.js');
+  const practice = structuredClone(raw);
+  practice.gameData.gameMode = 'PRACTICETOOL';
+  practice.gameData.gameTime = 120;
+  practice.events.Events = [{ EventName: 'GameStart', EventTime: 0 }];
+  const live = toLiveDashboard(practice, DEFAULT_TIMINGS);
+  assert.ok(live.timers, 'timers de objetivos e inibidores devem ficar ativos no Modo de treino');
+  assert.ok(live.jungle, 'campos da selva devem ficar ativos no Modo de treino');
+  assert.ok(live.objectives.some((o) => o.key === 'dragon'), 'Dragão na lista de objetivos');
+  assert.ok(live.objectives.some((o) => o.key === 'baron'), 'Barão na lista de objetivos');
+});
