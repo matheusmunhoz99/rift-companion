@@ -48,7 +48,12 @@ Rift Companion não é endossado pela Riot Games e não reflete as opiniões da 
 
 ### O que há de novo nesta versão
 ```
-Primeira versão na Microsoft Store: instalação sem avisos e atualizações automáticas pela Store.
+Versão 1.26.14:
+- Nova tela Jogar redesenhada: aceite convites de amigos e aceite ou recuse partidas direto pelo app, com slots em destaque no Jogo Dinâmico.
+- Gráficos de fim de jogo (sem IA): acompanhe Ouro, XP e CS minuto a minuto contra o seu oponente de rota e a divisão exata do seu dano (físico, mágico e verdadeiro).
+- Acervo local ampliado em "Já jogaram com você": guarda até 1.000 partidas no PC para reconhecer jogadores antigos sem gastar API extra.
+- Alertas de itens críticos inimigos ao vivo (Zhonya, Anjo Guardião, Bandana de Mercúrio, Rabadon e outros) na aba Ao vivo.
+- Ranking dos amigos no Progresso (Solo/Duo e Flex), os dois elos nos cards e detector de provável smurf.
 ```
 
 ### Recursos do produto (um por campo)

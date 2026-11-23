@@ -5,6 +5,7 @@ renderer/.angular/
 *.env
 *.log
 .omc/
+.claude/
 release/
 release-check*/
 release-overlay/

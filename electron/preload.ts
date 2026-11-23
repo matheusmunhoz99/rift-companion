@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('app', {
   setPreferences: (changes: unknown) => ipcRenderer.invoke('prefs:set', changes),
   openBuildsFolder: () => ipcRenderer.invoke('app:open-builds-folder'),
   openStartupSettings: () => ipcRenderer.invoke('app:open-startup-settings'),
+  openStoreReview: () => ipcRenderer.invoke('app:open-store-review'),
   launchLeague: () => ipcRenderer.invoke('app:launch-league'),
   invisibleMissing: () => ipcRenderer.invoke('invisible:missing'),
   restartInvisible: () => ipcRenderer.invoke('invisible:restart'),

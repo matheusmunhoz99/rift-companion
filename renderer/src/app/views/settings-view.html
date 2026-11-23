@@ -215,34 +215,6 @@
         (toggled)="prefs.set({ liveReadVoice: $event })"
       />
     }
-
-    @switch (prefs.gameWindowMode()) {
-      @case ('fullscreen') {
-        <div class="notice warning">
-          <strong>Seu jogo está em Tela Cheia Exclusiva.</strong>
-          No modo exclusivo, a captura do minimapa vem preta e a selva automática não consegue ler os timers.
-          Escolha <strong>Sem bordas</strong> no jogo (100% da tela, mesma resolução e taxa de quadros).
-          @if (canSetBorderless) {
-            <div class="notice-actions">
-              <button type="button" class="btn small" [disabled]="switchingWindow()" (click)="switchToBorderless()">
-                {{ switchingWindow() ? 'Mudando…' : 'Mudar para Tela Cheia Sem Bordas' }}
-              </button>
-              <span class="muted">Configurado pelo cliente do LoL, vale para a próxima partida.</span>
-            </div>
-          }
-        </div>
-      }
-      @case ('borderless') {
-        <div class="notice ok">
-          <strong>Seu jogo está em Tela Cheia (Sem Bordas):</strong> ocupa 100% da tela com resolução total e máximo desempenho, e a selva automática consegue ler o minimapa.
-        </div>
-      }
-      @case ('windowed') {
-        <div class="notice ok">
-          Seu jogo está em Modo Janela: a selva automática consegue ler o minimapa normalmente.
-        </div>
-      }
-    }
   </section>
   }
   }
@@ -387,17 +359,11 @@
       <h3 class="section-title">Sobre</h3>
       <div class="about-row">
         <p><strong>Rift Companion</strong> · versão {{ prefs.info()?.version }}</p>
-        @if (store()) {
+        @if (!android) {
         <span class="muted small">Atualizado pela Microsoft Store</span>
-        } @else if (!android) {
-        <button type="button" class="btn ghost small" [disabled]="checking()" (click)="checkUpdate()">
-          {{ checking() ? 'Procurando…' : 'Procurar atualizações' }}
-        </button>
+        <button type="button" class="btn ghost small" (click)="openStoreReview()">Avaliar na Store</button>
         }
       </div>
-      @if (updateMessage(); as message) {
-        <p class="muted">{{ message }}</p>
-      }
       <p class="muted">
         Os dados da sua conta vêm do cliente do LoL no seu PC. Buscas de jogadores e partidas passam pelo servidor do
         Rift Companion, que consulta a Riot API. Nenhuma senha é lida ou enviada.

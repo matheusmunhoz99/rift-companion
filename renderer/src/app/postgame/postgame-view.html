@@ -63,6 +63,15 @@
   @if (sharing() && me(); as m) {
     <app-share-card [game]="g" [player]="m" [modeTitle]="title()" (closed)="sharing.set(false)" />
   }
+  @if (showStoreReview()) {
+    <div class="store-review">
+      <span><strong>Mandou muito bem!</strong> Curtiu jogar com o Rift Companion? Avalie em 5 segundos na Microsoft Store.</span>
+      <div class="store-review-actions">
+        <button type="button" class="btn small" (click)="dismissStoreReview(true)">Avaliar na Store</button>
+        <button type="button" class="btn ghost small" (click)="dismissStoreReview(false)">Agora não</button>
+      </div>
+    </div>
+  }
 
   @if (layout.visible('placar')) {
     <app-postgame-scoreboard

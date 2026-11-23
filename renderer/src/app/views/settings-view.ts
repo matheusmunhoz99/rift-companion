@@ -197,4 +197,8 @@ export class SettingsView {
   protected openStartupSettings(): void {
     void window.app?.openStartupSettings?.();
   }
+
+  protected openStoreReview(): void {
+    void window.app?.openStoreReview?.();
+  }
 }

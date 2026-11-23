@@ -1638,3 +1638,21 @@ h3 {
     }
   }
 }
+
+.store-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-size: 13px;
+}
+
+.store-review-actions {
+  display: flex;
+  gap: 8px;
+}

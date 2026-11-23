@@ -2,99 +2,49 @@ import { Component, signal } from '@angular/core';
 import { Icon } from '../ui/icon';
 
 /** Versão cujas novidades esta tela apresenta; trocar quando houver outra grande. */
-const RELEASE = '1.26.9';
+const RELEASE = '1.26.14';
 const SEEN_KEY = 'rift.whatsNewSeen';
 
 const HIGHLIGHTS = [
   {
-    icon: 'progress',
-    title: 'Ranking dos amigos',
-    text: 'Em Progresso, um ranking com todos os seus amigos do LoL: elo da temporada, pico e quanto cada um subiu desde a temporada passada, ou o PDL ganho na semana com vitórias, derrotas e sequências. Solo/Duo e Flex separados. O botão "Copiar imagem" gera o ranking pronto para mandar no grupo.',
-  },
-  {
     icon: 'swords',
-    title: 'Dano AP, AD e verdadeiro real + itens situacionais precisos',
-    text: 'Todos os 173 campeões agora usam o dano real medido em 247 mil+ partidas Mestre+ (corrigindo campeões como Qiyana, Bel’Veth, Senna e Locke na seleção e na build). Os itens situacionais filtram botas repetidas, evoluções de Lágrima e priorizam apenas itens que realmente sobem contra o dano inimigo.',
+    title: 'Tela Jogar redesenhada e convites ao vivo',
+    text: 'Crie sala, aceite convites recebidos de amigos e aceite ou recuse partidas direto pelo Rift Companion, com visual novo para os slots do Jogo Dinâmico.',
   },
   {
-    icon: 'display',
-    title: 'Overlay e timers do minimapa em tela cheia',
-    text: 'O overlay e os timers do minimapa agora funcionam em tela cheia (100% da tela, sem precisar jogar em janela pequena), com contagem desde o 2m+ nos buffs Red e Blue e contagem do primeiro spawn no início da partida.',
-  },
-  {
-    icon: 'eye',
-    title: 'Timers em cima do minimapa',
-    text: 'Uma camada transparente em cima do minimapa mostra quanto falta para cada campo da selva e para dragão, Barão, Arauto e Larvas, no lugar de cada um. Funciona por cima do jogo e não injeta nada.',
-  },
-  {
-    icon: 'check',
-    title: 'Selva automática mais precisa',
-    text: 'Cada horário só entra depois de duas leituras que concordam, sem estimativas e sem confundir a contagem de nascimento do começo da partida.',
-  },
-  {
-    icon: 'plan',
-    title: 'Selva automática pela tela',
-    text: 'O LoL escreve no minimapa quanto falta para cada campo que o seu time viu morrer (1:57, 40, 2m+). O app lê esse número na tela a cada segundo e conta sozinho até o campo voltar, sem você apertar nada. Só lê a tela, não toca no jogo.',
-  },
-  {
-    icon: 'eye',
-    title: 'Overlay com a IA por cima do jogo',
-    text: 'A leitura da IA aparece numa linha do overlay (a primeira opção e o alerta), junto com objetivos, inibidores e a selva. É uma janela separada: não injeta nada no jogo.',
-  },
-  {
-    icon: 'display',
-    title: 'Sem bordas com um clique',
-    text: 'Em Configurações › Overlay, o botão troca o jogo para Sem bordas pelo próprio cliente do LoL. Mesmo desempenho da tela cheia, e o overlay e a visão da IA passam a funcionar.',
-  },
-  {
-    icon: 'display',
-    title: 'A IA vê o seu minimapa',
-    text: 'Em cada leitura o app recorta só o canto do minimapa da tela e manda junto: a IA vê inimigos visíveis, sentinelas e os timers que o próprio LoL desenha. Precisa do jogo em Sem bordas (em Tela cheia o Windows entrega a tela preta).',
-  },
-  {
-    icon: 'refresh',
-    title: 'Timers mais rápidos',
-    text: 'O app lê o jogo a cada 1 segundo (antes 2 a 3): objetivos, inibidores, overlay e avisos falados saem quase na hora.',
-  },
-  {
-    icon: 'eye',
-    title: 'A IA acompanha a sua partida',
-    text: 'Ela anota suas mortes (e quem te matou), os itens que você comprou, o CS e o ouro contra o oponente e a média Mestre+ no mesmo minuto. A cada leitura diz o que você está acertando, onde dá para melhorar e os caminhos possíveis.',
-  },
-  {
-    icon: 'plan',
-    title: 'Selva no tempo certo e atalhos no jogo',
-    text: 'Tempos dos campos do patch 26.1 (e da Partida Rápida, que volta mais rápido). Matou o vermelho? Ctrl+Alt+2 sem sair do jogo: o app conta e a voz confirma. Ctrl+Alt+1 a 6 marcam buffs e caranguejos.',
-  },
-  {
-    icon: 'chat',
-    title: 'Avisos falados',
-    text: 'Uma voz em português avisa no fone: "Dragão em 30 segundos", "Barão nasceu", inibidores voltando e os campos da selva que você marcou. Funciona com o jogo em tela cheia. Volume em Configurações.',
-  },
-  {
-    icon: 'user',
-    title: 'Para você, na seleção',
-    text: 'Na hora de escolher, seus campeões que mais ganham nesta rota, cruzados com o confronto contra o inimigo da sua rota. Um clique e já escolhe.',
+    icon: 'progress',
+    title: 'Gráficos de fim de jogo vs. oponente de rota',
+    text: 'No fim da partida, veja sua evolução minuto a minuto em Ouro, XP e CS comparada ao seu oponente direto, além da divisão exata do seu dano (físico, mágico e verdadeiro).',
   },
   {
     icon: 'linked',
-    title: 'Com quem você ganha mais',
-    text: 'No Progresso: sozinho x em grupo, cada parceiro de duo com as vitórias juntos e seus campeões que mais ganham.',
-  },
-  {
-    icon: 'swords',
-    title: 'Card do fim de jogo',
-    text: 'O botão "Compartilhar" no fim de jogo gera uma imagem 1080×1080 com a arte do campeão, nota, KDA e destaques. Copie e cole no WhatsApp, Discord ou Instagram.',
+    title: 'Acervo local de 1.000 partidas em "Já jogaram com você"',
+    text: 'O app agora guarda um resumo leve das suas últimas 1.000 partidas no seu PC (sem chamadas extras à Riot), reconhecendo quem você já enfrentou semanas atrás.',
   },
   {
     icon: 'eye',
-    title: 'Selva e inibidores no overlay',
-    text: 'O overlay por cima do jogo ganha uma linha com os campos da selva marcados e os inibidores voltando.',
+    title: 'Alertas de itens críticos inimigos ao vivo',
+    text: 'Na aba Ao vivo, o app avisa na hora quando um inimigo fecha itens que viram lutas — como Ampulheta de Zhonya, Anjo Guardião, Limiar da Noite, Bandana de Mercúrio ou Rabadon.',
   },
   {
-    icon: 'display',
-    title: 'Ctrl+Shift+R',
-    text: 'Mostra o app por cima do jogo e, apertando de novo, volta para o jogo. Sem Alt+Tab.',
+    icon: 'progress',
+    title: 'Ranking dos amigos no Progresso',
+    text: 'Veja o ranking de todos os seus amigos do LoL (Solo/Duo e Flex): elo da temporada, pico, PDL ganho desde segunda-feira e sequências — com botão "Copiar imagem" pronto para o grupo.',
+  },
+  {
+    icon: 'user',
+    title: 'Os dois elos nos cards + detector de smurf',
+    text: 'Cada jogador na partida mostra Solo/Duo e Flex juntos, além de sinalizar contas de nível baixo com elo alto ("Provável smurf").',
+  },
+  {
+    icon: 'plan',
+    title: 'Plano de jogo e leitura tática por IA no Rift',
+    text: 'A IA analisa os dois times na tela de carregamento e acompanha a sua partida (mortes, itens e ritmo Mestre+) trazendo opções práticas para você decidir.',
+  },
+  {
+    icon: 'chat',
+    title: 'Avisos falados e atalhos da selva',
+    text: 'Voz em português para objetivos e campos marcados (Ctrl+Alt+1..6 sem sair do jogo), além de Ctrl+Shift+R para alternar para o app sem Alt+Tab.',
   },
 ];
 
@@ -111,7 +61,7 @@ const HIGHLIGHTS = [
           <header class="hero">
             <span class="badge">Novidades</span>
             <h2 id="whats-new-title">Rift Companion <span class="num">{{ release }}</span></h2>
-            <p>A IA acompanhando a sua partida, a selva no tempo certo e atalhos dentro do jogo: veja o que mudou.</p>
+            <p>Nova tela Jogar com convites, gráficos de fim de jogo, acervo de 1.000 partidas e alertas de itens críticos: veja o que mudou.</p>
           </header>
           <ul class="highlights">
             @for (item of highlights; track item.title) {

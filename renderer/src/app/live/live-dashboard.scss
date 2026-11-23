@@ -1221,3 +1221,31 @@ h4 {
     gap: 2px;
   }
 }
+
+.spikes {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spike {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--enemy-strong) 12%, var(--well));
+  font-size: 12px;
+
+  &.important {
+    border: 1px solid color-mix(in srgb, var(--enemy-strong) 45%, transparent);
+  }
+
+  img {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+}

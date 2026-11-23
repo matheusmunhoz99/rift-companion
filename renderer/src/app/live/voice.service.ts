@@ -19,6 +19,7 @@ export class VoiceService {
   private readonly prefs = inject(PreferencesService);
   private readonly live = inject(LiveDataService);
   private readonly announced = new Set<string>();
+  private readonly announcedSpikes = new Set<string>();
 
   constructor() {
     window.app?.onSpeak?.((text) => this.say(text));
@@ -44,6 +45,21 @@ export class VoiceService {
           this.announced.add(id);
           const names = campNames(key);
           if (names) this.say(`${names.spoken} volta em ${CAMP_WARNING_S} segundos`);
+        }
+      });
+    });
+
+    effect(() => {
+      const spikes = this.live.itemSpikes();
+      untracked(() => {
+        if (!spikes.length) {
+          this.announcedSpikes.clear();
+          return;
+        }
+        for (const spike of spikes) {
+          if (!spike.important || this.announcedSpikes.has(spike.id)) continue;
+          this.announcedSpikes.add(spike.id);
+          this.say(`${spike.championName} fechou ${spike.itemName}`);
         }
       });
     });

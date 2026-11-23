@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } f
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import type { LiveDashboard, LivePlayer } from '../history/riot.types';
 import { LcuService } from '../lcu/lcu.service';
+import { detectEnemyItemSpikes, type ItemSpike } from './item-spikes';
 import { emptyJournal, rememberRead, updateJournal, type Journal } from './match-journal';
 
 const POLL_MS = 1_000;
@@ -28,6 +29,9 @@ export class LiveDataService {
   private readonly fetchedAt = signal(0);
   private readonly now = signal(Date.now());
   readonly history = signal<GoldSample[]>([]);
+  /** Alertas recentes de itens críticos fechados pelo time inimigo. */
+  readonly itemSpikes = signal<ItemSpike[]>([]);
+  private seenEnemyItems: Set<string> | null = null;
   /** Feitiços marcados como usados: "riotId|slot" -> tempo de jogo em que voltam. */
   readonly spellTimers = signal<ReadonlyMap<string, number>>(new Map());
 
@@ -114,6 +118,8 @@ export class LiveDataService {
     this.timer = null;
     this.data.set(null);
     this.history.set([]);
+    this.itemSpikes.set([]);
+    this.seenEnemyItems = null;
     this.spellTimers.set(new Map());
     this.campTimers.set(new Map());
     this.journal.set(emptyJournal());
@@ -130,10 +136,21 @@ export class LiveDataService {
     if (!data) return;
     const previous = this.data();
     // Tempo voltou: outra partida (ou replay); o gráfico recomeça.
-    if (previous && data.gameTime + 5 < previous.gameTime) this.history.set([]);
+    if (previous && data.gameTime + 5 < previous.gameTime) {
+      this.history.set([]);
+      this.itemSpikes.set([]);
+      this.seenEnemyItems = null;
+    }
     this.data.set(data);
     this.fetchedAt.set(Date.now());
     this.sample(data);
+    if (this.seenEnemyItems === null) {
+      this.seenEnemyItems = new Set<string>();
+      detectEnemyItemSpikes(data.players, data.gameTime, this.seenEnemyItems, true);
+    } else {
+      const spikes = detectEnemyItemSpikes(data.players, data.gameTime, this.seenEnemyItems, false);
+      if (spikes.length) this.itemSpikes.update((prev) => [...spikes, ...prev].slice(0, 12));
+    }
     this.journal.update((j) => updateJournal(j, data, (id) => this.ddragon.itemCost(id), (p) => this.itemValue(p)));
   }
 

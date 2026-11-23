@@ -294,6 +294,17 @@
         <h4>Lances</h4>
         <span class="muted small" title="Dados do próprio jogo. A Riot não informa dano causado durante a partida: ele aparece no placar ao fim, no histórico.">do jogo, a cada 2 s</span>
       </header>
+      @if (live.itemSpikes().length) {
+        <ul class="spikes" aria-label="Itens críticos inimigos">
+          @for (s of live.itemSpikes(); track s.id) {
+            <li class="spike" [class.important]="s.important">
+              <span class="event-time">{{ time(s.time) }}</span>
+              <img [src]="ddragon.itemIconUrl(s.itemId)" [alt]="s.itemName" />
+              <span><strong>{{ s.championName }}</strong> fechou {{ s.itemName }}</span>
+            </li>
+          }
+        </ul>
+      }
       <ol class="feed">
         @for (event of game.events; track $index) {
           <li class="event" [class.ally]="event.ally === true" [class.enemy]="event.ally === false" [attr.data-kind]="event.kind">

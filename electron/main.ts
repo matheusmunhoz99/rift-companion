@@ -804,6 +804,9 @@ void acquireInstance().then((acquired) => {
     // Na versão da Store, o "iniciar com o Windows" é a tarefa de inicialização do pacote,
     // ligada e desligada pela pessoa nas configurações do Windows.
     ipcMain.handle('app:open-startup-settings', () => shell.openExternal('ms-settings:startupapps'));
+    ipcMain.handle('app:open-store-review', () =>
+      shell.openExternal('ms-windows-store://review/?ProductId=9P28NB8F1VHW'),
+    );
     ipcMain.handle('app:open-builds-folder', async () => {
       const directory = path.join(app.getPath('userData'), 'builds');
       await import('node:fs/promises').then((fs) => fs.mkdir(directory, { recursive: true }));

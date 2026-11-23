@@ -135,6 +135,8 @@ export interface AppBridge {
   openBuildsFolder(): Promise<void>;
   /** Versão da Store: abre Configurações > Aplicativos > Inicialização do Windows. */
   openStartupSettings?(): Promise<void>;
+  /** Versão da Store: abre a página de avaliação na Microsoft Store. */
+  openStoreReview?(): Promise<void>;
   /** Envia um erro ao servidor (anônimo), respeitando a preferência da pessoa. */
   report(context: string, message: string, stack?: string): Promise<void>;
   /** Diagnóstico detalhado (só tem efeito com a opção ligada). Ausente no celular. */

@@ -10,6 +10,7 @@ import { PostGameScoreboard } from './scoreboard';
 import { ShareCard } from './share-card';
 import { ScreenLayout } from '../core/screen-layout';
 import { LayoutMenu } from '../ui/layout-menu';
+import { isAndroid } from '../mobile/mobile-client';
 import { partiesOf } from '../match/parties';
 import { BASELINE_SIZE, buildCoachReport, toCoachRequest, type CoachMetric, type CoachReport } from './coach';
 
@@ -127,6 +128,19 @@ export class PostGameView {
   protected readonly showFormula = signal(false);
   /** Card do fim de jogo aberto (para copiar ou salvar a imagem). */
   protected readonly sharing = signal(false);
+  private readonly reviewDismissed = signal(localStorage.getItem('rift.storeReviewPrompted') === '1');
+  protected readonly showStoreReview = computed(() => {
+    if (isAndroid || !window.app?.openStoreReview || this.reviewDismissed()) return false;
+    const g = this.game();
+    const m = this.me();
+    return !!g && !!m && g.myTeamWon === true && (m.score >= 8 || m.rank <= 2);
+  });
+
+  protected dismissStoreReview(rate: boolean): void {
+    this.reviewDismissed.set(true);
+    try { localStorage.setItem('rift.storeReviewPrompted', '1'); } catch { /* noop */ }
+    if (rate) void window.app?.openStoreReview?.();
+  }
 
   // --- Coach: comparação com a sua média + narração por IA (opcional) ---
   protected readonly coach = signal<CoachReport | null>(null);
