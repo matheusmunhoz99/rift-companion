@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld('lobby', {
   search: (start: boolean) => ipcRenderer.invoke('lobby:search', start),
   invite: (summonerId: number) => ipcRenderer.invoke('lobby:invite', summonerId),
   readyCheck: (accept: boolean) => ipcRenderer.invoke('lobby:ready-check', accept),
+  respondInvite: (invitationId: string, accept: boolean) =>
+    ipcRenderer.invoke('lobby:respond-invite', invitationId, accept),
   champions: () => ipcRenderer.invoke('lobby:champions'),
   setSlot: (index: number, championId: number, position: string) =>
     ipcRenderer.invoke('lobby:slot', index, championId, position),

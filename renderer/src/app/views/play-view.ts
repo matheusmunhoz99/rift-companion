@@ -3,7 +3,14 @@ import { NavigationService } from '../core/navigation.service';
 import { ToastService, errorText } from '../core/toast.service';
 import { DataDragonService } from '../data-dragon/data-dragon.service';
 import { LcuService } from '../lcu/lcu.service';
-import type { Friend, LobbyMember, PlayerSlot, Position, QueueOption } from '../lcu/lcu.types';
+import type {
+  Friend,
+  LobbyMember,
+  PlayerSlot,
+  Position,
+  QueueOption,
+  ReceivedInvitation,
+} from '../lcu/lcu.types';
 import { queueName } from '../riot/labels';
 import { Icon } from '../ui/icon';
 
@@ -29,6 +36,9 @@ interface QueueGroup {
 }
 
 const BUSY_STATUSES = new Set(['inGame', 'championSelect', 'inQueue']);
+
+/** Tempo que o cliente dá para aceitar a partida. */
+const READY_CHECK_SECONDS = 10;
 
 const AVAILABILITY_LABELS: Record<string, string> = {
   chat: 'Online',
@@ -124,6 +134,17 @@ export class PlayView {
   });
 
   protected readonly searching = computed(() => this.state().search?.searchState === 'Searching');
+
+  /** Convites que alguém te mandou e ainda esperam resposta. */
+  protected readonly invitations = computed(() => this.state().invitations ?? []);
+  protected readonly readyCheck = computed(() => this.state().readyCheck);
+
+  /** Campeão do primeiro slot preenchido: vira a arte de fundo da sala. */
+  protected readonly heroSplash = computed(() => {
+    const slot = this.lobby()?.localPlayerSlots.find((s) => s.championId > 0);
+    const champion = slot ? this.ddragon.champion(slot.championId) : null;
+    return champion ? this.ddragon.championCenteredUrl(champion) : null;
+  });
 
   protected readonly visibleFriends = computed(() => {
     const term = this.friendSearch().toLowerCase().trim();
@@ -281,6 +302,43 @@ export class PlayView {
 
   protected slots(count: number): number[] {
     return Array.from({ length: count }, (_, i) => i);
+  }
+
+  /** Ícone do mapa para cada rota (FILL e sem rota usam as setas trocadas). */
+  protected laneIcon(position: string): string {
+    const known = SLOT_POSITIONS.includes(position as Position);
+    return known ? `lane-${position.toLowerCase()}` : 'lane-fill';
+  }
+
+  protected invitationQueue(queueId: number): string {
+    return this.queues().find((q) => q.id === queueId)?.name ?? queueName(queueId);
+  }
+
+  protected respondInvite(invitation: ReceivedInvitation, accept: boolean): Promise<void> {
+    return this.run(`invite:${invitation.invitationId}`, async () => {
+      await window.lobby!.respondInvite!(invitation.invitationId, accept);
+      this.toast.show(
+        accept ? `Você entrou na sala de ${invitation.fromName}.` : 'Convite recusado.',
+        accept ? 'success' : 'info',
+      );
+    });
+  }
+
+  protected respondReady(accept: boolean): Promise<void> {
+    return this.run('ready', () => window.lobby!.readyCheck(accept));
+  }
+
+  /** Segundos que ainda restam para aceitar (o cliente dá 10). */
+  protected readySeconds(): number {
+    const timer = this.readyCheck()?.timer ?? 0;
+    return Math.max(0, Math.ceil(READY_CHECK_SECONDS - timer));
+  }
+
+  /** Quanto da estimativa já passou (0–100), para a barra de progresso da fila. */
+  protected searchProgress(): number {
+    const search = this.state().search;
+    if (!search || search.estimatedQueueTime <= 0) return 0;
+    return Math.min(100, Math.round((search.timeInQueue / search.estimatedQueueTime) * 100));
   }
 
   private async run(key: string, action: () => Promise<void>): Promise<void> {

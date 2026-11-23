@@ -78,6 +78,8 @@ export interface LcuState {
   lobby: LobbyState | null;
   search: SearchState | null;
   readyCheck: ReadyCheckState | null;
+  /** Convites de sala que você recebeu e ainda não respondeu. */
+  invitations?: ReceivedInvitation[];
   /** Última conta que entrou no LoL neste PC (salva): vale com o cliente fechado. */
   account?: SavedAccount | null;
 }
@@ -153,6 +155,15 @@ export interface ReadyCheckState {
   timer: number;
 }
 
+/** Convite que alguém te mandou para entrar na sala dele. */
+export interface ReceivedInvitation {
+  invitationId: string;
+  fromSummonerId: number;
+  fromName: string;
+  queueId: number;
+  canAccept: boolean;
+}
+
 export interface Friend {
   puuid: string;
   summonerId: number;
@@ -172,6 +183,7 @@ export interface LobbyBridge {
   search(start: boolean): Promise<void>;
   invite(summonerId: number): Promise<void>;
   readyCheck(accept: boolean): Promise<void>;
+  respondInvite?(invitationId: string, accept: boolean): Promise<void>;
   champions(): Promise<number[]>;
   setSlot(index: number, championId: number, position: string): Promise<void>;
 }

@@ -8,6 +8,7 @@ import {
   getQueues,
   inviteFriend,
   leaveLobby,
+  respondInvitation,
   respondReadyCheck,
   setPlayerSlot,
   setPositions,
@@ -42,6 +43,16 @@ export function registerLobbyHandlers(connector: LcuConnector): void {
   ipcMain.handle('lobby:ready-check', (_event, accept: boolean) =>
     respondReadyCheck(credentials(), accept === true),
   );
+  ipcMain.handle('lobby:respond-invite', (_event, invitationId: string, accept: boolean) =>
+    respondInvitation(credentials(), toInvitationId(invitationId), accept === true),
+  );
+}
+
+/** O id vem do cliente, mas entra numa URL: aceita só o formato que ele usa. */
+function toInvitationId(value: unknown): string {
+  const id = String(value ?? '');
+  if (!/^[A-Za-z0-9._:-]{1,128}$/.test(id)) throw new Error('Convite inválido.');
+  return id;
 }
 
 function toId(value: unknown): number {

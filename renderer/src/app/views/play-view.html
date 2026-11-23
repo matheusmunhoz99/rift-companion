@@ -1,3 +1,36 @@
+<!-- Convites recebidos: valem em qualquer estado da tela, por isso vêm primeiro. -->
+@if (invitations().length > 0) {
+  <section class="invites">
+    @for (invitation of invitations(); track invitation.invitationId) {
+      <article class="invite">
+        <span class="invite-mark"><app-icon name="invite" [size]="18" /></span>
+        <div class="invite-text">
+          <strong>{{ invitation.fromName || 'Um jogador' }} chamou você</strong>
+          <span class="muted small">{{ invitationQueue(invitation.queueId) }}</span>
+        </div>
+        <div class="invite-actions">
+          <button
+            type="button"
+            class="btn ghost small"
+            [disabled]="busy() !== null"
+            (click)="respondInvite(invitation, false)"
+          >
+            Recusar
+          </button>
+          <button
+            type="button"
+            class="btn small"
+            [disabled]="busy() !== null || !invitation.canAccept"
+            (click)="respondInvite(invitation, true)"
+          >
+            Entrar
+          </button>
+        </div>
+      </article>
+    }
+  </section>
+}
+
 @if (!connected()) {
   <section class="card">
     <div class="empty-state">
@@ -20,53 +53,77 @@
 } @else if (lobby(); as room) {
   <div class="lobby-layout">
     <div class="lobby-main">
-      <section class="card lobby-header">
-        <div>
-          <span class="eyebrow">Sala</span>
+      <!-- Cabeçalho: a arte do campeão escolhido vira o ambiente da sala. -->
+      <section
+        class="hero"
+        [class.has-art]="!!heroSplash()"
+        [style.--art]="heroSplash() ? 'url(' + heroSplash() + ')' : null"
+      >
+        <div class="hero-body">
+          <span class="eyebrow">{{ room.isLeader ? 'Sua sala' : 'Você está na sala' }}</span>
           <h2>{{ lobbyQueueName(room.queueId) }}</h2>
-          <p class="muted">{{ room.members.length }} de {{ room.maxLobbySize }} jogadores</p>
+          <div class="hero-meta">
+            <span class="count"><strong>{{ room.members.length }}</strong>/{{ room.maxLobbySize }}</span>
+            <span class="muted">{{ room.members.length === 1 ? 'só você por enquanto' : 'no grupo' }}</span>
+          </div>
         </div>
         <button type="button" class="btn ghost" [disabled]="busy() !== null" (click)="leave()">Sair da sala</button>
       </section>
 
-      <section class="members">
+      <!-- O grupo, em fileira: quem está dentro e as vagas que faltam. -->
+      <section class="roster">
         @for (member of room.members; track member.puuid) {
-          <article class="member" [class.me]="member === me()">
-            <div class="member-avatar">
+          <article class="seat" [class.me]="member === me()">
+            <div class="seat-avatar">
               @if (ddragon.profileIconUrl(member.summonerIconId); as icon) {
                 <img [src]="icon" alt="" />
               }
               @if (member.isLeader) {
-                <span class="crown" title="Líder da sala">★</span>
+                <span class="seat-crown" title="Líder da sala"><app-icon name="crown" [size]="13" /></span>
               }
             </div>
-            <button type="button" class="member-name" [disabled]="!member.tagLine" (click)="openMember(member)" title="Ver histórico">
-              {{ member.gameName }}<span class="muted">#{{ member.tagLine }}</span>
+            <button
+              type="button"
+              class="seat-name"
+              [disabled]="!member.tagLine"
+              (click)="openMember(member)"
+              title="Ver histórico"
+            >
+              {{ member.gameName }}
             </button>
-            <span class="muted small">Nível {{ member.summonerLevel }}</span>
+            <span class="seat-level">Nível {{ member.summonerLevel }}</span>
             @if (member.playerSlots.length > 0) {
-              <div class="member-slots">
+              <div class="seat-champs">
                 @for (slot of member.playerSlots; track $index) {
                   @if (ddragon.champion(slot.championId); as champion) {
-                    <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" [title]="champion.name + ' · ' + positionLabel(slot.positionPreference)" />
+                    <img
+                      [src]="ddragon.championIconUrl(champion)"
+                      [alt]="champion.name"
+                      [title]="champion.name + ' · ' + positionLabel(slot.positionPreference)"
+                    />
                   }
                 }
               </div>
             }
             @if (room.showPositionSelector) {
-              <div class="member-positions">
-                <span class="position">{{ positionLabels[member.firstPosition] }}</span>
+              <div class="seat-lanes">
+                <span class="seat-lane" [title]="positionLabels[member.firstPosition]">
+                  <app-icon [name]="laneIcon(member.firstPosition)" [size]="15" />
+                </span>
                 @if (member.secondPosition !== 'UNSELECTED') {
-                  <span class="position secondary">{{ positionLabels[member.secondPosition] }}</span>
+                  <span class="seat-lane dim" [title]="positionLabels[member.secondPosition]">
+                    <app-icon [name]="laneIcon(member.secondPosition)" [size]="15" />
+                  </span>
                 }
               </div>
             }
           </article>
         }
         @for (slot of slots(emptySlots()); track slot) {
-          <article class="member empty">
-            <div class="member-avatar"><span class="plus">+</span></div>
-            <span class="muted">Vaga livre</span>
+          <article class="seat empty">
+            <div class="seat-avatar"><span class="plus">+</span></div>
+            <span class="seat-name muted">Vaga livre</span>
+            <span class="seat-level muted">Convide um amigo</span>
           </article>
         }
       </section>
@@ -77,7 +134,12 @@
           <div class="slots">
             @for (index of [0, 1]; track index) {
               <div class="slot">
-                <button type="button" class="slot-champion" [disabled]="busy() !== null || searching()" (click)="openPicker(index)">
+                <button
+                  type="button"
+                  class="slot-champion"
+                  [disabled]="busy() !== null || searching()"
+                  (click)="openPicker(index)"
+                >
                   @if (slot(index)?.championId && ddragon.champion(slot(index)!.championId); as champion) {
                     <img [src]="ddragon.championIconUrl(champion)" [alt]="champion.name" />
                     <span>
@@ -89,21 +151,19 @@
                     <span><strong>Escolher campeão</strong></span>
                   }
                 </button>
-                <div class="chips">
+                <div class="lane-row">
                   @for (position of slotPositions; track position) {
                     <button
                       type="button"
-                      class="chip"
+                      class="lane"
                       [class.active]="slot(index)?.positionPreference === position"
                       [class.scarce]="scarce().includes(position)"
                       [disabled]="busy() !== null || searching() || !slot(index)?.championId || !slotPositionAllowed(index, position)"
-                      [title]="scarce().includes(position) ? 'Rota prioritária' : ''"
+                      [title]="positionLabels[position] + (scarce().includes(position) ? ' · rota prioritária' : '')"
                       (click)="setSlotPosition(index, position)"
                     >
-                      @if (scarce().includes(position)) {
-                        <span class="diamond">◆</span>
-                      }
-                      {{ positionLabels[position] }}
+                      <app-icon [name]="laneIcon(position)" [size]="20" />
+                      <span>{{ positionLabels[position] }}</span>
                     </button>
                   }
                 </div>
@@ -120,74 +180,86 @@
       } @else if (room.showPositionSelector && me(); as mine) {
         <section class="card">
           <h3 class="section-title">Suas rotas</h3>
-          <div class="position-row">
-            <span class="position-label">Principal</span>
-            <div class="chips">
+          <div class="lane-pick">
+            <span class="lane-label">Principal</span>
+            <div class="lane-row">
               @for (position of positions; track position) {
                 <button
                   type="button"
-                  class="chip"
+                  class="lane"
                   [class.active]="mine.firstPosition === position"
                   [disabled]="busy() !== null || searching()"
+                  [title]="positionLabels[position]"
                   (click)="setPosition('first', position)"
                 >
-                  {{ positionLabels[position] }}
+                  <app-icon [name]="laneIcon(position)" [size]="22" />
+                  <span>{{ positionLabels[position] }}</span>
                 </button>
               }
             </div>
           </div>
-          <div class="position-row">
-            <span class="position-label">Secundária</span>
-            <div class="chips">
+          <div class="lane-pick" [class.off]="mine.firstPosition === 'FILL'">
+            <span class="lane-label">Secundária</span>
+            <div class="lane-row">
               @for (position of positions; track position) {
                 <button
                   type="button"
-                  class="chip"
+                  class="lane"
                   [class.active]="mine.secondPosition === position"
                   [disabled]="busy() !== null || searching() || mine.firstPosition === 'FILL' || mine.firstPosition === position"
+                  [title]="positionLabels[position]"
                   (click)="setPosition('second', position)"
                 >
-                  {{ positionLabels[position] }}
+                  <app-icon [name]="laneIcon(position)" [size]="22" />
+                  <span>{{ positionLabels[position] }}</span>
                 </button>
               }
             </div>
           </div>
+          @if (mine.firstPosition === 'FILL') {
+            <p class="muted small slot-hint">
+              Com <strong>Preencher</strong> você aceita qualquer rota — por isso a fila costuma ser bem mais rápida.
+            </p>
+          }
         </section>
       }
 
-      <section class="card search-card" [class.searching]="searching()">
+      <!-- A barra de ação: o botão mais importante da tela. -->
+      <section class="action" [class.searching]="searching()">
         @if (searching()) {
-          <div class="search-info">
-            <span class="pulse"></span>
-            <div>
-              <strong>Procurando partida · {{ elapsed() }}</strong>
-              <p class="muted small">Tempo estimado {{ estimate() }}</p>
+          <div class="queue-live">
+            <div class="queue-line">
+              <span class="pulse"></span>
+              <strong class="queue-time">{{ elapsed() }}</strong>
+              <span class="muted small">na fila · estimativa {{ estimate() }}</span>
             </div>
+            <div class="queue-bar"><span [style.width.%]="searchProgress()"></span></div>
           </div>
           <button type="button" class="btn ghost" [disabled]="busy() !== null" (click)="toggleSearch()">Cancelar</button>
         } @else {
-          <div>
+          <div class="action-text">
             <strong>Pronto para jogar?</strong>
-            <p class="muted small">
+            <span class="muted small">
               {{ room.isLeader ? 'A fila começa para todos da sala.' : 'Só o líder da sala pode iniciar a fila.' }}
-            </p>
+            </span>
           </div>
           <button
             type="button"
-            class="btn big"
+            class="cta"
             [disabled]="busy() !== null || !room.isLeader || !room.canStartActivity"
             (click)="toggleSearch()"
           >
+            <app-icon name="play" [size]="20" />
             Encontrar partida
           </button>
         }
-        @for (message of state().search?.errors ?? []; track $index) {
-          <p class="search-error">{{ message }}</p>
-        }
       </section>
+      @for (message of state().search?.errors ?? []; track $index) {
+        <p class="search-error">{{ message }}</p>
+      }
     </div>
 
-    <aside class="card friends">
+    <aside class="friends">
       <header class="friends-header">
         <h3 class="section-title">Amigos</h3>
         <button type="button" class="icon-btn" title="Atualizar" (click)="refresh()">
@@ -210,16 +282,11 @@
               <span class="muted small">{{ friendStatus(friend) }}</span>
             </button>
             @if (inLobby(friend)) {
-              <span class="muted small">Na sala</span>
+              <span class="friend-tag in">Na sala</span>
             } @else if (invited(friend)) {
-              <span class="muted small">Convidado</span>
+              <span class="friend-tag">Convidado</span>
             } @else if (canInvite(friend)) {
-              <button
-                type="button"
-                class="btn small ghost"
-                [disabled]="busy() !== null"
-                (click)="invite(friend)"
-              >
+              <button type="button" class="btn small ghost" [disabled]="busy() !== null" (click)="invite(friend)">
                 Convidar
               </button>
             }
@@ -241,19 +308,23 @@
               type="button"
               class="queue"
               [class.ranked]="queue.isRanked"
+              [class.busy]="busy() === 'queue:' + queue.id"
               [disabled]="busy() !== null"
               (click)="createLobby(queue)"
             >
               <span class="queue-name">{{ queue.name }}</span>
               <span class="queue-meta">
                 @if (queue.isRanked) {
-                  <span class="tag">Ranqueada</span>
+                  <span class="tag ranked">Ranqueada</span>
                 }
                 @if (queue.showPositionSelector) {
                   <span class="tag">Escolha de rotas</span>
                 }
               </span>
-              <span class="queue-cta">{{ busy() === 'queue:' + queue.id ? 'Criando sala…' : 'Criar sala' }}</span>
+              <span class="queue-cta">
+                {{ busy() === 'queue:' + queue.id ? 'Criando sala…' : 'Criar sala' }}
+                <app-icon name="play" [size]="13" />
+              </span>
             </button>
           }
         </div>
@@ -261,6 +332,29 @@
     } @empty {
       <p class="muted">Carregando filas…</p>
     }
+  </div>
+}
+
+<!-- Partida encontrada: o momento mais tenso da tela, então ocupa tudo. -->
+@if (readyCheck(); as ready) {
+  <div class="ready-backdrop">
+    <div class="ready" [class.accepted]="ready.playerResponse === 'Accepted'">
+      <span class="ready-eyebrow">Partida encontrada</span>
+      @if (ready.playerResponse === 'Accepted') {
+        <strong class="ready-waiting">Aceito — esperando o resto do grupo</strong>
+        <span class="muted small">Se alguém recusar, você volta para a fila automaticamente.</span>
+      } @else {
+        <div class="ready-timer"><span>{{ readySeconds() }}</span></div>
+        <div class="ready-actions">
+          <button type="button" class="btn ghost" [disabled]="busy() !== null" (click)="respondReady(false)">
+            Recusar
+          </button>
+          <button type="button" class="cta" [disabled]="busy() !== null" (click)="respondReady(true)">
+            Aceitar partida
+          </button>
+        </div>
+      }
+    </div>
   </div>
 }
 

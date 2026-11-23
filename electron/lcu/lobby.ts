@@ -372,3 +372,61 @@ export async function getAvailableChampions(credentials: LcuCredentials): Promis
 function toPosition(value: string): Position {
   return POSITIONS.includes(value as Position) ? (value as Position) : 'UNSELECTED';
 }
+
+/* ------------------------------------------------------------------ *
+ * Convites recebidos: alguém te chamou para a sala dele.
+ * O cliente expõe isso em /lol-lobby/v2/received-invitations, separado
+ * de LobbyState.invitations (que são os convites que VOCÊ enviou).
+ * ------------------------------------------------------------------ */
+
+export interface ReceivedInvitation {
+  invitationId: string;
+  fromSummonerId: number;
+  fromName: string;
+  queueId: number;
+  canAccept: boolean;
+}
+
+export interface RawReceivedInvitation {
+  invitationId?: string;
+  fromSummonerId?: number;
+  fromSummonerName?: string;
+  state?: string;
+  canAcceptInvitation?: boolean;
+  gameConfig?: { queueId?: number };
+}
+
+/** Só os convites ainda abertos: os aceitos/recusados/expirados somem da tela. */
+export function toReceivedInvitations(raw: RawReceivedInvitation[] | null): ReceivedInvitation[] {
+  return (raw ?? [])
+    .filter((invitation) => invitation.state === 'Pending' && !!invitation.invitationId)
+    .map((invitation) => ({
+      invitationId: String(invitation.invitationId),
+      fromSummonerId: Number(invitation.fromSummonerId ?? 0),
+      fromName: invitation.fromSummonerName ?? '',
+      queueId: Number(invitation.gameConfig?.queueId ?? 0),
+      canAccept: invitation.canAcceptInvitation !== false,
+    }));
+}
+
+export async function getReceivedInvitations(credentials: LcuCredentials): Promise<ReceivedInvitation[]> {
+  const raw = await lcuRequest<RawReceivedInvitation[]>(
+    credentials,
+    'GET',
+    '/lol-lobby/v2/received-invitations',
+  );
+  return toReceivedInvitations(raw);
+}
+
+export function respondInvitation(
+  credentials: LcuCredentials,
+  invitationId: string,
+  accept: boolean,
+): Promise<unknown> {
+  const id = encodeURIComponent(invitationId);
+  return lcuRequest(
+    credentials,
+    'POST',
+    `/lol-lobby/v2/received-invitations/${id}/${accept ? 'accept' : 'decline'}`,
+  );
+}

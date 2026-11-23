@@ -13,11 +13,14 @@ import {
 import { findLcuCredentials, type LcuCredentials } from './credentials';
 import {
   toLobbyState,
+  toReceivedInvitations,
   toSearchState,
   withSearchTimes,
   type LobbyState,
   type RawLobby,
+  type RawReceivedInvitation,
   type ReadyCheckState,
+  type ReceivedInvitation,
   type SearchState,
 } from './lobby';
 import { lcuRequest } from './http';
@@ -46,6 +49,8 @@ export interface LcuState {
   lobby: LobbyState | null;
   search: SearchState | null;
   readyCheck: ReadyCheckState | null;
+  /** Convites de sala que você recebeu e ainda não respondeu. */
+  invitations: ReceivedInvitation[];
   /**
    * Última conta que entrou no LoL neste PC (fica salva): com o cliente fechado,
    * o app ainda sabe quem é você e mostra seu perfil e histórico.
@@ -151,7 +156,13 @@ export class LcuConnector extends EventEmitter {
 
     this.credentials = credentials;
     this.setState({ ...this.state, status: 'connected' });
-    await Promise.all([this.loadSummoner(), this.loadGameflowPhase(), this.loadPlatform(), this.loadLobby()]);
+    await Promise.all([
+      this.loadSummoner(),
+      this.loadGameflowPhase(),
+      this.loadPlatform(),
+      this.loadLobby(),
+      this.loadInvitations(),
+    ]);
     if (this.state.gameflowPhase === 'ChampSelect') await this.loadChampSelect();
   }
 
@@ -187,6 +198,15 @@ export class LcuConnector extends EventEmitter {
         } else {
           void this.applyLobby(toLobbyState(event.data as RawLobby));
         }
+        break;
+      case '/lol-lobby/v2/received-invitations':
+        this.setState({
+          ...this.state,
+          invitations:
+            event.eventType === 'Delete' || !event.data
+              ? []
+              : toReceivedInvitations(event.data as RawReceivedInvitation[]),
+        });
         break;
       case '/lol-lobby/v2/lobby/matchmaking/search-state':
         this.setState({
@@ -232,6 +252,12 @@ export class LcuConnector extends EventEmitter {
   private async loadGameflowPhase(): Promise<void> {
     const phase = await this.get<string>('/lol-gameflow/v1/gameflow-phase');
     this.setState({ ...this.state, gameflowPhase: phase });
+  }
+
+  /** Convites que já estavam esperando quando o app abriu. */
+  private async loadInvitations(): Promise<void> {
+    const raw = await this.get<RawReceivedInvitation[]>('/lol-lobby/v2/received-invitations');
+    this.setState({ ...this.state, invitations: toReceivedInvitations(raw) });
   }
 
   private async loadLobby(): Promise<void> {
@@ -411,6 +437,7 @@ function emptyState(status: ConnectionStatus): LcuState {
     lobby: null,
     search: null,
     readyCheck: null,
+    invitations: [],
     account: null,
   };
 }

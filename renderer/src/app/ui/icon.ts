@@ -127,6 +127,46 @@ const ICONS: Record<string, Shape[]> = {
     { d: 'M5 20.5V10.5L12 3.5 19 10.5V20.5L15 17.5H9Z' },
     { d: 'M8 11.5H16L14.5 14H9.5Z', fill: true },
   ],
+  // Rotas: o mapa visto de cima, com o corredor da rota em destaque.
+  'lane-top': [
+    { d: 'M3.5 3.5H20.5V20.5H3.5Z' },
+    { d: 'M6 6H12.5L6 12.5Z', fill: true },
+  ],
+  'lane-middle': [
+    { d: 'M3.5 3.5H20.5V20.5H3.5Z' },
+    { d: 'M6.5 15.5 15.5 6.5 17.5 8.5 8.5 17.5Z', fill: true },
+  ],
+  'lane-bottom': [
+    { d: 'M3.5 3.5H20.5V20.5H3.5Z' },
+    { d: 'M18 18H11.5L18 11.5Z', fill: true },
+  ],
+  // Broto: a selva.
+  'lane-jungle': [
+    { d: 'M12 20.5V11' },
+    { d: 'M12 13.5 6.5 8.5M12 13.5 17.5 8.5' },
+    { d: 'M12 3 15.5 9.5H8.5Z', fill: true },
+  ],
+  // Escudo com cruz: o suporte.
+  'lane-utility': [
+    { d: 'M12 3.5 19.5 6.5V12.5L12 20.5 4.5 12.5V6.5Z' },
+    { d: 'M11 8.5H13V11H15.5V13H13V15.5H11V13H8.5V11H11Z', fill: true },
+  ],
+  // Setas trocadas: preencher (qualquer rota).
+  'lane-fill': [
+    { d: 'M3.5 8H9L15 16H19M3.5 16H9L15 8H19' },
+    { d: 'M16.5 5 20.5 8 16.5 11Z', fill: true },
+    { d: 'M16.5 13 20.5 16 16.5 19Z', fill: true },
+  ],
+  // Coroa: líder da sala.
+  crown: [
+    { d: 'M4.5 6.5 8.5 11.5 12 4.5 15.5 11.5 19.5 6.5 18 16.5H6Z', fill: true },
+    { d: 'M6.5 19.5H17.5' },
+  ],
+  // Envelope: convite recebido.
+  invite: [
+    { d: 'M3.5 6.5H20.5V17.5H3.5Z' },
+    { d: 'M3.5 6.5 12 13.5 20.5 6.5Z', fill: true },
+  ],
 };
 
 @Component({

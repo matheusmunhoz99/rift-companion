@@ -15,6 +15,7 @@ export class LcuService {
     lobby: null,
     search: null,
     readyCheck: null,
+    invitations: [],
   });
 
   /**
